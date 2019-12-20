@@ -36,7 +36,7 @@ output/encounters.csv.gz: \
 	input/EROEncounters_FY2017.csv.gz \
 	input/EROEncounters_FY2018.csv.gz \
 	input/EROEncounters_FY2019.csv.gz
-	python $< \	
+	python $< \
 		--dtypes=hand/encounter_dtypes.yaml \
 		--input_fy16=input/EROEncounters_FY2016.csv.gz \
 		--input_fy17=input/EROEncounters_FY2017.csv.gz \
