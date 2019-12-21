@@ -59,6 +59,11 @@ if __name__ == "__main__":
 
     df = pd.concat(files, sort=False)
 
+    df.columns = df.columns.str.lower()
+    df.columns = df.columns.str.replace(' ', '_')
+
+    df['id'] = range(len(df))
+
     write_csv_opts = {'sep': '|',
                       'quotechar': '"',
                       'compression': 'gzip',
@@ -66,5 +71,6 @@ if __name__ == "__main__":
                       'index': False}
 
     df.to_csv(args.output, **write_csv_opts)
+    print(f'Wrote {len(df)} records to {args.output}')
 
 # END.
