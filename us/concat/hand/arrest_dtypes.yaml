@@ -1,9 +1,10 @@
-Area of Responsibility: category
-Apprehension Date: str
-Apprehension Method: category
-Apprehension Landmark: category
-Operation: category
-Processing Disposition: category
-Birth Date: category
-Citizenship: category
-Gender: category
+id: int64
+aor: category
+apprehension_date: str
+apprehension_method: category
+apprehension_landmark: category
+operation: category
+processing_disposition: category
+birth_date: category
+citizenship: category
+gender: category

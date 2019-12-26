@@ -1,8 +1,8 @@
-Event Area of Responsibility: category
-Event Date: str
-Landmark: category
-Operation: category
-Processing Disposition: category
-Birth Date: category
-Citizenship: category
-Gender: category
+id: int64
+aor: category
+event_date: str
+landmark: category
+operation: category
+processing_disposition: category
+citizenship: category
+gender: category
