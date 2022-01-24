@@ -1,0 +1,16 @@
+---
+title: "Analysis"
+author: "Trung-Anh Nguyen"
+date: "1/23/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+facilities <- read.csv("../input/facil-list.csv.gz", sep = "|")
+```
+
