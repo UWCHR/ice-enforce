@@ -9,7 +9,7 @@ output:
 
 ```{r setup, include=F, warning=F, message=F}
 #rm(list = ls())
-knitr::opts_chunk$set(warning=F, message=F)
+knitr::opts_chunk$set(warning=F, message=F, cache = T)
 options(scipen = 999)
 library(dplyr)
 library(ggplot2)
@@ -17,13 +17,15 @@ library(RColorBrewer)
 library(tidyr)
 library(knitr)
 library(ggthemes)
+library(lubridate)
 ```
 
 # Arrests
 
 ```{r cache=T}
 arrests <- read.csv("../../export/output/arrests.csv.gz")
-arrests <- arrests %>% mutate(apprehension_date2 = as.Date(arrests$apprehension_date, format = "%m/%d/%Y"),
+arrests <- arrests %>% filter(aor != "HQ") %>%
+  mutate(apprehension_date2 = as.Date(apprehension_date, format = "%m/%d/%Y"),
                               apprehension_year = format(apprehension_date2, "%Y"))
 ```
 
@@ -65,12 +67,120 @@ ggplot(plot2, aes(as.numeric(apprehension_year), total, group = aor)) +
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45))
 ```
+```{r fiscalyear}
+arrests <- arrests %>% mutate(fy = case_when(apprehension_date2 < "2016-10-01" ~ 2016,
+                                                             apprehension_date2 < "2017-10-01" ~ 2017,
+                                                             apprehension_date2 < "2018-10-01" ~ 2018,
+                                                             apprehension_date2 < "2019-10-01" ~ 2019),
+                              apprehension_month = format(apprehension_date2, "%Y-%m"))
+ arrests %>% 
+  group_by(fy) %>%
+  summarize(total = n()) %>%
+  ggplot(aes(fy, total, group = 1)) + 
+  geom_point() +
+  geom_line() +
+  labs(x = "Apprehension Year (Fiscal)",
+       y = "Total Yearly Apprehension",
+       title = "Total Arrests Across AOR FY 2016-2019") +
+  theme_few()
+ 
+arrests %>% 
+  group_by(fy, aor) %>%
+  summarize(total = n()) %>%
+  ggplot(aes(as.numeric(fy), total, group = aor)) + 
+  geom_line(aes(col = aor)) +
+  scale_x_continuous(limits = c(2016, 2019)) +
+  labs(x = "Apprehension Year (Fiscal)",
+       y = "Yearly Apprehension by AOR",
+       title = "Total Arrests by AOR FY 2016-2019") +
+  facet_wrap(~aor) +
+  theme_few() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45))
+
+# Monthly data
+arrests_2016 <- arrests %>% filter(fy == 2016) %>%
+  group_by(aor, apprehension_month) %>%
+  summarize(total = n())          
+arrests_2017 <- arrests %>% filter(fy == 2017) %>%
+  group_by(aor, apprehension_month) %>%
+  summarize(total = n())
+arrests_2018 <- arrests %>% filter(fy == 2018) %>%
+  group_by(aor, apprehension_month) %>%
+  summarize(total = n())
+arrests_2019 <- arrests %>% filter(fy == 2019) %>%
+  group_by(aor, apprehension_month) %>%
+  summarize(total = n())
+
+# Quarterly data
+arrests_2016_q <- arrests %>% filter(fy == 2016) %>% 
+  mutate(quarter = case_when(apprehension_month < "2016-01" ~ 1,
+                             apprehension_month < "2016-04" ~ 2,
+                            apprehension_month < "2016-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n())
+  
+arrests_2017_q <- arrests %>% filter(fy == 2017) %>% 
+  mutate(quarter = case_when(apprehension_month < "2017-01" ~ 1,
+                             apprehension_month < "2017-04" ~ 2,
+                            apprehension_month < "2017-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n())   
+  
+arrests_2018_q <- arrests %>% filter(fy == 2018) %>% 
+  mutate(quarter = case_when(apprehension_month < "2018-01" ~ 1,
+                             apprehension_month < "2018-04" ~ 2,
+                            apprehension_month < "2018-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n()) 
+
+arrests_2019_q <- arrests %>% filter(fy == 2019) %>% 
+  mutate(quarter = case_when(apprehension_month < "2019-01" ~ 1,
+                             apprehension_month < "2019-04" ~ 2,
+                            apprehension_month < "2019-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n()) 
+```
+
+
+```{r citizenship}
+arrests %>% 
+  group_by(citizenship) %>%
+  summarize(total = n()) %>%
+  arrange(desc(total)) %>%
+  kable()
+  
+# by FY
+
+# by AOR
+
+# by FY-AOR
+```
+
+```{r gender}
+arrests %>% 
+  group_by(gender) %>%
+  summarize(total = n()) %>%
+  arrange(desc(total)) %>%
+  kable()
+# by FY
+
+# by AOR
+
+# by FY-AOR
+
+```
 
 # Encounters
 
 ```{r cache=T}
 encounters <- read.csv("../../export/output/encounters.csv.gz")
-encounters <- encounters %>% mutate(event_date2 = as.Date(event_date, format = "%m/%d/%Y"),
+encounters <- encounters %>% filter(aor != "HQ") %>%
+  mutate(event_date2 = as.Date(event_date, format = "%m/%d/%Y"),
                               event_year = format(event_date2, "%Y"))
 ```
 
@@ -113,10 +223,152 @@ ggplot(plot2_encounters, aes(as.numeric(event_year), total, group = aor)) +
         axis.text.x = element_text(angle = 45))
 ```
 
+```{r fiscalyear_encounters}
+encounters <- encounters %>% mutate(fy = case_when(event_date2 < "2016-10-01" ~ 2016,
+                                                   event_date2 < "2017-10-01" ~ 2017,
+                                                   event_date2 < "2018-10-01" ~ 2018,
+                                                   event_date2 < "2019-10-01" ~ 2019),
+                              event_month = format(event_date2, "%Y-%m"))
+encounters %>% 
+  group_by(fy) %>%
+  summarize(total = n()) %>%
+  ggplot(aes(fy, total, group = 1)) + 
+  geom_point() +
+  geom_line() +
+  labs(x = "Encounter Year (Fiscal)",
+       y = "Total Yearly Encounters",
+       title = "Total Encounters Across AOR FY 2016-2019") +
+  theme_few()
+ 
+encounters %>% 
+  group_by(fy, aor) %>%
+  summarize(total = n()) %>%
+  ggplot(aes(as.numeric(fy), total, group = aor)) + 
+  geom_line(aes(col = aor)) +
+  scale_x_continuous(limits = c(2016, 2019)) +
+  labs(x = "Encounter Year (Fiscal)",
+       y = "Yearly Encounters by AOR",
+       title = "Total Encounters by AOR FY 2016-2019") +
+  facet_wrap(~aor) +
+  theme_few() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45))
+
+# Monthly data
+encounters_2016 <- encounters %>% filter(fy == 2016) %>%
+  group_by(aor, event_month) %>%
+  summarize(total = n())          
+encounters_2017 <- encounters %>% filter(fy == 2017) %>%
+  group_by(aor, event_month) %>%
+  summarize(total = n())
+encounters_2018 <- encounters %>% filter(fy == 2018) %>%
+  group_by(aor, event_month) %>%
+  summarize(total = n())
+encounters_2019 <- encounters %>% filter(fy == 2019) %>%
+  group_by(aor, event_month) %>%
+  summarize(total = n())
+
+# Quarterly data
+encounters_2016_q <- encounters %>% filter(fy == 2016) %>% 
+  mutate(quarter = case_when(event_month < "2016-01" ~ 1,
+                             event_month < "2016-04" ~ 2,
+                             event_month < "2016-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n())
+  
+encounters_2017_q <- encounters %>% filter(fy == 2017) %>% 
+  mutate(quarter = case_when(event_month < "2017-01" ~ 1,
+                             event_month < "2017-04" ~ 2,
+                             event_month < "2017-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n())   
+  
+encounters_2018_q <- encounters %>% filter(fy == 2018) %>% 
+  mutate(quarter = case_when(event_month < "2018-01" ~ 1,
+                             event_month < "2018-04" ~ 2,
+                             event_month < "2018-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n()) 
+
+encounters_2019_q <- encounters %>% filter(fy == 2019) %>% 
+  mutate(quarter = case_when(event_month < "2019-01" ~ 1,
+                             event_month < "2019-04" ~ 2,
+                             event_month < "2019-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n()) 
+```
+
+```{r citizenship_encounters}
+encounters %>% 
+  group_by(citizenship) %>%
+  summarize(total = n()) %>%
+  arrange(desc(total)) %>%
+  kable()
+  
+# by FY
+
+# by AOR
+
+# by FY-AOR
+```
+
+```{r gender_encounters}
+encounters %>% 
+  group_by(gender) %>%
+  summarize(total = n()) %>%
+  arrange(desc(total)) %>%
+  kable()
+# by FY
+
+# by AOR
+
+# by FY-AOR
+
+```
+
+
 # Removals
 
 ```{r cache=T}
 removals <- read.csv("../../export/output/removals.csv.gz", sep = "|")
-removals %>% select(1:9) %>% head() %>% kable(caption = "`removals` dataframe")
+removals <- removals %>% mutate(apprehension_date2 = as.Date(apprehension_date, format = "%m/%d/%Y"),
+                                departed_date2 = as.Date(departed_date, format = "%m/%d/%Y"),
+                                removal_date2 = as.Date(removal_date, format = "%m/%d/%Y"))
 ```
 
+
+```{r}
+#sum(is.na(removals$apprehension_date2))
+
+removals <- removals %>% drop_na(apprehension_date2, departed_date2, removal_date2) %>%
+  mutate(difference = removal_date2 - apprehension_date2,
+         difference2 = removal_date2 - departed_date2,
+         fy = case_when(removal_date2 < "2016-10-01" ~ 2016,
+                        removal_date2 < "2017-10-01" ~ 2017,
+                        removal_date2 < "2018-10-01" ~ 2018,
+                        removal_date2 < "2019-10-01" ~ 2019))
+
+#sum(removals$difference2 != 0)
+
+removals %>% 
+  select(aor, apprehension_date, departed_date, removal_date, difference, difference2) %>% 
+  arrange(difference) %>%
+  head(30) %>% kable(caption = "`removals` dataframe sorted by `difference` in ascending order")
+
+removals %>% 
+  select(aor, apprehension_date, departed_date, removal_date, difference, difference2) %>% 
+  arrange(desc(difference)) %>%
+  head(30) %>% kable(caption = "`removals` dataframe sorted by `difference` in descending order")
+
+#removals %>% filter(fy == 2016) %>%
+  #group_by(aor) %>%
+  #summarize(mean_length_stay = mean(difference))
+```
+
+There are 14,235 observations with empty `apprehension_date`. These were removed from the calculations for the difference between removal date and apprehension date. 
+
+There were no observations with empty `departed_date` or `removal_date`. There are differences between these 2 columns--17,890 rows show a non-0 difference in the number of days between departure and removal.
