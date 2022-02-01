@@ -1,0 +1,122 @@
+---
+title: "Descriptive Analysis"
+author: "Trung-Anh Nguyen"
+date: "1/23/2022"
+output: 
+  html_document: 
+    code_folding: hide
+---
+
+```{r setup, include=F, warning=F, message=F}
+#rm(list = ls())
+knitr::opts_chunk$set(warning=F, message=F)
+options(scipen = 999)
+library(dplyr)
+library(ggplot2)
+library(RColorBrewer)
+library(tidyr)
+library(knitr)
+library(ggthemes)
+```
+
+# Arrests
+
+```{r cache=T}
+arrests <- read.csv("../../export/output/arrests.csv.gz")
+arrests <- arrests %>% mutate(apprehension_date2 = as.Date(arrests$apprehension_date, format = "%m/%d/%Y"),
+                              apprehension_year = format(apprehension_date2, "%Y"))
+```
+
+```{r}
+arrests %>% select(1:8) %>% head() %>% kable(caption = "`arrests` dataframe")
+
+plot <- arrests %>% 
+  group_by(apprehension_year) %>%
+  summarize(total = n()) 
+
+plot2 <- arrests %>% 
+  group_by(apprehension_year, aor) %>%
+  summarize(total = n())
+
+plot2 %>% pivot_wider(names_from = apprehension_year, values_from = total) %>% kable(caption = "Total Arrests by AOR 2015-2019")
+
+ggplot(plot, aes(apprehension_year, total, group = 1)) + 
+  geom_point() +
+  geom_line() +
+  labs(x = "Apprehension Year",
+       y = "Total Yearly Apprehension",
+       title = "Total Arrests Across AOR 2015-2019") +
+  theme_few()
+
+#ggplot(plot2, aes(as.numeric(apprehension_year), total, group = aor)) + 
+  #geom_line(aes(col = aor)) +
+  #scale_x_continuous(limits = c(2015, 2019)) +
+  #labs(x = "Apprehension Year",
+       #y = "Yearly Apprehension by AOR")
+
+ggplot(plot2, aes(as.numeric(apprehension_year), total, group = aor)) + 
+  geom_line(aes(col = aor)) +
+  scale_x_continuous(limits = c(2015, 2019)) +
+  labs(x = "Apprehension Year",
+       y = "Yearly Apprehension by AOR",
+       title = "Total Arrests by AOR 2015-2019") +
+  facet_wrap(~aor) +
+  theme_few() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45))
+```
+
+# Encounters
+
+```{r cache=T}
+encounters <- read.csv("../../export/output/encounters.csv.gz")
+encounters <- encounters %>% mutate(event_date2 = as.Date(event_date, format = "%m/%d/%Y"),
+                              event_year = format(event_date2, "%Y"))
+```
+
+```{r}
+encounters %>% select(1:7) %>% head() %>% kable(caption = "`encounters` dataframe")
+
+plot_encounters <- encounters %>% 
+  group_by(event_year) %>%
+  summarize(total = n()) 
+
+plot2_encounters <- encounters %>% 
+  group_by(event_year, aor) %>%
+  summarize(total = n())
+
+plot2_encounters %>% pivot_wider(names_from = event_year, values_from = total) %>% kable(caption = "Total Encounters by AOR 2015-2019")
+
+ggplot(plot_encounters, aes(event_year, total, group = 1)) + 
+  geom_point() +
+  geom_line() +
+  labs(x = "Year",
+       y = "Total Yearly Encounters",
+       title = "Total Encounters Across AOR 2015-2019") +
+  theme_few()
+
+#ggplot(plot2, aes(as.numeric(apprehension_year), total, group = aor)) + 
+  #geom_line(aes(col = aor)) +
+  #scale_x_continuous(limits = c(2015, 2019)) +
+  #labs(x = "Apprehension Year",
+       #y = "Yearly Apprehension by AOR")
+
+ggplot(plot2_encounters, aes(as.numeric(event_year), total, group = aor)) + 
+  geom_line(aes(col = aor)) +
+  scale_x_continuous(limits = c(2015, 2019)) +
+  labs(x = "Year",
+       y = "Yearly Encounters by AOR",
+       title = "Total Encounters by AOR 2015-2019") +
+  facet_wrap(~aor) +
+  theme_few() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 45))
+```
+
+# Removals
+
+```{r cache=T}
+removals <- read.csv("../../export/output/removals.csv.gz", sep = "|")
+removals %>% select(1:9) %>% head() %>% kable(caption = "`removals` dataframe")
+```
+

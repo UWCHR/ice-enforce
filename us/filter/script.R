@@ -10,3 +10,4 @@ write.csv(encounters, file = gzfile("../export/output/encounters.csv.gz"), row.n
 
 #removals <- read.csv("../clean/output/removals.csv.gz", sep = "|")
 
+
