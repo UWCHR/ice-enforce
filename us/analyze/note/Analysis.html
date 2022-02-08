@@ -841,884 +841,619 @@ arrests_2019_q &lt;- arrests %&gt;% filter(fy == 2019) %&gt;%
                              TRUE ~ 4)) %&gt;%
   group_by(aor, quarter) %&gt;%
   summarize(total = n()) </code></pre>
-<pre class="r"><code>arrests %&gt;% 
-  group_by(citizenship) %&gt;%
-  summarize(total = n()) %&gt;%
-  arrange(desc(total)) %&gt;%
-  kable()</code></pre>
+<pre class="r"><code>apprehension_landmark &lt;- arrests %&gt;% group_by(apprehension_landmark) %&gt;% summarize(total = n())
+write.csv(apprehension_landmark, 'apprehension_landmark.csv')
+
+arrests &lt;- arrests %&gt;% mutate(apprehension_landmark2 = 
+                                case_when(grepl('NON_SPECIFIC|GENERAL AREA|OPERATIONS|FUGITIVE', apprehension_landmark) ~ 0,
+                                          apprehension_landmark %in% c('ATLANTA, GA', 'SAN ANGELO SUB-OFFICE', 'BALTIMORE CITY MD', 'NORTHERN VIRGINIA AREA', 'SEA CAP', 'DETROIT, MI', 'DO NOT USE', '')  ~ 0,
+                                          TRUE ~ 1))
+#test &lt;- arrests %&gt;% select(apprehension_landmark, apprehension_landmark2)
+test2 &lt;- arrests %&gt;% filter(apprehension_landmark2 == 1) %&gt;%
+  group_by(apprehension_landmark) %&gt;% 
+  summarize(total = n())
+
+specificity &lt;- arrests %&gt;% 
+  group_by(fy, aor, apprehension_landmark2) %&gt;%
+  summarize(total = n()) %&gt;% 
+  pivot_wider(names_from = fy, values_from = total)
+  
+specificity %&gt;% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)')</code></pre>
 <table>
+<caption>Apprehension landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)</caption>
+<thead>
+<tr class="header">
+<th align="left">aor</th>
+<th align="right">apprehension_landmark2</th>
+<th align="right">2016</th>
+<th align="right">2017</th>
+<th align="right">2018</th>
+<th align="right">2019</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">ATL</td>
+<td align="right">0</td>
+<td align="right">2195</td>
+<td align="right">2900</td>
+<td align="right">3097</td>
+<td align="right">2790</td>
+</tr>
+<tr class="even">
+<td align="left">ATL</td>
+<td align="right">1</td>
+<td align="right">6671</td>
+<td align="right">10651</td>
+<td align="right">12092</td>
+<td align="right">9478</td>
+</tr>
+<tr class="odd">
+<td align="left">BAL</td>
+<td align="right">0</td>
+<td align="right">350</td>
+<td align="right">424</td>
+<td align="right">495</td>
+<td align="right">406</td>
+</tr>
+<tr class="even">
+<td align="left">BAL</td>
+<td align="right">1</td>
+<td align="right">889</td>
+<td align="right">1242</td>
+<td align="right">1208</td>
+<td align="right">924</td>
+</tr>
+<tr class="odd">
+<td align="left">BOS</td>
+<td align="right">0</td>
+<td align="right">637</td>
+<td align="right">841</td>
+<td align="right">881</td>
+<td align="right">757</td>
+</tr>
+<tr class="even">
+<td align="left">BOS</td>
+<td align="right">1</td>
+<td align="right">1221</td>
+<td align="right">1993</td>
+<td align="right">2027</td>
+<td align="right">1509</td>
+</tr>
+<tr class="odd">
+<td align="left">BUF</td>
+<td align="right">0</td>
+<td align="right">126</td>
+<td align="right">286</td>
+<td align="right">259</td>
+<td align="right">22</td>
+</tr>
+<tr class="even">
+<td align="left">BUF</td>
+<td align="right">1</td>
+<td align="right">1047</td>
+<td align="right">1208</td>
+<td align="right">1323</td>
+<td align="right">1184</td>
+</tr>
+<tr class="odd">
+<td align="left">CHI</td>
+<td align="right">0</td>
+<td align="right">3678</td>
+<td align="right">4685</td>
+<td align="right">4542</td>
+<td align="right">3863</td>
+</tr>
+<tr class="even">
+<td align="left">CHI</td>
+<td align="right">1</td>
+<td align="right">3377</td>
+<td align="right">3919</td>
+<td align="right">4699</td>
+<td align="right">3906</td>
+</tr>
+<tr class="odd">
+<td align="left">DAL</td>
+<td align="right">0</td>
+<td align="right">2105</td>
+<td align="right">5090</td>
+<td align="right">5942</td>
+<td align="right">3157</td>
+</tr>
+<tr class="even">
+<td align="left">DAL</td>
+<td align="right">1</td>
+<td align="right">7529</td>
+<td align="right">11430</td>
+<td align="right">11702</td>
+<td align="right">12414</td>
+</tr>
+<tr class="odd">
+<td align="left">DEN</td>
+<td align="right">0</td>
+<td align="right">88</td>
+<td align="right">181</td>
+<td align="right">150</td>
+<td align="right">98</td>
+</tr>
+<tr class="even">
+<td align="left">DEN</td>
+<td align="right">1</td>
+<td align="right">2196</td>
+<td align="right">2565</td>
+<td align="right">2605</td>
+<td align="right">2117</td>
+</tr>
+<tr class="odd">
+<td align="left">DET</td>
+<td align="right">0</td>
+<td align="right">987</td>
+<td align="right">1453</td>
+<td align="right">1560</td>
+<td align="right">1391</td>
+</tr>
+<tr class="even">
+<td align="left">DET</td>
+<td align="right">1</td>
+<td align="right">1254</td>
+<td align="right">1956</td>
+<td align="right">2044</td>
+<td align="right">1703</td>
+</tr>
+<tr class="odd">
+<td align="left">ELP</td>
+<td align="right">0</td>
+<td align="right">785</td>
+<td align="right">778</td>
+<td align="right">1279</td>
+<td align="right">1121</td>
+</tr>
+<tr class="even">
+<td align="left">ELP</td>
+<td align="right">1</td>
+<td align="right">826</td>
+<td align="right">1114</td>
+<td align="right">880</td>
+<td align="right">982</td>
+</tr>
+<tr class="odd">
+<td align="left">HOU</td>
+<td align="right">0</td>
+<td align="right">3013</td>
+<td align="right">3346</td>
+<td align="right">3034</td>
+<td align="right">2681</td>
+</tr>
+<tr class="even">
+<td align="left">HOU</td>
+<td align="right">1</td>
+<td align="right">9883</td>
+<td align="right">10219</td>
+<td align="right">11299</td>
+<td align="right">8080</td>
+</tr>
+<tr class="odd">
+<td align="left">LOS</td>
+<td align="right">0</td>
+<td align="right">4566</td>
+<td align="right">5302</td>
+<td align="right">5980</td>
+<td align="right">4974</td>
+</tr>
+<tr class="even">
+<td align="left">LOS</td>
+<td align="right">1</td>
+<td align="right">3085</td>
+<td align="right">3117</td>
+<td align="right">1874</td>
+<td align="right">1170</td>
+</tr>
+<tr class="odd">
+<td align="left">MIA</td>
+<td align="right">0</td>
+<td align="right">1331</td>
+<td align="right">2298</td>
+<td align="right">2436</td>
+<td align="right">2747</td>
+</tr>
+<tr class="even">
+<td align="left">MIA</td>
+<td align="right">1</td>
+<td align="right">2193</td>
+<td align="right">3894</td>
+<td align="right">6038</td>
+<td align="right">5948</td>
+</tr>
+<tr class="odd">
+<td align="left">NEW</td>
+<td align="right">0</td>
+<td align="right">79</td>
+<td align="right">310</td>
+<td align="right">196</td>
+<td align="right">178</td>
+</tr>
+<tr class="even">
+<td align="left">NEW</td>
+<td align="right">1</td>
+<td align="right">2168</td>
+<td align="right">2879</td>
+<td align="right">3213</td>
+<td align="right">2476</td>
+</tr>
+<tr class="odd">
+<td align="left">NOL</td>
+<td align="right">0</td>
+<td align="right">2392</td>
+<td align="right">3310</td>
+<td align="right">4222</td>
+<td align="right">3828</td>
+</tr>
+<tr class="even">
+<td align="left">NOL</td>
+<td align="right">1</td>
+<td align="right">2782</td>
+<td align="right">4658</td>
+<td align="right">6048</td>
+<td align="right">5247</td>
+</tr>
+<tr class="odd">
+<td align="left">NYC</td>
+<td align="right">0</td>
+<td align="right">957</td>
+<td align="right">944</td>
+<td align="right">1223</td>
+<td align="right">780</td>
+</tr>
+<tr class="even">
+<td align="left">NYC</td>
+<td align="right">1</td>
+<td align="right">890</td>
+<td align="right">1632</td>
+<td align="right">2253</td>
+<td align="right">1501</td>
+</tr>
+<tr class="odd">
+<td align="left">PHI</td>
+<td align="right">0</td>
+<td align="right">870</td>
+<td align="right">1878</td>
+<td align="right">2057</td>
+<td align="right">1460</td>
+</tr>
+<tr class="even">
+<td align="left">PHI</td>
+<td align="right">1</td>
+<td align="right">2802</td>
+<td align="right">3060</td>
+<td align="right">3086</td>
+<td align="right">2292</td>
+</tr>
+<tr class="odd">
+<td align="left">PHO</td>
+<td align="right">0</td>
+<td align="right">640</td>
+<td align="right">1192</td>
+<td align="right">1132</td>
+<td align="right">923</td>
+</tr>
+<tr class="even">
+<td align="left">PHO</td>
+<td align="right">1</td>
+<td align="right">4730</td>
+<td align="right">5265</td>
+<td align="right">6030</td>
+<td align="right">4497</td>
+</tr>
+<tr class="odd">
+<td align="left">SEA</td>
+<td align="right">0</td>
+<td align="right">468</td>
+<td align="right">425</td>
+<td align="right">533</td>
+<td align="right">345</td>
+</tr>
+<tr class="even">
+<td align="left">SEA</td>
+<td align="right">1</td>
+<td align="right">2230</td>
+<td align="right">2951</td>
+<td align="right">2534</td>
+<td align="right">1983</td>
+</tr>
+<tr class="odd">
+<td align="left">SFR</td>
+<td align="right">0</td>
+<td align="right">2642</td>
+<td align="right">2306</td>
+<td align="right">2502</td>
+<td align="right">1935</td>
+</tr>
+<tr class="even">
+<td align="left">SFR</td>
+<td align="right">1</td>
+<td align="right">4009</td>
+<td align="right">4925</td>
+<td align="right">3708</td>
+<td align="right">2789</td>
+</tr>
+<tr class="odd">
+<td align="left">SLC</td>
+<td align="right">0</td>
+<td align="right">1651</td>
+<td align="right">1919</td>
+<td align="right">1856</td>
+<td align="right">1636</td>
+</tr>
+<tr class="even">
+<td align="left">SLC</td>
+<td align="right">1</td>
+<td align="right">2987</td>
+<td align="right">3258</td>
+<td align="right">3898</td>
+<td align="right">3378</td>
+</tr>
+<tr class="odd">
+<td align="left">SNA</td>
+<td align="right">0</td>
+<td align="right">4941</td>
+<td align="right">5704</td>
+<td align="right">6551</td>
+<td align="right">5532</td>
+</tr>
+<tr class="even">
+<td align="left">SNA</td>
+<td align="right">1</td>
+<td align="right">3484</td>
+<td align="right">2806</td>
+<td align="right">4198</td>
+<td align="right">5436</td>
+</tr>
+<tr class="odd">
+<td align="left">SND</td>
+<td align="right">0</td>
+<td align="right">281</td>
+<td align="right">402</td>
+<td align="right">1240</td>
+<td align="right">614</td>
+</tr>
+<tr class="even">
+<td align="left">SND</td>
+<td align="right">1</td>
+<td align="right">3402</td>
+<td align="right">4149</td>
+<td align="right">4760</td>
+<td align="right">1493</td>
+</tr>
+<tr class="odd">
+<td align="left">SPM</td>
+<td align="right">0</td>
+<td align="right">1284</td>
+<td align="right">1823</td>
+<td align="right">1787</td>
+<td align="right">1562</td>
+</tr>
+<tr class="even">
+<td align="left">SPM</td>
+<td align="right">1</td>
+<td align="right">1216</td>
+<td align="right">2352</td>
+<td align="right">2871</td>
+<td align="right">2443</td>
+</tr>
+<tr class="odd">
+<td align="left">WAS</td>
+<td align="right">0</td>
+<td align="right">1412</td>
+<td align="right">1950</td>
+<td align="right">1461</td>
+<td align="right">1501</td>
+</tr>
+<tr class="even">
+<td align="left">WAS</td>
+<td align="right">1</td>
+<td align="right">1471</td>
+<td align="right">2213</td>
+<td align="right">2898</td>
+<td align="right">2233</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># by FY
+arrests %&gt;% 
+  group_by(citizenship, fy) %&gt;%
+  summarize(total = n()) %&gt;%
+  pivot_wider(names_from = fy, values_from = total) %&gt;%
+  replace(is.na(.), 0) %&gt;%
+  mutate(total = sum(c_across('2016':'2019'))) %&gt;%
+  arrange(desc(total)) %&gt;%
+  head(n=15) %&gt;%
+  kable(caption = 'Top 15 countries whose citizens were arrested FY2016-2019')</code></pre>
+<table>
+<caption>Top 15 countries whose citizens were arrested FY2016-2019</caption>
 <thead>
 <tr class="header">
 <th align="left">citizenship</th>
+<th align="right">2016</th>
+<th align="right">2017</th>
+<th align="right">2018</th>
+<th align="right">2019</th>
 <th align="right">total</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">MEXICO</td>
+<td align="right">70779</td>
+<td align="right">87367</td>
+<td align="right">93298</td>
+<td align="right">73879</td>
 <td align="right">325323</td>
 </tr>
 <tr class="even">
 <td align="left">GUATEMALA</td>
+<td align="right">9091</td>
+<td align="right">14217</td>
+<td align="right">17553</td>
+<td align="right">16083</td>
 <td align="right">56944</td>
 </tr>
 <tr class="odd">
 <td align="left">HONDURAS</td>
+<td align="right">7633</td>
+<td align="right">11828</td>
+<td align="right">13546</td>
+<td align="right">12343</td>
 <td align="right">45350</td>
 </tr>
 <tr class="even">
 <td align="left">EL SALVADOR</td>
+<td align="right">6753</td>
+<td align="right">9240</td>
+<td align="right">10083</td>
+<td align="right">8356</td>
 <td align="right">34432</td>
 </tr>
 <tr class="odd">
 <td align="left">DOMINICAN REPUBLIC</td>
+<td align="right">1842</td>
+<td align="right">2019</td>
+<td align="right">1875</td>
+<td align="right">1698</td>
 <td align="right">7434</td>
 </tr>
 <tr class="even">
 <td align="left">CUBA</td>
+<td align="right">1012</td>
+<td align="right">1693</td>
+<td align="right">2094</td>
+<td align="right">2122</td>
 <td align="right">6921</td>
 </tr>
 <tr class="odd">
 <td align="left">COLOMBIA</td>
+<td align="right">873</td>
+<td align="right">1013</td>
+<td align="right">1097</td>
+<td align="right">955</td>
 <td align="right">3938</td>
 </tr>
 <tr class="even">
 <td align="left">JAMAICA</td>
+<td align="right">926</td>
+<td align="right">961</td>
+<td align="right">1085</td>
+<td align="right">840</td>
 <td align="right">3812</td>
 </tr>
 <tr class="odd">
 <td align="left">ECUADOR</td>
+<td align="right">661</td>
+<td align="right">1014</td>
+<td align="right">1028</td>
+<td align="right">1026</td>
 <td align="right">3729</td>
 </tr>
 <tr class="even">
 <td align="left">BRAZIL</td>
+<td align="right">437</td>
+<td align="right">899</td>
+<td align="right">1107</td>
+<td align="right">896</td>
 <td align="right">3339</td>
 </tr>
 <tr class="odd">
 <td align="left">HAITI</td>
+<td align="right">847</td>
+<td align="right">1014</td>
+<td align="right">621</td>
+<td align="right">498</td>
 <td align="right">2980</td>
 </tr>
 <tr class="even">
 <td align="left">CHINA, PEOPLES REPUBLIC OF</td>
+<td align="right">510</td>
+<td align="right">706</td>
+<td align="right">999</td>
+<td align="right">558</td>
 <td align="right">2773</td>
 </tr>
 <tr class="odd">
 <td align="left">NICARAGUA</td>
+<td align="right">424</td>
+<td align="right">596</td>
+<td align="right">637</td>
+<td align="right">765</td>
 <td align="right">2422</td>
 </tr>
 <tr class="even">
 <td align="left">INDIA</td>
+<td align="right">333</td>
+<td align="right">496</td>
+<td align="right">635</td>
+<td align="right">535</td>
 <td align="right">1999</td>
 </tr>
 <tr class="odd">
 <td align="left">VIETNAM</td>
+<td align="right">425</td>
+<td align="right">456</td>
+<td align="right">575</td>
+<td align="right">388</td>
 <td align="right">1844</td>
-</tr>
-<tr class="even">
-<td align="left">PERU</td>
-<td align="right">1621</td>
-</tr>
-<tr class="odd">
-<td align="left">NIGERIA</td>
-<td align="right">1537</td>
-</tr>
-<tr class="even">
-<td align="left">VENEZUELA</td>
-<td align="right">1182</td>
-</tr>
-<tr class="odd">
-<td align="left">ROMANIA</td>
-<td align="right">1179</td>
-</tr>
-<tr class="even">
-<td align="left">CANADA</td>
-<td align="right">1047</td>
-</tr>
-<tr class="odd">
-<td align="left">PHILIPPINES</td>
-<td align="right">889</td>
-</tr>
-<tr class="even">
-<td align="left">IRAQ</td>
-<td align="right">837</td>
-</tr>
-<tr class="odd">
-<td align="left">SOMALIA</td>
-<td align="right">801</td>
-</tr>
-<tr class="even">
-<td align="left">LIBERIA</td>
-<td align="right">733</td>
-</tr>
-<tr class="odd">
-<td align="left">LAOS</td>
-<td align="right">707</td>
-</tr>
-<tr class="even">
-<td align="left">UNITED KINGDOM</td>
-<td align="right">693</td>
-</tr>
-<tr class="odd">
-<td align="left">TRINIDAD AND TOBAGO</td>
-<td align="right">671</td>
-</tr>
-<tr class="even">
-<td align="left">PAKISTAN</td>
-<td align="right">641</td>
-</tr>
-<tr class="odd">
-<td align="left">GHANA</td>
-<td align="right">635</td>
-</tr>
-<tr class="even">
-<td align="left">COSTA RICA</td>
-<td align="right">622</td>
-</tr>
-<tr class="odd">
-<td align="left">KENYA</td>
-<td align="right">612</td>
-</tr>
-<tr class="even">
-<td align="left">CAMBODIA</td>
-<td align="right">598</td>
-</tr>
-<tr class="odd">
-<td align="left">RUSSIA</td>
-<td align="right">562</td>
-</tr>
-<tr class="even">
-<td align="left">GUYANA</td>
-<td align="right">551</td>
-</tr>
-<tr class="odd">
-<td align="left">POLAND</td>
-<td align="right">540</td>
-</tr>
-<tr class="even">
-<td align="left">JORDAN</td>
-<td align="right">523</td>
-</tr>
-<tr class="odd">
-<td align="left">CHILE</td>
-<td align="right">514</td>
-</tr>
-<tr class="even">
-<td align="left">UKRAINE</td>
-<td align="right">508</td>
-</tr>
-<tr class="odd">
-<td align="left">BANGLADESH</td>
-<td align="right">490</td>
-</tr>
-<tr class="even">
-<td align="left">SOUTH KOREA</td>
-<td align="right">460</td>
-</tr>
-<tr class="odd">
-<td align="left">SPAIN</td>
-<td align="right">444</td>
-</tr>
-<tr class="even">
-<td align="left">MICRONESIA, FEDERATED STATES OF</td>
-<td align="right">411</td>
-</tr>
-<tr class="odd">
-<td align="left">ARGENTINA</td>
-<td align="right">407</td>
-</tr>
-<tr class="even">
-<td align="left">IRAN</td>
-<td align="right">404</td>
-</tr>
-<tr class="odd">
-<td align="left">UNKNOWN</td>
-<td align="right">387</td>
-</tr>
-<tr class="even">
-<td align="left">BAHAMAS</td>
-<td align="right">386</td>
-</tr>
-<tr class="odd">
-<td align="left">BELIZE</td>
-<td align="right">380</td>
-</tr>
-<tr class="even">
-<td align="left">SUDAN</td>
-<td align="right">375</td>
-</tr>
-<tr class="odd">
-<td align="left">ISRAEL</td>
-<td align="right">350</td>
-</tr>
-<tr class="even">
-<td align="left">SAUDI ARABIA</td>
-<td align="right">344</td>
-</tr>
-<tr class="odd">
-<td align="left">BOLIVIA</td>
-<td align="right">343</td>
-</tr>
-<tr class="even">
-<td align="left">GAMBIA</td>
-<td align="right">341</td>
-</tr>
-<tr class="odd">
-<td align="left">GUINEA</td>
-<td align="right">325</td>
-</tr>
-<tr class="even">
-<td align="left">ARMENIA</td>
-<td align="right">321</td>
-</tr>
-<tr class="odd">
-<td align="left">ITALY</td>
-<td align="right">319</td>
-</tr>
-<tr class="even">
-<td align="left">SIERRA LEONE</td>
-<td align="right">313</td>
-</tr>
-<tr class="odd">
-<td align="left">EGYPT</td>
-<td align="right">309</td>
-</tr>
-<tr class="even">
-<td align="left">THAILAND</td>
-<td align="right">307</td>
-</tr>
-<tr class="odd">
-<td align="left">BOSNIA-HERZEGOVINA</td>
-<td align="right">306</td>
-</tr>
-<tr class="even">
-<td align="left">PORTUGAL</td>
-<td align="right">279</td>
-</tr>
-<tr class="odd">
-<td align="left">GERMANY</td>
-<td align="right">276</td>
-</tr>
-<tr class="even">
-<td align="left">TURKEY</td>
-<td align="right">269</td>
-</tr>
-<tr class="odd">
-<td align="left">INDONESIA</td>
-<td align="right">265</td>
-</tr>
-<tr class="even">
-<td align="left">PANAMA</td>
-<td align="right">265</td>
-</tr>
-<tr class="odd">
-<td align="left">SENEGAL</td>
-<td align="right">252</td>
-</tr>
-<tr class="even">
-<td align="left">ETHIOPIA</td>
-<td align="right">246</td>
-</tr>
-<tr class="odd">
-<td align="left">BURMA</td>
-<td align="right">239</td>
-</tr>
-<tr class="even">
-<td align="left">MOROCCO</td>
-<td align="right">236</td>
-</tr>
-<tr class="odd">
-<td align="left">CAMEROON</td>
-<td align="right">223</td>
-</tr>
-<tr class="even">
-<td align="left">HUNGARY</td>
-<td align="right">223</td>
-</tr>
-<tr class="odd">
-<td align="left">CAPE VERDE</td>
-<td align="right">213</td>
-</tr>
-<tr class="even">
-<td align="left">IVORY COAST</td>
-<td align="right">208</td>
-</tr>
-<tr class="odd">
-<td align="left">ALBANIA</td>
-<td align="right">193</td>
-</tr>
-<tr class="even">
-<td align="left">LEBANON</td>
-<td align="right">188</td>
-</tr>
-<tr class="odd">
-<td align="left">URUGUAY</td>
-<td align="right">186</td>
-</tr>
-<tr class="even">
-<td align="left">DEM REP OF THE CONGO</td>
-<td align="right">182</td>
-</tr>
-<tr class="odd">
-<td align="left">AFGHANISTAN</td>
-<td align="right">178</td>
-</tr>
-<tr class="even">
-<td align="left">SOUTH SUDAN</td>
-<td align="right">172</td>
-</tr>
-<tr class="odd">
-<td align="left">FRANCE</td>
-<td align="right">168</td>
-</tr>
-<tr class="even">
-<td align="left">SOUTH AFRICA</td>
-<td align="right">163</td>
-</tr>
-<tr class="odd">
-<td align="left">MALI</td>
-<td align="right">160</td>
-</tr>
-<tr class="even">
-<td align="left">KOREA</td>
-<td align="right">156</td>
-</tr>
-<tr class="odd">
-<td align="left">UZBEKISTAN</td>
-<td align="right">151</td>
-</tr>
-<tr class="even">
-<td align="left">GEORGIA</td>
-<td align="right">147</td>
-</tr>
-<tr class="odd">
-<td align="left">MAURITANIA</td>
-<td align="right">146</td>
-</tr>
-<tr class="even">
-<td align="left">MOLDOVA</td>
-<td align="right">143</td>
-</tr>
-<tr class="odd">
-<td align="left">MARSHALL ISLANDS</td>
-<td align="right">142</td>
-</tr>
-<tr class="even">
-<td align="left">NEPAL</td>
-<td align="right">142</td>
-</tr>
-<tr class="odd">
-<td align="left">YEMEN</td>
-<td align="right">142</td>
-</tr>
-<tr class="even">
-<td align="left">IRELAND</td>
-<td align="right">141</td>
-</tr>
-<tr class="odd">
-<td align="left">CZECH REPUBLIC</td>
-<td align="right">132</td>
-</tr>
-<tr class="even">
-<td align="left">ERITREA</td>
-<td align="right">132</td>
-</tr>
-<tr class="odd">
-<td align="left">LITHUANIA</td>
-<td align="right">125</td>
-</tr>
-<tr class="even">
-<td align="left">ST. LUCIA</td>
-<td align="right">114</td>
-</tr>
-<tr class="odd">
-<td align="left">ZIMBABWE</td>
-<td align="right">114</td>
-</tr>
-<tr class="even">
-<td align="left">CONGO</td>
-<td align="right">113</td>
-</tr>
-<tr class="odd">
-<td align="left">TANZANIA</td>
-<td align="right">109</td>
-</tr>
-<tr class="even">
-<td align="left">KAZAKHSTAN</td>
-<td align="right">108</td>
-</tr>
-<tr class="odd">
-<td align="left">SAMOA</td>
-<td align="right">106</td>
-</tr>
-<tr class="even">
-<td align="left">MONGOLIA</td>
-<td align="right">103</td>
-</tr>
-<tr class="odd">
-<td align="left">SYRIA</td>
-<td align="right">103</td>
-</tr>
-<tr class="even">
-<td align="left">NETHERLANDS</td>
-<td align="right">102</td>
-</tr>
-<tr class="odd">
-<td align="left">TONGA</td>
-<td align="right">100</td>
-</tr>
-<tr class="even">
-<td align="left">TAIWAN</td>
-<td align="right">97</td>
-</tr>
-<tr class="odd">
-<td align="left">BARBADOS</td>
-<td align="right">96</td>
-</tr>
-<tr class="even">
-<td align="left">AUSTRALIA</td>
-<td align="right">94</td>
-</tr>
-<tr class="odd">
-<td align="left">USSR</td>
-<td align="right">93</td>
-</tr>
-<tr class="even">
-<td align="left">BULGARIA</td>
-<td align="right">87</td>
-</tr>
-<tr class="odd">
-<td align="left">GREECE</td>
-<td align="right">86</td>
-</tr>
-<tr class="even">
-<td align="left">BHUTAN</td>
-<td align="right">85</td>
-</tr>
-<tr class="odd">
-<td align="left">FIJI</td>
-<td align="right">84</td>
-</tr>
-<tr class="even">
-<td align="left">UGANDA</td>
-<td align="right">83</td>
-</tr>
-<tr class="odd">
-<td align="left">ALGERIA</td>
-<td align="right">79</td>
-</tr>
-<tr class="even">
-<td align="left">BELARUS</td>
-<td align="right">79</td>
-</tr>
-<tr class="odd">
-<td align="left">DOMINICA</td>
-<td align="right">79</td>
-</tr>
-<tr class="even">
-<td align="left">BURKINA FASO</td>
-<td align="right">78</td>
-</tr>
-<tr class="odd">
-<td align="left">ANGOLA</td>
-<td align="right">75</td>
-</tr>
-<tr class="even">
-<td align="left">AZERBAIJAN</td>
-<td align="right">75</td>
-</tr>
-<tr class="odd">
-<td align="left">ANTIGUA-BARBUDA</td>
-<td align="right">72</td>
-</tr>
-<tr class="even">
-<td align="left">ZAMBIA</td>
-<td align="right">71</td>
-</tr>
-<tr class="odd">
-<td align="left">SLOVAKIA</td>
-<td align="right">69</td>
-</tr>
-<tr class="even">
-<td align="left">RWANDA</td>
-<td align="right">67</td>
-</tr>
-<tr class="odd">
-<td align="left">NEW ZEALAND</td>
-<td align="right">65</td>
-</tr>
-<tr class="even">
-<td align="left">ST. VINCENT-GRENADINES</td>
-<td align="right">64</td>
-</tr>
-<tr class="odd">
-<td align="left">SERBIA</td>
-<td align="right">63</td>
-</tr>
-<tr class="even">
-<td align="left">JAPAN</td>
-<td align="right">62</td>
-</tr>
-<tr class="odd">
-<td align="left">NIGER</td>
-<td align="right">62</td>
-</tr>
-<tr class="even">
-<td align="left">GRENADA</td>
-<td align="right">61</td>
-</tr>
-<tr class="odd">
-<td align="left">TOGO</td>
-<td align="right">60</td>
-</tr>
-<tr class="even">
-<td align="left">SRI LANKA</td>
-<td align="right">59</td>
-</tr>
-<tr class="odd">
-<td align="left">BURUNDI</td>
-<td align="right">57</td>
-</tr>
-<tr class="even">
-<td align="left">TUNISIA</td>
-<td align="right">57</td>
-</tr>
-<tr class="odd">
-<td align="left">YUGOSLAVIA</td>
-<td align="right">57</td>
-</tr>
-<tr class="even">
-<td align="left">KUWAIT</td>
-<td align="right">55</td>
-</tr>
-<tr class="odd">
-<td align="left">KYRGYZSTAN</td>
-<td align="right">55</td>
-</tr>
-<tr class="even">
-<td align="left">PALAU</td>
-<td align="right">55</td>
-</tr>
-<tr class="odd">
-<td align="left">KOSOVO</td>
-<td align="right">51</td>
-</tr>
-<tr class="even">
-<td align="left">LATVIA</td>
-<td align="right">51</td>
-</tr>
-<tr class="odd">
-<td align="left">MALAYSIA</td>
-<td align="right">48</td>
-</tr>
-<tr class="even">
-<td align="left">ST. KITTS-NEVIS</td>
-<td align="right">48</td>
-</tr>
-<tr class="odd">
-<td align="left">BENIN</td>
-<td align="right">46</td>
-</tr>
-<tr class="even">
-<td align="left">ESTONIA</td>
-<td align="right">42</td>
-</tr>
-<tr class="odd">
-<td align="left">MACEDONIA</td>
-<td align="right">42</td>
-</tr>
-<tr class="even">
-<td align="left">SURINAME</td>
-<td align="right">41</td>
-</tr>
-<tr class="odd">
-<td align="left">CROATIA</td>
-<td align="right">40</td>
-</tr>
-<tr class="even">
-<td align="left">SWEDEN</td>
-<td align="right">40</td>
-</tr>
-<tr class="odd">
-<td align="left">LIBYA</td>
-<td align="right">35</td>
-</tr>
-<tr class="even">
-<td align="left">BELGIUM</td>
-<td align="right">33</td>
-</tr>
-<tr class="odd">
-<td align="left">HONG KONG</td>
-<td align="right">33</td>
-</tr>
-<tr class="even">
-<td align="left">GABON</td>
-<td align="right">30</td>
-</tr>
-<tr class="odd">
-<td align="left">MONTENEGRO</td>
-<td align="right">30</td>
-</tr>
-<tr class="even">
-<td align="left">PARAGUAY</td>
-<td align="right">30</td>
-</tr>
-<tr class="odd">
-<td align="left">CENTRAL AFRICAN REPUBLIC</td>
-<td align="right">28</td>
-</tr>
-<tr class="even">
-<td align="left">TAJIKISTAN</td>
-<td align="right">28</td>
-</tr>
-<tr class="odd">
-<td align="left">CHAD</td>
-<td align="right">25</td>
-</tr>
-<tr class="even">
-<td align="left">AUSTRIA</td>
-<td align="right">21</td>
-</tr>
-<tr class="odd">
-<td align="left">MALAWI</td>
-<td align="right">21</td>
-</tr>
-<tr class="even">
-<td align="left">TURKS AND CAICOS ISLANDS</td>
-<td align="right">21</td>
-</tr>
-<tr class="odd">
-<td align="left">NORWAY</td>
-<td align="right">18</td>
-</tr>
-<tr class="even">
-<td align="left">NETHERLANDS ANTILLES</td>
-<td align="right">17</td>
-</tr>
-<tr class="odd">
-<td align="left">GUADELOUPE</td>
-<td align="right">16</td>
-</tr>
-<tr class="even">
-<td align="left">SINGAPORE</td>
-<td align="right">16</td>
-</tr>
-<tr class="odd">
-<td align="left">EQUATORIAL GUINEA</td>
-<td align="right">15</td>
-</tr>
-<tr class="even">
-<td align="left">GUINEA-BISSAU</td>
-<td align="right">15</td>
-</tr>
-<tr class="odd">
-<td align="left">SWITZERLAND</td>
-<td align="right">15</td>
-</tr>
-<tr class="even">
-<td align="left">NORTH MACEDONIA</td>
-<td align="right">13</td>
-</tr>
-<tr class="odd">
-<td align="left">BRITISH VIRGIN ISLANDS</td>
-<td align="right">12</td>
-</tr>
-<tr class="even">
-<td align="left">CAYMAN ISLANDS</td>
-<td align="right">12</td>
-</tr>
-<tr class="odd">
-<td align="left">CZECHOSLOVAKIA</td>
-<td align="right">12</td>
-</tr>
-<tr class="even">
-<td align="left">UNITED ARAB EMIRATES</td>
-<td align="right">12</td>
-</tr>
-<tr class="odd">
-<td align="left">BERMUDA</td>
-<td align="right">11</td>
-</tr>
-<tr class="even">
-<td align="left">BOTSWANA</td>
-<td align="right">10</td>
-</tr>
-<tr class="odd">
-<td align="left">DENMARK</td>
-<td align="right">10</td>
-</tr>
-<tr class="even">
-<td align="left">MOZAMBIQUE</td>
-<td align="right">10</td>
-</tr>
-<tr class="odd">
-<td align="left">MAURITIUS</td>
-<td align="right">9</td>
-</tr>
-<tr class="even">
-<td align="left">QATAR</td>
-<td align="right">9</td>
-</tr>
-<tr class="odd">
-<td align="left">FINLAND</td>
-<td align="right">7</td>
-</tr>
-<tr class="even">
-<td align="left">PAPUA NEW GUINEA</td>
-<td align="right">7</td>
-</tr>
-<tr class="odd">
-<td align="left">NAMIBIA</td>
-<td align="right">6</td>
-</tr>
-<tr class="even">
-<td align="left">MACAU</td>
-<td align="right">5</td>
-</tr>
-<tr class="odd">
-<td align="left">SEYCHELLES</td>
-<td align="right">5</td>
-</tr>
-<tr class="even">
-<td align="left">TURKMENISTAN</td>
-<td align="right">5</td>
-</tr>
-<tr class="odd">
-<td align="left">ANGUILLA</td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left">ARUBA</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">DJIBOUTI</td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left">OMAN</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">SLOVENIA</td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left">BAHRAIN</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="left">LESOTHO</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">MADAGASCAR</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="left">MONTSERRAT</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">SERBIA AND MONTENEGRO</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="left">ANDORRA</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">CYPRUS</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">FRENCH GUIANA</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">FRENCH POLYNESIA</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">NAURU</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">NORTH KOREA</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">SAN MARINO</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">SWAZILAND</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">BRUNEI</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">COMOROS</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">ESWATINI</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">ICELAND</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">KIRIBATI</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">MALDIVES</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="left">MONACO</td>
-<td align="right">1</td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># by FY
-
-# by AOR
+<pre class="r"><code># by AOR
 
 # by FY-AOR</code></pre>
-<pre class="r"><code>arrests %&gt;% 
-  group_by(gender) %&gt;%
+<pre class="r"><code># by FY
+arrests %&gt;% 
+  group_by(gender, fy) %&gt;%
   summarize(total = n()) %&gt;%
+  pivot_wider(names_from = fy, values_from = total) %&gt;%
+  mutate(total = sum(c_across('2016':'2019'))) %&gt;%
   arrange(desc(total)) %&gt;%
-  kable()</code></pre>
+  kable(caption = 'Gender makeup among those arrested FY2016-2019')</code></pre>
 <table>
+<caption>Gender makeup among those arrested FY2016-2019</caption>
 <thead>
 <tr class="header">
 <th align="left">gender</th>
+<th align="right">2016</th>
+<th align="right">2017</th>
+<th align="right">2018</th>
+<th align="right">2019</th>
 <th align="right">total</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">Male</td>
+<td align="right">102345</td>
+<td align="right">132690</td>
+<td align="right">143832</td>
+<td align="right">117622</td>
 <td align="right">496489</td>
 </tr>
 <tr class="even">
 <td align="left">Female</td>
+<td align="right">7469</td>
+<td align="right">10507</td>
+<td align="right">13862</td>
+<td align="right">11848</td>
 <td align="right">43686</td>
 </tr>
 <tr class="odd">
 <td align="left">Unknown</td>
+<td align="right">6</td>
+<td align="right">6</td>
+<td align="right">9</td>
+<td align="right">14</td>
 <td align="right">35</td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># by FY
-
-# by AOR
+<pre class="r"><code># by AOR
 
 # by FY-AOR</code></pre>
 </div>
@@ -2116,947 +1851,644 @@ encounters_2019_q &lt;- encounters %&gt;% filter(fy == 2019) %&gt;%
                              TRUE ~ 4)) %&gt;%
   group_by(aor, quarter) %&gt;%
   summarize(total = n()) </code></pre>
-<pre class="r"><code>encounters %&gt;% 
-  group_by(citizenship) %&gt;%
-  summarize(total = n()) %&gt;%
-  arrange(desc(total)) %&gt;%
-  kable()</code></pre>
+<pre class="r"><code>encounter_landmark &lt;- encounters %&gt;% group_by(landmark) %&gt;% summarize(total = n())
+write.csv(encounter_landmark, 'encounter_landmark.csv')
+
+encounters &lt;- encounters %&gt;% mutate(landmark2 = 
+                                case_when(grepl('NON_SPECIFIC|GENERAL AREA|OPERATIONS|FUGITIVE', landmark) ~ 0,
+                                          landmark %in% c('DO NOT USE', 'PHILADELPHIA - SECURE COMMUNITIES', 'LOGANVILLE, GA', '287g', '')  ~ 0,
+                                          TRUE ~ 1))
+test &lt;- encounters %&gt;% select(landmark, landmark2)
+test2 &lt;- encounters %&gt;% filter(landmark2 == 1) %&gt;%
+  group_by(landmark) %&gt;% 
+  summarize(total = n())
+
+specificity2 &lt;- encounters %&gt;% 
+  group_by(fy, aor, landmark2) %&gt;%
+  summarize(total = n()) %&gt;% 
+  pivot_wider(names_from = fy, values_from = total)
+  
+specificity2 %&gt;% kable(caption = 'Encounter landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)')</code></pre>
 <table>
+<caption>Encounter landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)</caption>
+<thead>
+<tr class="header">
+<th align="left">aor</th>
+<th align="right">landmark2</th>
+<th align="right">2016</th>
+<th align="right">2017</th>
+<th align="right">2018</th>
+<th align="right">2019</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">ATL</td>
+<td align="right">0</td>
+<td align="right">22125</td>
+<td align="right">14456</td>
+<td align="right">15670</td>
+<td align="right">15000</td>
+</tr>
+<tr class="even">
+<td align="left">ATL</td>
+<td align="right">1</td>
+<td align="right">11102</td>
+<td align="right">13807</td>
+<td align="right">13206</td>
+<td align="right">10275</td>
+</tr>
+<tr class="odd">
+<td align="left">BAL</td>
+<td align="right">0</td>
+<td align="right">5090</td>
+<td align="right">3234</td>
+<td align="right">2253</td>
+<td align="right">2286</td>
+</tr>
+<tr class="even">
+<td align="left">BAL</td>
+<td align="right">1</td>
+<td align="right">1337</td>
+<td align="right">1567</td>
+<td align="right">1685</td>
+<td align="right">1579</td>
+</tr>
+<tr class="odd">
+<td align="left">BOS</td>
+<td align="right">0</td>
+<td align="right">3959</td>
+<td align="right">5201</td>
+<td align="right">6233</td>
+<td align="right">5171</td>
+</tr>
+<tr class="even">
+<td align="left">BOS</td>
+<td align="right">1</td>
+<td align="right">4910</td>
+<td align="right">4290</td>
+<td align="right">4106</td>
+<td align="right">3311</td>
+</tr>
+<tr class="odd">
+<td align="left">BUF</td>
+<td align="right">0</td>
+<td align="right">4908</td>
+<td align="right">3044</td>
+<td align="right">2097</td>
+<td align="right">2115</td>
+</tr>
+<tr class="even">
+<td align="left">BUF</td>
+<td align="right">1</td>
+<td align="right">1194</td>
+<td align="right">1294</td>
+<td align="right">1450</td>
+<td align="right">1012</td>
+</tr>
+<tr class="odd">
+<td align="left">CHI</td>
+<td align="right">0</td>
+<td align="right">5339</td>
+<td align="right">7632</td>
+<td align="right">7680</td>
+<td align="right">6688</td>
+</tr>
+<tr class="even">
+<td align="left">CHI</td>
+<td align="right">1</td>
+<td align="right">4107</td>
+<td align="right">5182</td>
+<td align="right">5571</td>
+<td align="right">4459</td>
+</tr>
+<tr class="odd">
+<td align="left">DAL</td>
+<td align="right">0</td>
+<td align="right">16099</td>
+<td align="right">19792</td>
+<td align="right">15472</td>
+<td align="right">11476</td>
+</tr>
+<tr class="even">
+<td align="left">DAL</td>
+<td align="right">1</td>
+<td align="right">12805</td>
+<td align="right">13516</td>
+<td align="right">18286</td>
+<td align="right">18453</td>
+</tr>
+<tr class="odd">
+<td align="left">DEN</td>
+<td align="right">0</td>
+<td align="right">3994</td>
+<td align="right">4280</td>
+<td align="right">3369</td>
+<td align="right">3060</td>
+</tr>
+<tr class="even">
+<td align="left">DEN</td>
+<td align="right">1</td>
+<td align="right">6295</td>
+<td align="right">5379</td>
+<td align="right">5425</td>
+<td align="right">4699</td>
+</tr>
+<tr class="odd">
+<td align="left">DET</td>
+<td align="right">0</td>
+<td align="right">5900</td>
+<td align="right">7014</td>
+<td align="right">6499</td>
+<td align="right">4333</td>
+</tr>
+<tr class="even">
+<td align="left">DET</td>
+<td align="right">1</td>
+<td align="right">2366</td>
+<td align="right">2755</td>
+<td align="right">2540</td>
+<td align="right">1493</td>
+</tr>
+<tr class="odd">
+<td align="left">ELP</td>
+<td align="right">0</td>
+<td align="right">2039</td>
+<td align="right">1934</td>
+<td align="right">2190</td>
+<td align="right">1892</td>
+</tr>
+<tr class="even">
+<td align="left">ELP</td>
+<td align="right">1</td>
+<td align="right">1080</td>
+<td align="right">1271</td>
+<td align="right">1089</td>
+<td align="right">1110</td>
+</tr>
+<tr class="odd">
+<td align="left">HOU</td>
+<td align="right">0</td>
+<td align="right">5901</td>
+<td align="right">6375</td>
+<td align="right">6700</td>
+<td align="right">5182</td>
+</tr>
+<tr class="even">
+<td align="left">HOU</td>
+<td align="right">1</td>
+<td align="right">11211</td>
+<td align="right">12029</td>
+<td align="right">12595</td>
+<td align="right">10129</td>
+</tr>
+<tr class="odd">
+<td align="left">LOS</td>
+<td align="right">0</td>
+<td align="right">10302</td>
+<td align="right">14825</td>
+<td align="right">16887</td>
+<td align="right">14983</td>
+</tr>
+<tr class="even">
+<td align="left">LOS</td>
+<td align="right">1</td>
+<td align="right">16744</td>
+<td align="right">23431</td>
+<td align="right">38084</td>
+<td align="right">36151</td>
+</tr>
+<tr class="odd">
+<td align="left">MIA</td>
+<td align="right">0</td>
+<td align="right">23379</td>
+<td align="right">26273</td>
+<td align="right">37188</td>
+<td align="right">36594</td>
+</tr>
+<tr class="even">
+<td align="left">MIA</td>
+<td align="right">1</td>
+<td align="right">3735</td>
+<td align="right">5354</td>
+<td align="right">8688</td>
+<td align="right">8736</td>
+</tr>
+<tr class="odd">
+<td align="left">NEW</td>
+<td align="right">0</td>
+<td align="right">580</td>
+<td align="right">1411</td>
+<td align="right">1296</td>
+<td align="right">783</td>
+</tr>
+<tr class="even">
+<td align="left">NEW</td>
+<td align="right">1</td>
+<td align="right">11699</td>
+<td align="right">13694</td>
+<td align="right">9679</td>
+<td align="right">8945</td>
+</tr>
+<tr class="odd">
+<td align="left">NOL</td>
+<td align="right">0</td>
+<td align="right">4291</td>
+<td align="right">6040</td>
+<td align="right">8134</td>
+<td align="right">6499</td>
+</tr>
+<tr class="even">
+<td align="left">NOL</td>
+<td align="right">1</td>
+<td align="right">4437</td>
+<td align="right">7342</td>
+<td align="right">8965</td>
+<td align="right">7089</td>
+</tr>
+<tr class="odd">
+<td align="left">NYC</td>
+<td align="right">0</td>
+<td align="right">18277</td>
+<td align="right">43314</td>
+<td align="right">34354</td>
+<td align="right">27239</td>
+</tr>
+<tr class="even">
+<td align="left">NYC</td>
+<td align="right">1</td>
+<td align="right">4017</td>
+<td align="right">6568</td>
+<td align="right">7674</td>
+<td align="right">5762</td>
+</tr>
+<tr class="odd">
+<td align="left">PHI</td>
+<td align="right">0</td>
+<td align="right">5740</td>
+<td align="right">6502</td>
+<td align="right">5346</td>
+<td align="right">4003</td>
+</tr>
+<tr class="even">
+<td align="left">PHI</td>
+<td align="right">1</td>
+<td align="right">4252</td>
+<td align="right">4890</td>
+<td align="right">4292</td>
+<td align="right">2855</td>
+</tr>
+<tr class="odd">
+<td align="left">PHO</td>
+<td align="right">0</td>
+<td align="right">11350</td>
+<td align="right">11382</td>
+<td align="right">11461</td>
+<td align="right">9816</td>
+</tr>
+<tr class="even">
+<td align="left">PHO</td>
+<td align="right">1</td>
+<td align="right">6869</td>
+<td align="right">8313</td>
+<td align="right">8647</td>
+<td align="right">6986</td>
+</tr>
+<tr class="odd">
+<td align="left">SEA</td>
+<td align="right">0</td>
+<td align="right">1981</td>
+<td align="right">3121</td>
+<td align="right">5337</td>
+<td align="right">6675</td>
+</tr>
+<tr class="even">
+<td align="left">SEA</td>
+<td align="right">1</td>
+<td align="right">10005</td>
+<td align="right">10145</td>
+<td align="right">9443</td>
+<td align="right">5907</td>
+</tr>
+<tr class="odd">
+<td align="left">SFR</td>
+<td align="right">0</td>
+<td align="right">12084</td>
+<td align="right">15013</td>
+<td align="right">8139</td>
+<td align="right">5815</td>
+</tr>
+<tr class="even">
+<td align="left">SFR</td>
+<td align="right">1</td>
+<td align="right">9439</td>
+<td align="right">8279</td>
+<td align="right">10921</td>
+<td align="right">7121</td>
+</tr>
+<tr class="odd">
+<td align="left">SLC</td>
+<td align="right">0</td>
+<td align="right">7565</td>
+<td align="right">8556</td>
+<td align="right">9769</td>
+<td align="right">6662</td>
+</tr>
+<tr class="even">
+<td align="left">SLC</td>
+<td align="right">1</td>
+<td align="right">4072</td>
+<td align="right">3691</td>
+<td align="right">3357</td>
+<td align="right">3227</td>
+</tr>
+<tr class="odd">
+<td align="left">SNA</td>
+<td align="right">0</td>
+<td align="right">9744</td>
+<td align="right">13268</td>
+<td align="right">12749</td>
+<td align="right">10107</td>
+</tr>
+<tr class="even">
+<td align="left">SNA</td>
+<td align="right">1</td>
+<td align="right">5808</td>
+<td align="right">6481</td>
+<td align="right">10395</td>
+<td align="right">9725</td>
+</tr>
+<tr class="odd">
+<td align="left">SND</td>
+<td align="right">0</td>
+<td align="right">1920</td>
+<td align="right">2302</td>
+<td align="right">4879</td>
+<td align="right">3190</td>
+</tr>
+<tr class="even">
+<td align="left">SND</td>
+<td align="right">1</td>
+<td align="right">7317</td>
+<td align="right">6864</td>
+<td align="right">5082</td>
+<td align="right">2715</td>
+</tr>
+<tr class="odd">
+<td align="left">SPM</td>
+<td align="right">0</td>
+<td align="right">8815</td>
+<td align="right">10168</td>
+<td align="right">6291</td>
+<td align="right">5812</td>
+</tr>
+<tr class="even">
+<td align="left">SPM</td>
+<td align="right">1</td>
+<td align="right">6004</td>
+<td align="right">7530</td>
+<td align="right">11789</td>
+<td align="right">10918</td>
+</tr>
+<tr class="odd">
+<td align="left">WAS</td>
+<td align="right">0</td>
+<td align="right">5824</td>
+<td align="right">5271</td>
+<td align="right">7682</td>
+<td align="right">7351</td>
+</tr>
+<tr class="even">
+<td align="left">WAS</td>
+<td align="right">1</td>
+<td align="right">7180</td>
+<td align="right">5006</td>
+<td align="right">4056</td>
+<td align="right">2441</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># by FY
+encounters %&gt;% 
+  group_by(citizenship, fy) %&gt;%
+  summarize(total = n()) %&gt;%
+  pivot_wider(names_from = fy, values_from = total) %&gt;%
+  replace(is.na(.), 0) %&gt;%
+  mutate(total = sum(c_across('2016':'2019'))) %&gt;%
+  arrange(desc(total)) %&gt;%
+  head(n=15) %&gt;%
+  kable(caption = 'Top 15 countries whose citizens were encountered FY2016-2019')</code></pre>
+<table>
+<caption>Top 15 countries whose citizens were encountered FY2016-2019</caption>
 <thead>
 <tr class="header">
 <th align="left">citizenship</th>
+<th align="right">2016</th>
+<th align="right">2017</th>
+<th align="right">2018</th>
+<th align="right">2019</th>
 <th align="right">total</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">MEXICO</td>
+<td align="right">163214</td>
+<td align="right">183458</td>
+<td align="right">200299</td>
+<td align="right">165801</td>
 <td align="right">712772</td>
 </tr>
 <tr class="even">
 <td align="left">UNKNOWN</td>
+<td align="right">37101</td>
+<td align="right">39709</td>
+<td align="right">30830</td>
+<td align="right">18511</td>
 <td align="right">126151</td>
 </tr>
 <tr class="odd">
 <td align="left">GUATEMALA</td>
+<td align="right">18769</td>
+<td align="right">24526</td>
+<td align="right">31151</td>
+<td align="right">30051</td>
 <td align="right">104497</td>
 </tr>
 <tr class="even">
 <td align="left">HONDURAS</td>
+<td align="right">16959</td>
+<td align="right">22004</td>
+<td align="right">25569</td>
+<td align="right">24899</td>
 <td align="right">89431</td>
 </tr>
 <tr class="odd">
 <td align="left">EL SALVADOR</td>
+<td align="right">17772</td>
+<td align="right">19577</td>
+<td align="right">21394</td>
+<td align="right">19068</td>
 <td align="right">77811</td>
 </tr>
 <tr class="even">
 <td align="left">CUBA</td>
+<td align="right">7889</td>
+<td align="right">10984</td>
+<td align="right">14744</td>
+<td align="right">14279</td>
 <td align="right">47896</td>
 </tr>
 <tr class="odd">
 <td align="left">DOMINICAN REPUBLIC</td>
+<td align="right">8814</td>
+<td align="right">13717</td>
+<td align="right">12533</td>
+<td align="right">11487</td>
 <td align="right">46551</td>
 </tr>
 <tr class="even">
 <td align="left">JAMAICA</td>
+<td align="right">5317</td>
+<td align="right">7516</td>
+<td align="right">7835</td>
+<td align="right">7021</td>
 <td align="right">27689</td>
 </tr>
 <tr class="odd">
 <td align="left">HAITI</td>
+<td align="right">3719</td>
+<td align="right">4964</td>
+<td align="right">5279</td>
+<td align="right">5150</td>
 <td align="right">19112</td>
 </tr>
 <tr class="even">
 <td align="left">CHINA, PEOPLES REPUBLIC OF</td>
+<td align="right">3669</td>
+<td align="right">5453</td>
+<td align="right">5222</td>
+<td align="right">4269</td>
 <td align="right">18613</td>
 </tr>
 <tr class="odd">
 <td align="left">COLOMBIA</td>
+<td align="right">3139</td>
+<td align="right">4109</td>
+<td align="right">4351</td>
+<td align="right">4080</td>
 <td align="right">15679</td>
 </tr>
 <tr class="even">
 <td align="left">ECUADOR</td>
+<td align="right">2484</td>
+<td align="right">3889</td>
+<td align="right">3664</td>
+<td align="right">3571</td>
 <td align="right">13608</td>
 </tr>
 <tr class="odd">
 <td align="left">INDIA</td>
+<td align="right">2670</td>
+<td align="right">3316</td>
+<td align="right">3321</td>
+<td align="right">3041</td>
 <td align="right">12348</td>
 </tr>
 <tr class="even">
 <td align="left">BRAZIL</td>
+<td align="right">1884</td>
+<td align="right">2395</td>
+<td align="right">2983</td>
+<td align="right">2761</td>
 <td align="right">10023</td>
 </tr>
 <tr class="odd">
 <td align="left">VIETNAM</td>
+<td align="right">2471</td>
+<td align="right">2449</td>
+<td align="right">2841</td>
+<td align="right">2167</td>
 <td align="right">9928</td>
-</tr>
-<tr class="even">
-<td align="left">MICRONESIA, FEDERATED STATES OF</td>
-<td align="right">8174</td>
-</tr>
-<tr class="odd">
-<td align="left">CANADA</td>
-<td align="right">7909</td>
-</tr>
-<tr class="even">
-<td align="left">NICARAGUA</td>
-<td align="right">7664</td>
-</tr>
-<tr class="odd">
-<td align="left">PHILIPPINES</td>
-<td align="right">7510</td>
-</tr>
-<tr class="even">
-<td align="left">GUYANA</td>
-<td align="right">7486</td>
-</tr>
-<tr class="odd">
-<td align="left">PERU</td>
-<td align="right">7399</td>
-</tr>
-<tr class="even">
-<td align="left">SOMALIA</td>
-<td align="right">6970</td>
-</tr>
-<tr class="odd">
-<td align="left">LIBERIA</td>
-<td align="right">6854</td>
-</tr>
-<tr class="even">
-<td align="left">NIGERIA</td>
-<td align="right">6778</td>
-</tr>
-<tr class="odd">
-<td align="left">VENEZUELA</td>
-<td align="right">6384</td>
-</tr>
-<tr class="even">
-<td align="left">TRINIDAD AND TOBAGO</td>
-<td align="right">5897</td>
-</tr>
-<tr class="odd">
-<td align="left">UNITED KINGDOM</td>
-<td align="right">5565</td>
-</tr>
-<tr class="even">
-<td align="left">SUDAN</td>
-<td align="right">5235</td>
-</tr>
-<tr class="odd">
-<td align="left">RUSSIA</td>
-<td align="right">4703</td>
-</tr>
-<tr class="even">
-<td align="left">LAOS</td>
-<td align="right">4673</td>
-</tr>
-<tr class="odd">
-<td align="left">KENYA</td>
-<td align="right">4515</td>
-</tr>
-<tr class="even">
-<td align="left">IRAQ</td>
-<td align="right">4376</td>
-</tr>
-<tr class="odd">
-<td align="left">UKRAINE</td>
-<td align="right">4193</td>
-</tr>
-<tr class="even">
-<td align="left">BURMA</td>
-<td align="right">4074</td>
-</tr>
-<tr class="odd">
-<td align="left">ROMANIA</td>
-<td align="right">4024</td>
-</tr>
-<tr class="even">
-<td align="left">PAKISTAN</td>
-<td align="right">4017</td>
-</tr>
-<tr class="odd">
-<td align="left">ETHIOPIA</td>
-<td align="right">3860</td>
-</tr>
-<tr class="even">
-<td align="left">GHANA</td>
-<td align="right">3794</td>
-</tr>
-<tr class="odd">
-<td align="left">SOUTH KOREA</td>
-<td align="right">3189</td>
-</tr>
-<tr class="even">
-<td align="left">SAUDI ARABIA</td>
-<td align="right">3127</td>
-</tr>
-<tr class="odd">
-<td align="left">POLAND</td>
-<td align="right">3126</td>
-</tr>
-<tr class="even">
-<td align="left">BANGLADESH</td>
-<td align="right">3111</td>
-</tr>
-<tr class="odd">
-<td align="left">EGYPT</td>
-<td align="right">3048</td>
-</tr>
-<tr class="even">
-<td align="left">THAILAND</td>
-<td align="right">3024</td>
-</tr>
-<tr class="odd">
-<td align="left">IRAN</td>
-<td align="right">2809</td>
-</tr>
-<tr class="even">
-<td align="left">JORDAN</td>
-<td align="right">2483</td>
-</tr>
-<tr class="odd">
-<td align="left">CHILE</td>
-<td align="right">2467</td>
-</tr>
-<tr class="even">
-<td align="left">GERMANY</td>
-<td align="right">2402</td>
-</tr>
-<tr class="odd">
-<td align="left">DEM REP OF THE CONGO</td>
-<td align="right">2362</td>
-</tr>
-<tr class="even">
-<td align="left">SIERRA LEONE</td>
-<td align="right">2340</td>
-</tr>
-<tr class="odd">
-<td align="left">ARGENTINA</td>
-<td align="right">2201</td>
-</tr>
-<tr class="even">
-<td align="left">COSTA RICA</td>
-<td align="right">2170</td>
-</tr>
-<tr class="odd">
-<td align="left">SPAIN</td>
-<td align="right">2168</td>
-</tr>
-<tr class="even">
-<td align="left">MARSHALL ISLANDS</td>
-<td align="right">2121</td>
-</tr>
-<tr class="odd">
-<td align="left">BAHAMAS</td>
-<td align="right">2110</td>
-</tr>
-<tr class="even">
-<td align="left">BOSNIA-HERZEGOVINA</td>
-<td align="right">2098</td>
-</tr>
-<tr class="odd">
-<td align="left">UZBEKISTAN</td>
-<td align="right">2074</td>
-</tr>
-<tr class="even">
-<td align="left">ITALY</td>
-<td align="right">2011</td>
-</tr>
-<tr class="odd">
-<td align="left">KOREA</td>
-<td align="right">1891</td>
-</tr>
-<tr class="even">
-<td align="left">GUINEA</td>
-<td align="right">1861</td>
-</tr>
-<tr class="odd">
-<td align="left">YEMEN</td>
-<td align="right">1860</td>
-</tr>
-<tr class="even">
-<td align="left">MOROCCO</td>
-<td align="right">1798</td>
-</tr>
-<tr class="odd">
-<td align="left">PORTUGAL</td>
-<td align="right">1793</td>
-</tr>
-<tr class="even">
-<td align="left">NEPAL</td>
-<td align="right">1787</td>
-</tr>
-<tr class="odd">
-<td align="left">CAMBODIA</td>
-<td align="right">1785</td>
-</tr>
-<tr class="even">
-<td align="left">AFGHANISTAN</td>
-<td align="right">1781</td>
-</tr>
-<tr class="odd">
-<td align="left">ISRAEL</td>
-<td align="right">1740</td>
-</tr>
-<tr class="even">
-<td align="left">BOLIVIA</td>
-<td align="right">1648</td>
-</tr>
-<tr class="odd">
-<td align="left">CAPE VERDE</td>
-<td align="right">1622</td>
-</tr>
-<tr class="even">
-<td align="left">BHUTAN</td>
-<td align="right">1582</td>
-</tr>
-<tr class="odd">
-<td align="left">FRANCE</td>
-<td align="right">1577</td>
-</tr>
-<tr class="even">
-<td align="left">SENEGAL</td>
-<td align="right">1558</td>
-</tr>
-<tr class="odd">
-<td align="left">DOMINICA</td>
-<td align="right">1556</td>
-</tr>
-<tr class="even">
-<td align="left">PANAMA</td>
-<td align="right">1552</td>
-</tr>
-<tr class="odd">
-<td align="left">TURKEY</td>
-<td align="right">1530</td>
-</tr>
-<tr class="even">
-<td align="left">CAMEROON</td>
-<td align="right">1528</td>
-</tr>
-<tr class="odd">
-<td align="left">IVORY COAST</td>
-<td align="right">1513</td>
-</tr>
-<tr class="even">
-<td align="left">BELIZE</td>
-<td align="right">1389</td>
-</tr>
-<tr class="odd">
-<td align="left">CONGO</td>
-<td align="right">1362</td>
-</tr>
-<tr class="even">
-<td align="left">USSR</td>
-<td align="right">1256</td>
-</tr>
-<tr class="odd">
-<td align="left">ALBANIA</td>
-<td align="right">1234</td>
-</tr>
-<tr class="even">
-<td align="left">GAMBIA</td>
-<td align="right">1233</td>
-</tr>
-<tr class="odd">
-<td align="left">IRELAND</td>
-<td align="right">1227</td>
-</tr>
-<tr class="even">
-<td align="left">SOUTH AFRICA</td>
-<td align="right">1217</td>
-</tr>
-<tr class="odd">
-<td align="left">GEORGIA</td>
-<td align="right">1172</td>
-</tr>
-<tr class="even">
-<td align="left">ARMENIA</td>
-<td align="right">1154</td>
-</tr>
-<tr class="odd">
-<td align="left">AUSTRALIA</td>
-<td align="right">1070</td>
-</tr>
-<tr class="even">
-<td align="left">ST. LUCIA</td>
-<td align="right">1009</td>
-</tr>
-<tr class="odd">
-<td align="left">GRENADA</td>
-<td align="right">984</td>
-</tr>
-<tr class="even">
-<td align="left">ERITREA</td>
-<td align="right">919</td>
-</tr>
-<tr class="odd">
-<td align="left">URUGUAY</td>
-<td align="right">869</td>
-</tr>
-<tr class="even">
-<td align="left">LEBANON</td>
-<td align="right">857</td>
-</tr>
-<tr class="odd">
-<td align="left">MALI</td>
-<td align="right">841</td>
-</tr>
-<tr class="even">
-<td align="left">HUNGARY</td>
-<td align="right">835</td>
-</tr>
-<tr class="odd">
-<td align="left">JAPAN</td>
-<td align="right">828</td>
-</tr>
-<tr class="even">
-<td align="left">SYRIA</td>
-<td align="right">784</td>
-</tr>
-<tr class="odd">
-<td align="left">NIGER</td>
-<td align="right">783</td>
-</tr>
-<tr class="even">
-<td align="left">MOLDOVA</td>
-<td align="right">778</td>
-</tr>
-<tr class="odd">
-<td align="left">YUGOSLAVIA</td>
-<td align="right">777</td>
-</tr>
-<tr class="even">
-<td align="left">KAZAKHSTAN</td>
-<td align="right">767</td>
-</tr>
-<tr class="odd">
-<td align="left">BARBADOS</td>
-<td align="right">765</td>
-</tr>
-<tr class="even">
-<td align="left">ZIMBABWE</td>
-<td align="right">705</td>
-</tr>
-<tr class="odd">
-<td align="left">INDONESIA</td>
-<td align="right">700</td>
-</tr>
-<tr class="even">
-<td align="left">BURUNDI</td>
-<td align="right">690</td>
-</tr>
-<tr class="odd">
-<td align="left">KUWAIT</td>
-<td align="right">687</td>
-</tr>
-<tr class="even">
-<td align="left">TONGA</td>
-<td align="right">678</td>
-</tr>
-<tr class="odd">
-<td align="left">BURKINA FASO</td>
-<td align="right">670</td>
-</tr>
-<tr class="even">
-<td align="left">BELARUS</td>
-<td align="right">651</td>
-</tr>
-<tr class="odd">
-<td align="left">ST. VINCENT-GRENADINES</td>
-<td align="right">649</td>
-</tr>
-<tr class="even">
-<td align="left">NETHERLANDS</td>
-<td align="right">648</td>
-</tr>
-<tr class="odd">
-<td align="left">TAIWAN</td>
-<td align="right">632</td>
-</tr>
-<tr class="even">
-<td align="left">UGANDA</td>
-<td align="right">620</td>
-</tr>
-<tr class="odd">
-<td align="left">MAURITANIA</td>
-<td align="right">610</td>
-</tr>
-<tr class="even">
-<td align="left">TANZANIA</td>
-<td align="right">584</td>
-</tr>
-<tr class="odd">
-<td align="left">MONGOLIA</td>
-<td align="right">556</td>
-</tr>
-<tr class="even">
-<td align="left">ALGERIA</td>
-<td align="right">546</td>
-</tr>
-<tr class="odd">
-<td align="left">ANTIGUA-BARBUDA</td>
-<td align="right">527</td>
-</tr>
-<tr class="even">
-<td align="left">RWANDA</td>
-<td align="right">518</td>
-</tr>
-<tr class="odd">
-<td align="left">TOGO</td>
-<td align="right">512</td>
-</tr>
-<tr class="even">
-<td align="left">GREECE</td>
-<td align="right">503</td>
-</tr>
-<tr class="odd">
-<td align="left">PALAU</td>
-<td align="right">499</td>
-</tr>
-<tr class="even">
-<td align="left">BULGARIA</td>
-<td align="right">488</td>
-</tr>
-<tr class="odd">
-<td align="left">LITHUANIA</td>
-<td align="right">464</td>
-</tr>
-<tr class="even">
-<td align="left">FIJI</td>
-<td align="right">458</td>
-</tr>
-<tr class="odd">
-<td align="left">SRI LANKA</td>
-<td align="right">455</td>
-</tr>
-<tr class="even">
-<td align="left">SOUTH SUDAN</td>
-<td align="right">451</td>
-</tr>
-<tr class="odd">
-<td align="left">AZERBAIJAN</td>
-<td align="right">443</td>
-</tr>
-<tr class="even">
-<td align="left">ANGOLA</td>
-<td align="right">414</td>
-</tr>
-<tr class="odd">
-<td align="left">NEW ZEALAND</td>
-<td align="right">407</td>
-</tr>
-<tr class="even">
-<td align="left">LATVIA</td>
-<td align="right">386</td>
-</tr>
-<tr class="odd">
-<td align="left">ZAMBIA</td>
-<td align="right">380</td>
-</tr>
-<tr class="even">
-<td align="left">CZECH REPUBLIC</td>
-<td align="right">355</td>
-</tr>
-<tr class="odd">
-<td align="left">MALAYSIA</td>
-<td align="right">352</td>
-</tr>
-<tr class="even">
-<td align="left">TUNISIA</td>
-<td align="right">351</td>
-</tr>
-<tr class="odd">
-<td align="left">SERBIA</td>
-<td align="right">346</td>
-</tr>
-<tr class="even">
-<td align="left">SAMOA</td>
-<td align="right">333</td>
-</tr>
-<tr class="odd">
-<td align="left">KYRGYZSTAN</td>
-<td align="right">328</td>
-</tr>
-<tr class="even">
-<td align="left">ST. KITTS-NEVIS</td>
-<td align="right">326</td>
-</tr>
-<tr class="odd">
-<td align="left">SWEDEN</td>
-<td align="right">294</td>
-</tr>
-<tr class="even">
-<td align="left">CROATIA</td>
-<td align="right">282</td>
-</tr>
-<tr class="odd">
-<td align="left">HONG KONG</td>
-<td align="right">273</td>
-</tr>
-<tr class="even">
-<td align="left">BENIN</td>
-<td align="right">257</td>
-</tr>
-<tr class="odd">
-<td align="left">TAJIKISTAN</td>
-<td align="right">257</td>
-</tr>
-<tr class="even">
-<td align="left">SLOVAKIA</td>
-<td align="right">247</td>
-</tr>
-<tr class="odd">
-<td align="left">SURINAME</td>
-<td align="right">245</td>
-</tr>
-<tr class="even">
-<td align="left">BELGIUM</td>
-<td align="right">234</td>
-</tr>
-<tr class="odd">
-<td align="left">UNITED ARAB EMIRATES</td>
-<td align="right">228</td>
-</tr>
-<tr class="even">
-<td align="left">LIBYA</td>
-<td align="right">219</td>
-</tr>
-<tr class="odd">
-<td align="left">PARAGUAY</td>
-<td align="right">219</td>
-</tr>
-<tr class="even">
-<td align="left">ESTONIA</td>
-<td align="right">198</td>
-</tr>
-<tr class="odd">
-<td align="left">CENTRAL AFRICAN REPUBLIC</td>
-<td align="right">196</td>
-</tr>
-<tr class="even">
-<td align="left">MONTENEGRO</td>
-<td align="right">196</td>
-</tr>
-<tr class="odd">
-<td align="left">MACEDONIA</td>
-<td align="right">183</td>
-</tr>
-<tr class="even">
-<td align="left">AUSTRIA</td>
-<td align="right">180</td>
-</tr>
-<tr class="odd">
-<td align="left">KOSOVO</td>
-<td align="right">180</td>
-</tr>
-<tr class="even">
-<td align="left">SWITZERLAND</td>
-<td align="right">179</td>
-</tr>
-<tr class="odd">
-<td align="left">CZECHOSLOVAKIA</td>
-<td align="right">155</td>
-</tr>
-<tr class="even">
-<td align="left">GUADELOUPE</td>
-<td align="right">150</td>
-</tr>
-<tr class="odd">
-<td align="left">DENMARK</td>
-<td align="right">142</td>
-</tr>
-<tr class="even">
-<td align="left">CHAD</td>
-<td align="right">141</td>
-</tr>
-<tr class="odd">
-<td align="left">NORWAY</td>
-<td align="right">136</td>
-</tr>
-<tr class="even">
-<td align="left">GABON</td>
-<td align="right">120</td>
-</tr>
-<tr class="odd">
-<td align="left">MALAWI</td>
-<td align="right">116</td>
-</tr>
-<tr class="even">
-<td align="left">BERMUDA</td>
-<td align="right">114</td>
-</tr>
-<tr class="odd">
-<td align="left">GUINEA-BISSAU</td>
-<td align="right">114</td>
-</tr>
-<tr class="even">
-<td align="left">BRITISH VIRGIN ISLANDS</td>
-<td align="right">112</td>
-</tr>
-<tr class="odd">
-<td align="left">SINGAPORE</td>
-<td align="right">112</td>
-</tr>
-<tr class="even">
-<td align="left">MACAU</td>
-<td align="right">110</td>
-</tr>
-<tr class="odd">
-<td align="left">TURKS AND CAICOS ISLANDS</td>
-<td align="right">109</td>
-</tr>
-<tr class="even">
-<td align="left">FINLAND</td>
-<td align="right">106</td>
-</tr>
-<tr class="odd">
-<td align="left">QATAR</td>
-<td align="right">104</td>
-</tr>
-<tr class="even">
-<td align="left">TURKMENISTAN</td>
-<td align="right">103</td>
-</tr>
-<tr class="odd">
-<td align="left">NETHERLANDS ANTILLES</td>
-<td align="right">91</td>
-</tr>
-<tr class="even">
-<td align="left">NAMIBIA</td>
-<td align="right">66</td>
-</tr>
-<tr class="odd">
-<td align="left">CYPRUS</td>
-<td align="right">62</td>
-</tr>
-<tr class="even">
-<td align="left">SERBIA AND MONTENEGRO</td>
-<td align="right">58</td>
-</tr>
-<tr class="odd">
-<td align="left">MAURITIUS</td>
-<td align="right">57</td>
-</tr>
-<tr class="even">
-<td align="left">DJIBOUTI</td>
-<td align="right">56</td>
-</tr>
-<tr class="odd">
-<td align="left">CAYMAN ISLANDS</td>
-<td align="right">55</td>
-</tr>
-<tr class="even">
-<td align="left">NORTH MACEDONIA</td>
-<td align="right">53</td>
-</tr>
-<tr class="odd">
-<td align="left">BOTSWANA</td>
-<td align="right">52</td>
-</tr>
-<tr class="even">
-<td align="left">OMAN</td>
-<td align="right">51</td>
-</tr>
-<tr class="odd">
-<td align="left">EQUATORIAL GUINEA</td>
-<td align="right">48</td>
-</tr>
-<tr class="even">
-<td align="left">SLOVENIA</td>
-<td align="right">48</td>
-</tr>
-<tr class="odd">
-<td align="left">BAHRAIN</td>
-<td align="right">46</td>
-</tr>
-<tr class="even">
-<td align="left">MOZAMBIQUE</td>
-<td align="right">45</td>
-</tr>
-<tr class="odd">
-<td align="left">ICELAND</td>
-<td align="right">44</td>
-</tr>
-<tr class="even">
-<td align="left">MONTSERRAT</td>
-<td align="right">33</td>
-</tr>
-<tr class="odd">
-<td align="left">PAPUA NEW GUINEA</td>
-<td align="right">32</td>
-</tr>
-<tr class="even">
-<td align="left">FRENCH GUIANA</td>
-<td align="right">30</td>
-</tr>
-<tr class="odd">
-<td align="left">MADAGASCAR</td>
-<td align="right">26</td>
-</tr>
-<tr class="even">
-<td align="left">FRENCH POLYNESIA</td>
-<td align="right">25</td>
-</tr>
-<tr class="odd">
-<td align="left">ANGUILLA</td>
-<td align="right">24</td>
-</tr>
-<tr class="even">
-<td align="left">ARUBA</td>
-<td align="right">23</td>
-</tr>
-<tr class="odd">
-<td align="left">SEYCHELLES</td>
-<td align="right">21</td>
-</tr>
-<tr class="even">
-<td align="left">LESOTHO</td>
-<td align="right">18</td>
-</tr>
-<tr class="odd">
-<td align="left">EAST TIMOR</td>
-<td align="right">17</td>
-</tr>
-<tr class="even">
-<td align="left">NORTH KOREA</td>
-<td align="right">17</td>
-</tr>
-<tr class="odd">
-<td align="left">SOLOMON ISLANDS</td>
-<td align="right">11</td>
-</tr>
-<tr class="even">
-<td align="left">MALTA</td>
-<td align="right">10</td>
-</tr>
-<tr class="odd">
-<td align="left">SWAZILAND</td>
-<td align="right">10</td>
-</tr>
-<tr class="even">
-<td align="left">LUXEMBOURG</td>
-<td align="right">8</td>
-</tr>
-<tr class="odd">
-<td align="left">COMOROS</td>
-<td align="right">7</td>
-</tr>
-<tr class="even">
-<td align="left">ANDORRA</td>
-<td align="right">6</td>
-</tr>
-<tr class="odd">
-<td align="left">BRUNEI</td>
-<td align="right">6</td>
-</tr>
-<tr class="even">
-<td align="left">KIRIBATI</td>
-<td align="right">6</td>
-</tr>
-<tr class="odd">
-<td align="left">MONACO</td>
-<td align="right">6</td>
-</tr>
-<tr class="even">
-<td align="left">SAO TOME AND PRINCIPE</td>
-<td align="right">5</td>
-</tr>
-<tr class="odd">
-<td align="left">MALDIVES</td>
-<td align="right">4</td>
-</tr>
-<tr class="even">
-<td align="left">VANUATU</td>
-<td align="right">4</td>
-</tr>
-<tr class="odd">
-<td align="left">CHRISTMAS ISLAND</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">ESWATINI</td>
-<td align="right">3</td>
-</tr>
-<tr class="odd">
-<td align="left">SAN MARINO</td>
-<td align="right">3</td>
-</tr>
-<tr class="even">
-<td align="left">LIECHTENSTEIN</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">NAURU</td>
-<td align="right">2</td>
-</tr>
-<tr class="even">
-<td align="left">PITCAIRN ISLANDS</td>
-<td align="right">2</td>
-</tr>
-<tr class="odd">
-<td align="left">NEW CALEDONIA</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="left">REUNION</td>
-<td align="right">1</td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># by FY
-
-# by AOR
+<pre class="r"><code># by AOR
 
 # by FY-AOR</code></pre>
-<pre class="r"><code>encounters %&gt;% 
-  group_by(gender) %&gt;%
+<pre class="r"><code># by FY
+encounters %&gt;% 
+  group_by(gender, fy) %&gt;%
   summarize(total = n()) %&gt;%
+  pivot_wider(names_from = fy, values_from = total) %&gt;%
+  replace(is.na(.), 0) %&gt;%
+  mutate(total = sum(c_across('2016':'2019'))) %&gt;%
   arrange(desc(total)) %&gt;%
-  kable()</code></pre>
+  kable(caption = 'Gender makeup among those encounters FY2016-2019')</code></pre>
 <table>
+<caption>Gender makeup among those encounters FY2016-2019</caption>
 <thead>
 <tr class="header">
 <th align="left">gender</th>
+<th align="right">2016</th>
+<th align="right">2017</th>
+<th align="right">2018</th>
+<th align="right">2019</th>
 <th align="right">total</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">Male</td>
+<td align="right">314595</td>
+<td align="right">371570</td>
+<td align="right">389314</td>
+<td align="right">326713</td>
 <td align="right">1402192</td>
 </tr>
 <tr class="even">
 <td align="left">Female</td>
+<td align="right">38627</td>
+<td align="right">45858</td>
+<td align="right">50365</td>
+<td align="right">43824</td>
 <td align="right">178674</td>
 </tr>
 <tr class="odd">
 <td align="left">Unknown</td>
+<td align="right">1960</td>
+<td align="right">1654</td>
+<td align="right">5016</td>
+<td align="right">7293</td>
 <td align="right">15923</td>
 </tr>
 <tr class="even">
 <td align="left"></td>
+<td align="right">9</td>
+<td align="right">4</td>
+<td align="right">5</td>
+<td align="right">0</td>
 <td align="right">18</td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># by FY
-
-# by AOR
+<pre class="r"><code># by AOR
 
 # by FY-AOR</code></pre>
 </div>
 <div id="removals" class="section level1">
 <h1>Removals</h1>
 <pre class="r"><code>removals &lt;- read.csv(&quot;../../export/output/removals.csv.gz&quot;, sep = &quot;|&quot;)
-removals &lt;- removals %&gt;% mutate(apprehension_date2 = as.Date(apprehension_date, format = &quot;%m/%d/%Y&quot;),
-                                departed_date2 = as.Date(departed_date, format = &quot;%m/%d/%Y&quot;),
-                                removal_date2 = as.Date(removal_date, format = &quot;%m/%d/%Y&quot;))</code></pre>
+removals &lt;- removals %&gt;% filter(aor != &quot;HQ&quot;) %&gt;%
+  mutate(apprehension_date2 = as.Date(apprehension_date, format = &quot;%m/%d/%Y&quot;),
+         departed_date2 = as.Date(departed_date, format = &quot;%m/%d/%Y&quot;),
+         removal_date2 = as.Date(removal_date, format = &quot;%m/%d/%Y&quot;))</code></pre>
 <pre class="r"><code>#sum(is.na(removals$apprehension_date2))
 
 removals &lt;- removals %&gt;% drop_na(apprehension_date2, departed_date2, removal_date2) %&gt;%
   mutate(difference = removal_date2 - apprehension_date2,
          difference2 = removal_date2 - departed_date2,
-         fy = case_when(removal_date2 &lt; &quot;2016-10-01&quot; ~ 2016,
+         fy_removal = case_when(removal_date2 &lt; &quot;2016-10-01&quot; ~ 2016,
                         removal_date2 &lt; &quot;2017-10-01&quot; ~ 2017,
                         removal_date2 &lt; &quot;2018-10-01&quot; ~ 2018,
                         removal_date2 &lt; &quot;2019-10-01&quot; ~ 2019))
@@ -3586,6 +3018,1277 @@ removals %&gt;%
   #summarize(mean_length_stay = mean(difference))</code></pre>
 <p>There are 14,235 observations with empty <code>apprehension_date</code>. These were removed from the calculations for the difference between removal date and apprehension date.</p>
 <p>There were no observations with empty <code>departed_date</code> or <code>removal_date</code>. There are differences between these 2 columns–17,890 rows show a non-0 difference in the number of days between departure and removal.</p>
+<pre class="r"><code>removals %&gt;% group_by(aor, fy_removal) %&gt;%
+  summarize(avg_length = mean(difference2),
+            sd_length = sd(difference2),
+            median_length = median(difference2),
+            min_length = min(difference2),
+            max_length = max(difference2)) %&gt;%
+  kable(caption = 'Summary statistics of difference in length between departed and removal dates')</code></pre>
+<table>
+<caption>Summary statistics of difference in length between departed and removal dates</caption>
+<thead>
+<tr class="header">
+<th align="left">aor</th>
+<th align="right">fy_removal</th>
+<th align="left">avg_length</th>
+<th align="right">sd_length</th>
+<th align="left">median_length</th>
+<th align="left">min_length</th>
+<th align="left">max_length</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">ATL</td>
+<td align="right">2016</td>
+<td align="left">6.1691551 days</td>
+<td align="right">43.83697</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">643 days</td>
+</tr>
+<tr class="even">
+<td align="left">ATL</td>
+<td align="right">2017</td>
+<td align="left">2.6430659 days</td>
+<td align="right">28.33298</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">667 days</td>
+</tr>
+<tr class="odd">
+<td align="left">ATL</td>
+<td align="right">2018</td>
+<td align="left">3.2392729 days</td>
+<td align="right">38.82457</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">709 days</td>
+</tr>
+<tr class="even">
+<td align="left">ATL</td>
+<td align="right">2019</td>
+<td align="left">2.5376766 days</td>
+<td align="right">29.39282</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">622 days</td>
+</tr>
+<tr class="odd">
+<td align="left">BAL</td>
+<td align="right">2016</td>
+<td align="left">8.9518634 days</td>
+<td align="right">55.58866</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">585 days</td>
+</tr>
+<tr class="even">
+<td align="left">BAL</td>
+<td align="right">2017</td>
+<td align="left">8.4646597 days</td>
+<td align="right">52.76248</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">508 days</td>
+</tr>
+<tr class="odd">
+<td align="left">BAL</td>
+<td align="right">2018</td>
+<td align="left">9.7764706 days</td>
+<td align="right">57.71096</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">551 days</td>
+</tr>
+<tr class="even">
+<td align="left">BAL</td>
+<td align="right">2019</td>
+<td align="left">13.2274413 days</td>
+<td align="right">66.62939</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">648 days</td>
+</tr>
+<tr class="odd">
+<td align="left">BOS</td>
+<td align="right">2016</td>
+<td align="left">7.8678955 days</td>
+<td align="right">52.20632</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">558 days</td>
+</tr>
+<tr class="even">
+<td align="left">BOS</td>
+<td align="right">2017</td>
+<td align="left">8.3531915 days</td>
+<td align="right">55.71655</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">639 days</td>
+</tr>
+<tr class="odd">
+<td align="left">BOS</td>
+<td align="right">2018</td>
+<td align="left">10.6078261 days</td>
+<td align="right">65.40115</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">663 days</td>
+</tr>
+<tr class="even">
+<td align="left">BOS</td>
+<td align="right">2019</td>
+<td align="left">7.0005061 days</td>
+<td align="right">52.19691</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">633 days</td>
+</tr>
+<tr class="odd">
+<td align="left">BUF</td>
+<td align="right">2016</td>
+<td align="left">10.2564291 days</td>
+<td align="right">66.46097</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">653 days</td>
+</tr>
+<tr class="even">
+<td align="left">BUF</td>
+<td align="right">2017</td>
+<td align="left">10.7040498 days</td>
+<td align="right">65.16314</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">685 days</td>
+</tr>
+<tr class="odd">
+<td align="left">BUF</td>
+<td align="right">2018</td>
+<td align="left">7.3079755 days</td>
+<td align="right">50.60671</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">577 days</td>
+</tr>
+<tr class="even">
+<td align="left">BUF</td>
+<td align="right">2019</td>
+<td align="left">12.2961373 days</td>
+<td align="right">63.66652</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">610 days</td>
+</tr>
+<tr class="odd">
+<td align="left">CHI</td>
+<td align="right">2016</td>
+<td align="left">23.5362637 days</td>
+<td align="right">89.09290</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">706 days</td>
+</tr>
+<tr class="even">
+<td align="left">CHI</td>
+<td align="right">2017</td>
+<td align="left">7.1914040 days</td>
+<td align="right">49.89055</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">687 days</td>
+</tr>
+<tr class="odd">
+<td align="left">CHI</td>
+<td align="right">2018</td>
+<td align="left">6.4913923 days</td>
+<td align="right">48.16068</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">711 days</td>
+</tr>
+<tr class="even">
+<td align="left">CHI</td>
+<td align="right">2019</td>
+<td align="left">6.7342908 days</td>
+<td align="right">46.20352</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">611 days</td>
+</tr>
+<tr class="odd">
+<td align="left">DAL</td>
+<td align="right">2016</td>
+<td align="left">1.9786822 days</td>
+<td align="right">26.82921</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">585 days</td>
+</tr>
+<tr class="even">
+<td align="left">DAL</td>
+<td align="right">2017</td>
+<td align="left">1.0903836 days</td>
+<td align="right">19.22348</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">588 days</td>
+</tr>
+<tr class="odd">
+<td align="left">DAL</td>
+<td align="right">2018</td>
+<td align="left">2.9821209 days</td>
+<td align="right">36.42944</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">691 days</td>
+</tr>
+<tr class="even">
+<td align="left">DAL</td>
+<td align="right">2019</td>
+<td align="left">1.2126275 days</td>
+<td align="right">19.16902</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">594 days</td>
+</tr>
+<tr class="odd">
+<td align="left">DEN</td>
+<td align="right">2016</td>
+<td align="left">1.1544554 days</td>
+<td align="right">20.83842</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">437 days</td>
+</tr>
+<tr class="even">
+<td align="left">DEN</td>
+<td align="right">2017</td>
+<td align="left">2.8016895 days</td>
+<td align="right">31.71398</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">598 days</td>
+</tr>
+<tr class="odd">
+<td align="left">DEN</td>
+<td align="right">2018</td>
+<td align="left">2.7808989 days</td>
+<td align="right">34.51332</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">701 days</td>
+</tr>
+<tr class="even">
+<td align="left">DEN</td>
+<td align="right">2019</td>
+<td align="left">2.7037838 days</td>
+<td align="right">28.33550</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">673 days</td>
+</tr>
+<tr class="odd">
+<td align="left">DET</td>
+<td align="right">2016</td>
+<td align="left">3.2734875 days</td>
+<td align="right">35.60432</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">716 days</td>
+</tr>
+<tr class="even">
+<td align="left">DET</td>
+<td align="right">2017</td>
+<td align="left">4.3569172 days</td>
+<td align="right">37.17539</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">718 days</td>
+</tr>
+<tr class="odd">
+<td align="left">DET</td>
+<td align="right">2018</td>
+<td align="left">2.7870936 days</td>
+<td align="right">35.10902</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">601 days</td>
+</tr>
+<tr class="even">
+<td align="left">DET</td>
+<td align="right">2019</td>
+<td align="left">3.7823386 days</td>
+<td align="right">33.89012</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">633 days</td>
+</tr>
+<tr class="odd">
+<td align="left">ELP</td>
+<td align="right">2016</td>
+<td align="left">1.0737037 days</td>
+<td align="right">18.21701</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">598 days</td>
+</tr>
+<tr class="even">
+<td align="left">ELP</td>
+<td align="right">2017</td>
+<td align="left">1.9836450 days</td>
+<td align="right">20.86461</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">659 days</td>
+</tr>
+<tr class="odd">
+<td align="left">ELP</td>
+<td align="right">2018</td>
+<td align="left">1.7219036 days</td>
+<td align="right">28.13021</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">721 days</td>
+</tr>
+<tr class="even">
+<td align="left">ELP</td>
+<td align="right">2019</td>
+<td align="left">1.3337825 days</td>
+<td align="right">16.80524</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">523 days</td>
+</tr>
+<tr class="odd">
+<td align="left">HOU</td>
+<td align="right">2016</td>
+<td align="left">0.6334313 days</td>
+<td align="right">15.26746</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">620 days</td>
+</tr>
+<tr class="even">
+<td align="left">HOU</td>
+<td align="right">2017</td>
+<td align="left">1.2624019 days</td>
+<td align="right">22.12144</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">596 days</td>
+</tr>
+<tr class="odd">
+<td align="left">HOU</td>
+<td align="right">2018</td>
+<td align="left">1.9404687 days</td>
+<td align="right">28.14747</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">652 days</td>
+</tr>
+<tr class="even">
+<td align="left">HOU</td>
+<td align="right">2019</td>
+<td align="left">1.7775239 days</td>
+<td align="right">20.19376</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">676 days</td>
+</tr>
+<tr class="odd">
+<td align="left">LOS</td>
+<td align="right">2016</td>
+<td align="left">3.9475849 days</td>
+<td align="right">37.33105</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">664 days</td>
+</tr>
+<tr class="even">
+<td align="left">LOS</td>
+<td align="right">2017</td>
+<td align="left">5.5085758 days</td>
+<td align="right">44.61237</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">642 days</td>
+</tr>
+<tr class="odd">
+<td align="left">LOS</td>
+<td align="right">2018</td>
+<td align="left">5.3374789 days</td>
+<td align="right">45.87989</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">699 days</td>
+</tr>
+<tr class="even">
+<td align="left">LOS</td>
+<td align="right">2019</td>
+<td align="left">5.4119403 days</td>
+<td align="right">42.96930</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">639 days</td>
+</tr>
+<tr class="odd">
+<td align="left">MIA</td>
+<td align="right">2016</td>
+<td align="left">3.2363773 days</td>
+<td align="right">32.66018</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">693 days</td>
+</tr>
+<tr class="even">
+<td align="left">MIA</td>
+<td align="right">2017</td>
+<td align="left">2.3146417 days</td>
+<td align="right">28.92808</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">568 days</td>
+</tr>
+<tr class="odd">
+<td align="left">MIA</td>
+<td align="right">2018</td>
+<td align="left">6.3647617 days</td>
+<td align="right">53.96262</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">690 days</td>
+</tr>
+<tr class="even">
+<td align="left">MIA</td>
+<td align="right">2019</td>
+<td align="left">6.9258594 days</td>
+<td align="right">46.54552</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">655 days</td>
+</tr>
+<tr class="odd">
+<td align="left">NEW</td>
+<td align="right">2016</td>
+<td align="left">5.7450000 days</td>
+<td align="right">46.88249</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">644 days</td>
+</tr>
+<tr class="even">
+<td align="left">NEW</td>
+<td align="right">2017</td>
+<td align="left">4.2647541 days</td>
+<td align="right">40.82162</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">694 days</td>
+</tr>
+<tr class="odd">
+<td align="left">NEW</td>
+<td align="right">2018</td>
+<td align="left">7.6981818 days</td>
+<td align="right">59.99998</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">708 days</td>
+</tr>
+<tr class="even">
+<td align="left">NEW</td>
+<td align="right">2019</td>
+<td align="left">6.5214872 days</td>
+<td align="right">48.84139</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">541 days</td>
+</tr>
+<tr class="odd">
+<td align="left">NOL</td>
+<td align="right">2016</td>
+<td align="left">2.9680053 days</td>
+<td align="right">30.89691</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">666 days</td>
+</tr>
+<tr class="even">
+<td align="left">NOL</td>
+<td align="right">2017</td>
+<td align="left">1.2199714 days</td>
+<td align="right">19.84142</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">594 days</td>
+</tr>
+<tr class="odd">
+<td align="left">NOL</td>
+<td align="right">2018</td>
+<td align="left">1.8815525 days</td>
+<td align="right">29.40557</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">722 days</td>
+</tr>
+<tr class="even">
+<td align="left">NOL</td>
+<td align="right">2019</td>
+<td align="left">1.8438607 days</td>
+<td align="right">25.48014</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">607 days</td>
+</tr>
+<tr class="odd">
+<td align="left">NYC</td>
+<td align="right">2016</td>
+<td align="left">34.8554642 days</td>
+<td align="right">115.19405</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">719 days</td>
+</tr>
+<tr class="even">
+<td align="left">NYC</td>
+<td align="right">2017</td>
+<td align="left">12.3087479 days</td>
+<td align="right">70.45212</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">703 days</td>
+</tr>
+<tr class="odd">
+<td align="left">NYC</td>
+<td align="right">2018</td>
+<td align="left">15.2229822 days</td>
+<td align="right">76.61916</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">662 days</td>
+</tr>
+<tr class="even">
+<td align="left">NYC</td>
+<td align="right">2019</td>
+<td align="left">19.7866130 days</td>
+<td align="right">82.50797</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">610 days</td>
+</tr>
+<tr class="odd">
+<td align="left">PHI</td>
+<td align="right">2016</td>
+<td align="left">3.2995848 days</td>
+<td align="right">35.00971</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">631 days</td>
+</tr>
+<tr class="even">
+<td align="left">PHI</td>
+<td align="right">2017</td>
+<td align="left">1.7123773 days</td>
+<td align="right">25.56816</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">709 days</td>
+</tr>
+<tr class="odd">
+<td align="left">PHI</td>
+<td align="right">2018</td>
+<td align="left">2.6811758 days</td>
+<td align="right">32.69922</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">705 days</td>
+</tr>
+<tr class="even">
+<td align="left">PHI</td>
+<td align="right">2019</td>
+<td align="left">3.4593414 days</td>
+<td align="right">35.78063</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">584 days</td>
+</tr>
+<tr class="odd">
+<td align="left">PHO</td>
+<td align="right">2016</td>
+<td align="left">5.9026573 days</td>
+<td align="right">39.43678</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">614 days</td>
+</tr>
+<tr class="even">
+<td align="left">PHO</td>
+<td align="right">2017</td>
+<td align="left">4.3001180 days</td>
+<td align="right">34.55664</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">704 days</td>
+</tr>
+<tr class="odd">
+<td align="left">PHO</td>
+<td align="right">2018</td>
+<td align="left">3.3303463 days</td>
+<td align="right">38.96328</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">674 days</td>
+</tr>
+<tr class="even">
+<td align="left">PHO</td>
+<td align="right">2019</td>
+<td align="left">4.5315076 days</td>
+<td align="right">32.52683</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">593 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SEA</td>
+<td align="right">2016</td>
+<td align="left">7.9279621 days</td>
+<td align="right">48.25505</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">651 days</td>
+</tr>
+<tr class="even">
+<td align="left">SEA</td>
+<td align="right">2017</td>
+<td align="left">4.7959647 days</td>
+<td align="right">40.96160</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">628 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SEA</td>
+<td align="right">2018</td>
+<td align="left">4.9588905 days</td>
+<td align="right">46.96900</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">650 days</td>
+</tr>
+<tr class="even">
+<td align="left">SEA</td>
+<td align="right">2019</td>
+<td align="left">5.3020779 days</td>
+<td align="right">42.61528</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">588 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SFR</td>
+<td align="right">2016</td>
+<td align="left">9.7662941 days</td>
+<td align="right">50.22294</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">596 days</td>
+</tr>
+<tr class="even">
+<td align="left">SFR</td>
+<td align="right">2017</td>
+<td align="left">5.0871322 days</td>
+<td align="right">45.46372</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">673 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SFR</td>
+<td align="right">2018</td>
+<td align="left">5.9174806 days</td>
+<td align="right">49.38457</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">657 days</td>
+</tr>
+<tr class="even">
+<td align="left">SFR</td>
+<td align="right">2019</td>
+<td align="left">6.3126817 days</td>
+<td align="right">47.67986</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">638 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SLC</td>
+<td align="right">2016</td>
+<td align="left">7.2021152 days</td>
+<td align="right">48.44198</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">493 days</td>
+</tr>
+<tr class="even">
+<td align="left">SLC</td>
+<td align="right">2017</td>
+<td align="left">2.5071551 days</td>
+<td align="right">27.18521</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">516 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SLC</td>
+<td align="right">2018</td>
+<td align="left">4.5185740 days</td>
+<td align="right">45.60774</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">646 days</td>
+</tr>
+<tr class="even">
+<td align="left">SLC</td>
+<td align="right">2019</td>
+<td align="left">2.9519541 days</td>
+<td align="right">29.01458</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">566 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SNA</td>
+<td align="right">2016</td>
+<td align="left">1.5507406 days</td>
+<td align="right">22.78240</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">654 days</td>
+</tr>
+<tr class="even">
+<td align="left">SNA</td>
+<td align="right">2017</td>
+<td align="left">2.8223666 days</td>
+<td align="right">25.42996</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">638 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SNA</td>
+<td align="right">2018</td>
+<td align="left">2.1025180 days</td>
+<td align="right">26.50142</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">629 days</td>
+</tr>
+<tr class="even">
+<td align="left">SNA</td>
+<td align="right">2019</td>
+<td align="left">1.4087719 days</td>
+<td align="right">18.06210</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">675 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SND</td>
+<td align="right">2016</td>
+<td align="left">2.9761353 days</td>
+<td align="right">25.90146</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">545 days</td>
+</tr>
+<tr class="even">
+<td align="left">SND</td>
+<td align="right">2017</td>
+<td align="left">2.7772675 days</td>
+<td align="right">28.10484</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">627 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SND</td>
+<td align="right">2018</td>
+<td align="left">1.8160692 days</td>
+<td align="right">22.07282</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">684 days</td>
+</tr>
+<tr class="even">
+<td align="left">SND</td>
+<td align="right">2019</td>
+<td align="left">2.7786463 days</td>
+<td align="right">30.27898</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">646 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SPM</td>
+<td align="right">2016</td>
+<td align="left">9.7472654 days</td>
+<td align="right">53.02626</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">468 days</td>
+</tr>
+<tr class="even">
+<td align="left">SPM</td>
+<td align="right">2017</td>
+<td align="left">5.5527380 days</td>
+<td align="right">40.48814</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">556 days</td>
+</tr>
+<tr class="odd">
+<td align="left">SPM</td>
+<td align="right">2018</td>
+<td align="left">7.2124697 days</td>
+<td align="right">52.91135</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">615 days</td>
+</tr>
+<tr class="even">
+<td align="left">SPM</td>
+<td align="right">2019</td>
+<td align="left">4.6962772 days</td>
+<td align="right">39.51267</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">647 days</td>
+</tr>
+<tr class="odd">
+<td align="left">WAS</td>
+<td align="right">2016</td>
+<td align="left">6.0816110 days</td>
+<td align="right">50.67308</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">684 days</td>
+</tr>
+<tr class="even">
+<td align="left">WAS</td>
+<td align="right">2017</td>
+<td align="left">2.7523810 days</td>
+<td align="right">30.87572</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">532 days</td>
+</tr>
+<tr class="odd">
+<td align="left">WAS</td>
+<td align="right">2018</td>
+<td align="left">10.3324480 days</td>
+<td align="right">66.64961</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">686 days</td>
+</tr>
+<tr class="even">
+<td align="left">WAS</td>
+<td align="right">2019</td>
+<td align="left">2.9173738 days</td>
+<td align="right">32.57664</td>
+<td align="left">0 days</td>
+<td align="left">0 days</td>
+<td align="left">577 days</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>removals %&gt;% group_by(aor, fy_removal) %&gt;%
+  summarize(count = n()) %&gt;%
+  pivot_wider(names_from = fy_removal, values_from = count) %&gt;%
+  kable(caption = 'Number of removals by FY 2016-2019 (by removal_date)')</code></pre>
+<table>
+<caption>Number of removals by FY 2016-2019 (by removal_date)</caption>
+<thead>
+<tr class="header">
+<th align="left">aor</th>
+<th align="right">2016</th>
+<th align="right">2017</th>
+<th align="right">2018</th>
+<th align="right">2019</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">ATL</td>
+<td align="right">5693</td>
+<td align="right">12316</td>
+<td align="right">13424</td>
+<td align="right">12740</td>
+</tr>
+<tr class="even">
+<td align="left">BAL</td>
+<td align="right">644</td>
+<td align="right">764</td>
+<td align="right">935</td>
+<td align="right">809</td>
+</tr>
+<tr class="odd">
+<td align="left">BOS</td>
+<td align="right">1302</td>
+<td align="right">1880</td>
+<td align="right">2300</td>
+<td align="right">1976</td>
+</tr>
+<tr class="even">
+<td align="left">BUF</td>
+<td align="right">1361</td>
+<td align="right">1605</td>
+<td align="right">1630</td>
+<td align="right">1398</td>
+</tr>
+<tr class="odd">
+<td align="left">CHI</td>
+<td align="right">2275</td>
+<td align="right">5235</td>
+<td align="right">5983</td>
+<td align="right">5013</td>
+</tr>
+<tr class="even">
+<td align="left">DAL</td>
+<td align="right">11868</td>
+<td align="right">13841</td>
+<td align="right">14654</td>
+<td align="right">13526</td>
+</tr>
+<tr class="odd">
+<td align="left">DEN</td>
+<td align="right">1010</td>
+<td align="right">2486</td>
+<td align="right">3204</td>
+<td align="right">2775</td>
+</tr>
+<tr class="even">
+<td align="left">DET</td>
+<td align="right">2033</td>
+<td align="right">3166</td>
+<td align="right">4091</td>
+<td align="right">3703</td>
+</tr>
+<tr class="odd">
+<td align="left">ELP</td>
+<td align="right">43200</td>
+<td align="right">21339</td>
+<td align="right">21097</td>
+<td align="right">18551</td>
+</tr>
+<tr class="even">
+<td align="left">HOU</td>
+<td align="right">14633</td>
+<td align="right">13506</td>
+<td align="right">15790</td>
+<td align="right">17067</td>
+</tr>
+<tr class="odd">
+<td align="left">LOS</td>
+<td align="right">6563</td>
+<td align="right">7871</td>
+<td align="right">8282</td>
+<td align="right">7705</td>
+</tr>
+<tr class="even">
+<td align="left">MIA</td>
+<td align="right">5322</td>
+<td align="right">6741</td>
+<td align="right">7594</td>
+<td align="right">8349</td>
+</tr>
+<tr class="odd">
+<td align="left">NEW</td>
+<td align="right">1800</td>
+<td align="right">2440</td>
+<td align="right">2475</td>
+<td align="right">2071</td>
+</tr>
+<tr class="even">
+<td align="left">NOL</td>
+<td align="right">4532</td>
+<td align="right">9083</td>
+<td align="right">10435</td>
+<td align="right">11573</td>
+</tr>
+<tr class="odd">
+<td align="left">NYC</td>
+<td align="right">851</td>
+<td align="right">1749</td>
+<td align="right">2193</td>
+<td align="right">1987</td>
+</tr>
+<tr class="even">
+<td align="left">PHI</td>
+<td align="right">3131</td>
+<td align="right">3668</td>
+<td align="right">3538</td>
+<td align="right">2976</td>
+</tr>
+<tr class="odd">
+<td align="left">PHO</td>
+<td align="right">21789</td>
+<td align="right">20342</td>
+<td align="right">26448</td>
+<td align="right">30929</td>
+</tr>
+<tr class="even">
+<td align="left">SEA</td>
+<td align="right">2110</td>
+<td align="right">3965</td>
+<td align="right">4038</td>
+<td align="right">3850</td>
+</tr>
+<tr class="odd">
+<td align="left">SFR</td>
+<td align="right">5815</td>
+<td align="right">6186</td>
+<td align="right">5938</td>
+<td align="right">4471</td>
+</tr>
+<tr class="even">
+<td align="left">SLC</td>
+<td align="right">1702</td>
+<td align="right">3494</td>
+<td align="right">3338</td>
+<td align="right">2789</td>
+</tr>
+<tr class="odd">
+<td align="left">SNA</td>
+<td align="right">72575</td>
+<td align="right">55243</td>
+<td align="right">62311</td>
+<td align="right">57137</td>
+</tr>
+<tr class="even">
+<td align="left">SND</td>
+<td align="right">23717</td>
+<td align="right">20904</td>
+<td align="right">26809</td>
+<td align="right">20980</td>
+</tr>
+<tr class="odd">
+<td align="left">SPM</td>
+<td align="right">1737</td>
+<td align="right">2721</td>
+<td align="right">3304</td>
+<td align="right">2713</td>
+</tr>
+<tr class="even">
+<td align="left">WAS</td>
+<td align="right">1887</td>
+<td align="right">2205</td>
+<td align="right">2259</td>
+<td align="right">2239</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># by FY
+removals %&gt;% 
+  group_by(citizenship, fy_removal) %&gt;%
+  summarize(total = n()) %&gt;%
+  pivot_wider(names_from = fy_removal, values_from = total) %&gt;%
+  replace(is.na(.), 0) %&gt;%
+  mutate(total = sum(c_across('2016':'2019'))) %&gt;%
+  arrange(desc(total)) %&gt;%
+  head(n=15) %&gt;%
+  kable(caption = 'Top 15 countries whose citizens were removed FY2016-2019')</code></pre>
+<table>
+<caption>Top 15 countries whose citizens were removed FY2016-2019</caption>
+<thead>
+<tr class="header">
+<th align="left">citizenship</th>
+<th align="right">2016</th>
+<th align="right">2017</th>
+<th align="right">2018</th>
+<th align="right">2019</th>
+<th align="right">total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">MEXICO</td>
+<td align="right">148223</td>
+<td align="right">126910</td>
+<td align="right">138987</td>
+<td align="right">112774</td>
+<td align="right">526894</td>
+</tr>
+<tr class="even">
+<td align="left">GUATEMALA</td>
+<td align="right">33815</td>
+<td align="right">33327</td>
+<td align="right">50129</td>
+<td align="right">50922</td>
+<td align="right">168193</td>
+</tr>
+<tr class="odd">
+<td align="left">HONDURAS</td>
+<td align="right">21895</td>
+<td align="right">22220</td>
+<td align="right">28666</td>
+<td align="right">37247</td>
+<td align="right">110028</td>
+</tr>
+<tr class="even">
+<td align="left">EL SALVADOR</td>
+<td align="right">20411</td>
+<td align="right">18650</td>
+<td align="right">15225</td>
+<td align="right">16594</td>
+<td align="right">70880</td>
+</tr>
+<tr class="odd">
+<td align="left">HAITI</td>
+<td align="right">290</td>
+<td align="right">5547</td>
+<td align="right">895</td>
+<td align="right">577</td>
+<td align="right">7309</td>
+</tr>
+<tr class="even">
+<td align="left">DOMINICAN REPUBLIC</td>
+<td align="right">1833</td>
+<td align="right">1834</td>
+<td align="right">1616</td>
+<td align="right">1668</td>
+<td align="right">6951</td>
+</tr>
+<tr class="odd">
+<td align="left">BRAZIL</td>
+<td align="right">1083</td>
+<td align="right">1404</td>
+<td align="right">1660</td>
+<td align="right">1544</td>
+<td align="right">5691</td>
+</tr>
+<tr class="even">
+<td align="left">ECUADOR</td>
+<td align="right">1077</td>
+<td align="right">1110</td>
+<td align="right">1188</td>
+<td align="right">1841</td>
+<td align="right">5216</td>
+</tr>
+<tr class="odd">
+<td align="left">NICARAGUA</td>
+<td align="right">785</td>
+<td align="right">818</td>
+<td align="right">857</td>
+<td align="right">1978</td>
+<td align="right">4438</td>
+</tr>
+<tr class="even">
+<td align="left">COLOMBIA</td>
+<td align="right">1086</td>
+<td align="right">1024</td>
+<td align="right">1100</td>
+<td align="right">914</td>
+<td align="right">4124</td>
+</tr>
+<tr class="odd">
+<td align="left">INDIA</td>
+<td align="right">345</td>
+<td align="right">441</td>
+<td align="right">585</td>
+<td align="right">1408</td>
+<td align="right">2779</td>
+</tr>
+<tr class="even">
+<td align="left">JAMAICA</td>
+<td align="right">739</td>
+<td align="right">715</td>
+<td align="right">700</td>
+<td align="right">591</td>
+<td align="right">2745</td>
+</tr>
+<tr class="odd">
+<td align="left">PERU</td>
+<td align="right">391</td>
+<td align="right">434</td>
+<td align="right">552</td>
+<td align="right">484</td>
+<td align="right">1861</td>
+</tr>
+<tr class="even">
+<td align="left">CHINA, PEOPLES REPUBLIC OF</td>
+<td align="right">307</td>
+<td align="right">433</td>
+<td align="right">589</td>
+<td align="right">425</td>
+<td align="right">1754</td>
+</tr>
+<tr class="odd">
+<td align="left">CUBA</td>
+<td align="right">64</td>
+<td align="right">158</td>
+<td align="right">461</td>
+<td align="right">768</td>
+<td align="right">1451</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># by AOR
+
+# by FY-AOR</code></pre>
+<pre class="r"><code># by FY
+removals %&gt;% 
+  group_by(gender, fy_removal) %&gt;%
+  summarize(total = n()) %&gt;%
+  pivot_wider(names_from = fy_removal, values_from = total) %&gt;%
+  mutate(total = sum(c_across('2016':'2019'))) %&gt;%
+  arrange(desc(total)) %&gt;%
+  kable(caption = 'Gender makeup among those removed FY2016-2019')</code></pre>
+<table>
+<caption>Gender makeup among those removed FY2016-2019</caption>
+<thead>
+<tr class="header">
+<th align="left">gender</th>
+<th align="right">2016</th>
+<th align="right">2017</th>
+<th align="right">2018</th>
+<th align="right">2019</th>
+<th align="right">total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Male</td>
+<td align="right">214669</td>
+<td align="right">201245</td>
+<td align="right">228660</td>
+<td align="right">214596</td>
+<td align="right">859170</td>
+</tr>
+<tr class="even">
+<td align="left">Female</td>
+<td align="right">22869</td>
+<td align="right">21493</td>
+<td align="right">23392</td>
+<td align="right">22716</td>
+<td align="right">90470</td>
+</tr>
+<tr class="odd">
+<td align="left">Unknown</td>
+<td align="right">12</td>
+<td align="right">12</td>
+<td align="right">18</td>
+<td align="right">15</td>
+<td align="right">57</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># by AOR
+
+# by FY-AOR</code></pre>
 </div>
 
 
