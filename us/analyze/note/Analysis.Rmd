@@ -149,24 +149,23 @@ arrests_2019_q <- arrests %>% filter(fy == 2019) %>%
 ```
 
 ```{r apprehension_landmark}
-apprehension_landmark <- arrests %>% group_by(apprehension_landmark) %>% summarize(total = n())
-write.csv(apprehension_landmark, 'apprehension_landmark.csv')
+#apprehension_landmark <- arrests %>% group_by(apprehension_landmark) %>% summarize(total = n())
+#write.csv(apprehension_landmark, 'apprehension_landmark.csv')
 
 arrests <- arrests %>% mutate(apprehension_landmark2 = 
-                                case_when(grepl('NON_SPECIFIC|GENERAL AREA|OPERATIONS|FUGITIVE', apprehension_landmark) ~ 0,
-                                          apprehension_landmark %in% c('ATLANTA, GA', 'SAN ANGELO SUB-OFFICE', 'BALTIMORE CITY MD', 'NORTHERN VIRGINIA AREA', 'SEA CAP', 'DETROIT, MI', 'DO NOT USE', '')  ~ 0,
-                                          TRUE ~ 1))
+                                case_when(grepl('NON-SPECIFIC|ARREST AT|ATD|BUREAU OF PRISONS-|FEDCAP-', apprehension_landmark) ~ "Non-specific",
+                                          apprehension_landmark %in% c("LICENSING UNIT/STATE POLICE", "287g", "at-large", "California Healthcare Facility", "CALIFORNIA HIGHWAY PATROL", "CAP ACI", "CIS REFERRAL", "FEDERAL DETENTION CENTER (FDC)", "FIELD ARREST", "FTC CI (Federal Transfer Center)", "FTM-JCART", "FTM-VCAS", "FUG - NON FUGITIVE", "FUGITIVE OPERATIONS", "FUGITIVE SOUTH TEAM ARRESTS", "FUGOP", "FUGOPS", "STREET ARREST", "STREET ARRESTS", "U.S. Marshalls Service", "U.S. Marshals", "U.S. Marshals Service", "U.S. MARSHALS SERVICE"< "U.S. PROBATION OFFICE", "UNITED STATES MARSHALL SERVICE", "UNITED STATES PROBATION & PAROLE", "UNITED STATES PROBATION", "US 281 TO FM 493 EXP 83 NORTH TO FM 490", "US DISTRICT COURT", "US MARSHALLS", "US Marshals TF", "USCIS ARREST", "USCIS REFERRALS") ~ "Non-specific",
+                                          apprehension_landmark == 'DO NOT USE'  ~ "DO NOT USE",
+                                          apprehension_landmark == ''  ~ "NA",
+                                          TRUE ~ "Specific"))
 #test <- arrests %>% select(apprehension_landmark, apprehension_landmark2)
-test2 <- arrests %>% filter(apprehension_landmark2 == 1) %>%
-  group_by(apprehension_landmark) %>% 
-  summarize(total = n())
 
 specificity <- arrests %>% 
-  group_by(fy, aor, apprehension_landmark2) %>%
+  group_by(aor, apprehension_landmark2) %>%
   summarize(total = n()) %>% 
-  pivot_wider(names_from = fy, values_from = total)
+  pivot_wider(names_from = apprehension_landmark2, values_from = total)
   
-specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)')
+specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')
 ```
 
 
@@ -330,24 +329,23 @@ encounters_2019_q <- encounters %>% filter(fy == 2019) %>%
 ```
 
 ```{r encounters_landmark}
-encounter_landmark <- encounters %>% group_by(landmark) %>% summarize(total = n())
-write.csv(encounter_landmark, 'encounter_landmark.csv')
+#encounter_landmark <- encounters %>% group_by(landmark) %>% summarize(total = n())
+#write.csv(encounter_landmark, 'encounter_landmark.csv')
 
 encounters <- encounters %>% mutate(landmark2 = 
-                                case_when(grepl('NON_SPECIFIC|GENERAL AREA|OPERATIONS|FUGITIVE', landmark) ~ 0,
-                                          landmark %in% c('DO NOT USE', 'PHILADELPHIA - SECURE COMMUNITIES', 'LOGANVILLE, GA', '287g', '')  ~ 0,
-                                          TRUE ~ 1))
-test <- encounters %>% select(landmark, landmark2)
-test2 <- encounters %>% filter(landmark2 == 1) %>%
-  group_by(landmark) %>% 
-  summarize(total = n())
+                                case_when(grepl('NON-SPECIFIC|ARREST AT|ATD|BUREAU OF PRISONS-|FEDCAP-', landmark) ~ "Non-specific",
+                                          landmark %in% c("LICENSING UNIT/STATE POLICE", "287g", "at-large", "California Healthcare Facility", "CALIFORNIA HIGHWAY PATROL", "CAP ACI", "CIS REFERRAL", "FEDERAL DETENTION CENTER (FDC)", "FIELD ARREST", "FTC CI (Federal Transfer Center)", "FTM-JCART", "FTM-VCAS", "FUG - NON FUGITIVE", "FUGITIVE OPERATIONS", "FUGITIVE SOUTH TEAM ARRESTS", "FUGOP", "FUGOPS", "STREET ARREST", "STREET ARRESTS", "U.S. Marshalls Service", "U.S. Marshals", "U.S. Marshals Service", "U.S. MARSHALS SERVICE"< "U.S. PROBATION OFFICE", "UNITED STATES MARSHALL SERVICE", "UNITED STATES PROBATION & PAROLE", "UNITED STATES PROBATION", "US 281 TO FM 493 EXP 83 NORTH TO FM 490", "US DISTRICT COURT", "US MARSHALLS", "US Marshals TF", "USCIS ARREST", "USCIS REFERRALS") ~ "Non-specific",
+                                          landmark == 'DO NOT USE'  ~ "DO NOT USE",
+                                          landmark == ''  ~ "NA",
+                                          TRUE ~ "Specific"))
+#test <- encounters %>% select(landmark, landmark2)
 
 specificity2 <- encounters %>% 
-  group_by(fy, aor, landmark2) %>%
+  group_by(aor, landmark2) %>%
   summarize(total = n()) %>% 
-  pivot_wider(names_from = fy, values_from = total)
+  pivot_wider(names_from = landmark2, values_from = total)
   
-specificity2 %>% kable(caption = 'Encounter landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)')
+specificity2 %>% kable(caption = 'Encounter landmark specificity by AOR FY2016-2019')
 ```
 
 

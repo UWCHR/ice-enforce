@@ -841,420 +841,202 @@ arrests_2019_q &lt;- arrests %&gt;% filter(fy == 2019) %&gt;%
                              TRUE ~ 4)) %&gt;%
   group_by(aor, quarter) %&gt;%
   summarize(total = n()) </code></pre>
-<pre class="r"><code>apprehension_landmark &lt;- arrests %&gt;% group_by(apprehension_landmark) %&gt;% summarize(total = n())
-write.csv(apprehension_landmark, 'apprehension_landmark.csv')
+<pre class="r"><code>#apprehension_landmark &lt;- arrests %&gt;% group_by(apprehension_landmark) %&gt;% summarize(total = n())
+#write.csv(apprehension_landmark, 'apprehension_landmark.csv')
 
 arrests &lt;- arrests %&gt;% mutate(apprehension_landmark2 = 
-                                case_when(grepl('NON_SPECIFIC|GENERAL AREA|OPERATIONS|FUGITIVE', apprehension_landmark) ~ 0,
-                                          apprehension_landmark %in% c('ATLANTA, GA', 'SAN ANGELO SUB-OFFICE', 'BALTIMORE CITY MD', 'NORTHERN VIRGINIA AREA', 'SEA CAP', 'DETROIT, MI', 'DO NOT USE', '')  ~ 0,
-                                          TRUE ~ 1))
+                                case_when(grepl('NON-SPECIFIC|ARREST AT|ATD|BUREAU OF PRISONS-|FEDCAP-', apprehension_landmark) ~ &quot;Non-specific&quot;,
+                                          apprehension_landmark %in% c(&quot;LICENSING UNIT/STATE POLICE&quot;, &quot;287g&quot;, &quot;at-large&quot;, &quot;California Healthcare Facility&quot;, &quot;CALIFORNIA HIGHWAY PATROL&quot;, &quot;CAP ACI&quot;, &quot;CIS REFERRAL&quot;, &quot;FEDERAL DETENTION CENTER (FDC)&quot;, &quot;FIELD ARREST&quot;, &quot;FTC CI (Federal Transfer Center)&quot;, &quot;FTM-JCART&quot;, &quot;FTM-VCAS&quot;, &quot;FUG - NON FUGITIVE&quot;, &quot;FUGITIVE OPERATIONS&quot;, &quot;FUGITIVE SOUTH TEAM ARRESTS&quot;, &quot;FUGOP&quot;, &quot;FUGOPS&quot;, &quot;STREET ARREST&quot;, &quot;STREET ARRESTS&quot;, &quot;U.S. Marshalls Service&quot;, &quot;U.S. Marshals&quot;, &quot;U.S. Marshals Service&quot;, &quot;U.S. MARSHALS SERVICE&quot;&lt; &quot;U.S. PROBATION OFFICE&quot;, &quot;UNITED STATES MARSHALL SERVICE&quot;, &quot;UNITED STATES PROBATION &amp; PAROLE&quot;, &quot;UNITED STATES PROBATION&quot;, &quot;US 281 TO FM 493 EXP 83 NORTH TO FM 490&quot;, &quot;US DISTRICT COURT&quot;, &quot;US MARSHALLS&quot;, &quot;US Marshals TF&quot;, &quot;USCIS ARREST&quot;, &quot;USCIS REFERRALS&quot;) ~ &quot;Non-specific&quot;,
+                                          apprehension_landmark == 'DO NOT USE'  ~ &quot;DO NOT USE&quot;,
+                                          apprehension_landmark == ''  ~ &quot;NA&quot;,
+                                          TRUE ~ &quot;Specific&quot;))
 #test &lt;- arrests %&gt;% select(apprehension_landmark, apprehension_landmark2)
-test2 &lt;- arrests %&gt;% filter(apprehension_landmark2 == 1) %&gt;%
-  group_by(apprehension_landmark) %&gt;% 
-  summarize(total = n())
 
 specificity &lt;- arrests %&gt;% 
-  group_by(fy, aor, apprehension_landmark2) %&gt;%
+  group_by(aor, apprehension_landmark2) %&gt;%
   summarize(total = n()) %&gt;% 
-  pivot_wider(names_from = fy, values_from = total)
+  pivot_wider(names_from = apprehension_landmark2, values_from = total)
   
-specificity %&gt;% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)')</code></pre>
+specificity %&gt;% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')</code></pre>
 <table>
-<caption>Apprehension landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)</caption>
+<caption>Apprehension landmark specificity by AOR FY2016-2019</caption>
 <thead>
 <tr class="header">
 <th align="left">aor</th>
-<th align="right">apprehension_landmark2</th>
-<th align="right">2016</th>
-<th align="right">2017</th>
-<th align="right">2018</th>
-<th align="right">2019</th>
+<th align="right">NA</th>
+<th align="right">Non-specific</th>
+<th align="right">Specific</th>
+<th align="right">DO NOT USE</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">ATL</td>
-<td align="right">0</td>
-<td align="right">2195</td>
-<td align="right">2900</td>
-<td align="right">3097</td>
-<td align="right">2790</td>
-</tr>
-<tr class="even">
-<td align="left">ATL</td>
-<td align="right">1</td>
-<td align="right">6671</td>
-<td align="right">10651</td>
-<td align="right">12092</td>
-<td align="right">9478</td>
-</tr>
-<tr class="odd">
-<td align="left">BAL</td>
-<td align="right">0</td>
-<td align="right">350</td>
-<td align="right">424</td>
-<td align="right">495</td>
-<td align="right">406</td>
+<td align="right">845</td>
+<td align="right">3931</td>
+<td align="right">45098</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">BAL</td>
-<td align="right">1</td>
-<td align="right">889</td>
-<td align="right">1242</td>
-<td align="right">1208</td>
-<td align="right">924</td>
+<td align="right">83</td>
+<td align="right">149</td>
+<td align="right">5706</td>
+<td align="right">NA</td>
 </tr>
 <tr class="odd">
 <td align="left">BOS</td>
-<td align="right">0</td>
-<td align="right">637</td>
-<td align="right">841</td>
-<td align="right">881</td>
-<td align="right">757</td>
-</tr>
-<tr class="even">
-<td align="left">BOS</td>
-<td align="right">1</td>
-<td align="right">1221</td>
-<td align="right">1993</td>
-<td align="right">2027</td>
-<td align="right">1509</td>
-</tr>
-<tr class="odd">
-<td align="left">BUF</td>
-<td align="right">0</td>
-<td align="right">126</td>
-<td align="right">286</td>
-<td align="right">259</td>
-<td align="right">22</td>
+<td align="right">77</td>
+<td align="right">1486</td>
+<td align="right">8303</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">BUF</td>
-<td align="right">1</td>
-<td align="right">1047</td>
-<td align="right">1208</td>
-<td align="right">1323</td>
-<td align="right">1184</td>
+<td align="right">18</td>
+<td align="right">380</td>
+<td align="right">4929</td>
+<td align="right">128</td>
 </tr>
 <tr class="odd">
 <td align="left">CHI</td>
-<td align="right">0</td>
-<td align="right">3678</td>
-<td align="right">4685</td>
-<td align="right">4542</td>
-<td align="right">3863</td>
+<td align="right">2103</td>
+<td align="right">10270</td>
+<td align="right">20296</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
-<td align="left">CHI</td>
-<td align="right">1</td>
-<td align="right">3377</td>
-<td align="right">3919</td>
+<td align="left">DAL</td>
+<td align="right">133</td>
 <td align="right">4699</td>
-<td align="right">3906</td>
-</tr>
-<tr class="odd">
-<td align="left">DAL</td>
-<td align="right">0</td>
-<td align="right">2105</td>
-<td align="right">5090</td>
-<td align="right">5942</td>
-<td align="right">3157</td>
-</tr>
-<tr class="even">
-<td align="left">DAL</td>
-<td align="right">1</td>
-<td align="right">7529</td>
-<td align="right">11430</td>
-<td align="right">11702</td>
-<td align="right">12414</td>
+<td align="right">54537</td>
+<td align="right">NA</td>
 </tr>
 <tr class="odd">
 <td align="left">DEN</td>
-<td align="right">0</td>
-<td align="right">88</td>
-<td align="right">181</td>
-<td align="right">150</td>
-<td align="right">98</td>
-</tr>
-<tr class="even">
-<td align="left">DEN</td>
-<td align="right">1</td>
-<td align="right">2196</td>
-<td align="right">2565</td>
-<td align="right">2605</td>
-<td align="right">2117</td>
-</tr>
-<tr class="odd">
-<td align="left">DET</td>
-<td align="right">0</td>
-<td align="right">987</td>
-<td align="right">1453</td>
-<td align="right">1560</td>
-<td align="right">1391</td>
-</tr>
-<tr class="even">
-<td align="left">DET</td>
-<td align="right">1</td>
-<td align="right">1254</td>
-<td align="right">1956</td>
-<td align="right">2044</td>
-<td align="right">1703</td>
-</tr>
-<tr class="odd">
-<td align="left">ELP</td>
-<td align="right">0</td>
-<td align="right">785</td>
-<td align="right">778</td>
-<td align="right">1279</td>
-<td align="right">1121</td>
-</tr>
-<tr class="even">
-<td align="left">ELP</td>
-<td align="right">1</td>
-<td align="right">826</td>
-<td align="right">1114</td>
-<td align="right">880</td>
-<td align="right">982</td>
-</tr>
-<tr class="odd">
-<td align="left">HOU</td>
-<td align="right">0</td>
-<td align="right">3013</td>
-<td align="right">3346</td>
-<td align="right">3034</td>
-<td align="right">2681</td>
-</tr>
-<tr class="even">
-<td align="left">HOU</td>
-<td align="right">1</td>
-<td align="right">9883</td>
-<td align="right">10219</td>
-<td align="right">11299</td>
-<td align="right">8080</td>
-</tr>
-<tr class="odd">
-<td align="left">LOS</td>
-<td align="right">0</td>
-<td align="right">4566</td>
-<td align="right">5302</td>
-<td align="right">5980</td>
-<td align="right">4974</td>
-</tr>
-<tr class="even">
-<td align="left">LOS</td>
-<td align="right">1</td>
-<td align="right">3085</td>
-<td align="right">3117</td>
-<td align="right">1874</td>
-<td align="right">1170</td>
-</tr>
-<tr class="odd">
-<td align="left">MIA</td>
-<td align="right">0</td>
-<td align="right">1331</td>
-<td align="right">2298</td>
-<td align="right">2436</td>
-<td align="right">2747</td>
-</tr>
-<tr class="even">
-<td align="left">MIA</td>
-<td align="right">1</td>
-<td align="right">2193</td>
-<td align="right">3894</td>
-<td align="right">6038</td>
-<td align="right">5948</td>
-</tr>
-<tr class="odd">
-<td align="left">NEW</td>
-<td align="right">0</td>
-<td align="right">79</td>
-<td align="right">310</td>
-<td align="right">196</td>
-<td align="right">178</td>
-</tr>
-<tr class="even">
-<td align="left">NEW</td>
-<td align="right">1</td>
-<td align="right">2168</td>
-<td align="right">2879</td>
-<td align="right">3213</td>
-<td align="right">2476</td>
-</tr>
-<tr class="odd">
-<td align="left">NOL</td>
-<td align="right">0</td>
-<td align="right">2392</td>
-<td align="right">3310</td>
-<td align="right">4222</td>
-<td align="right">3828</td>
-</tr>
-<tr class="even">
-<td align="left">NOL</td>
-<td align="right">1</td>
-<td align="right">2782</td>
-<td align="right">4658</td>
-<td align="right">6048</td>
-<td align="right">5247</td>
-</tr>
-<tr class="odd">
-<td align="left">NYC</td>
-<td align="right">0</td>
-<td align="right">957</td>
-<td align="right">944</td>
-<td align="right">1223</td>
-<td align="right">780</td>
-</tr>
-<tr class="even">
-<td align="left">NYC</td>
-<td align="right">1</td>
-<td align="right">890</td>
-<td align="right">1632</td>
-<td align="right">2253</td>
-<td align="right">1501</td>
-</tr>
-<tr class="odd">
-<td align="left">PHI</td>
-<td align="right">0</td>
-<td align="right">870</td>
-<td align="right">1878</td>
-<td align="right">2057</td>
-<td align="right">1460</td>
-</tr>
-<tr class="even">
-<td align="left">PHI</td>
-<td align="right">1</td>
-<td align="right">2802</td>
-<td align="right">3060</td>
-<td align="right">3086</td>
-<td align="right">2292</td>
-</tr>
-<tr class="odd">
-<td align="left">PHO</td>
-<td align="right">0</td>
-<td align="right">640</td>
-<td align="right">1192</td>
-<td align="right">1132</td>
-<td align="right">923</td>
-</tr>
-<tr class="even">
-<td align="left">PHO</td>
-<td align="right">1</td>
-<td align="right">4730</td>
-<td align="right">5265</td>
-<td align="right">6030</td>
-<td align="right">4497</td>
-</tr>
-<tr class="odd">
-<td align="left">SEA</td>
-<td align="right">0</td>
-<td align="right">468</td>
-<td align="right">425</td>
-<td align="right">533</td>
-<td align="right">345</td>
-</tr>
-<tr class="even">
-<td align="left">SEA</td>
-<td align="right">1</td>
-<td align="right">2230</td>
-<td align="right">2951</td>
-<td align="right">2534</td>
-<td align="right">1983</td>
-</tr>
-<tr class="odd">
-<td align="left">SFR</td>
-<td align="right">0</td>
-<td align="right">2642</td>
-<td align="right">2306</td>
-<td align="right">2502</td>
-<td align="right">1935</td>
-</tr>
-<tr class="even">
-<td align="left">SFR</td>
-<td align="right">1</td>
-<td align="right">4009</td>
-<td align="right">4925</td>
-<td align="right">3708</td>
-<td align="right">2789</td>
-</tr>
-<tr class="odd">
-<td align="left">SLC</td>
-<td align="right">0</td>
-<td align="right">1651</td>
-<td align="right">1919</td>
-<td align="right">1856</td>
-<td align="right">1636</td>
-</tr>
-<tr class="even">
-<td align="left">SLC</td>
-<td align="right">1</td>
-<td align="right">2987</td>
-<td align="right">3258</td>
-<td align="right">3898</td>
-<td align="right">3378</td>
-</tr>
-<tr class="odd">
-<td align="left">SNA</td>
-<td align="right">0</td>
-<td align="right">4941</td>
-<td align="right">5704</td>
-<td align="right">6551</td>
-<td align="right">5532</td>
-</tr>
-<tr class="even">
-<td align="left">SNA</td>
-<td align="right">1</td>
-<td align="right">3484</td>
-<td align="right">2806</td>
-<td align="right">4198</td>
-<td align="right">5436</td>
-</tr>
-<tr class="odd">
-<td align="left">SND</td>
-<td align="right">0</td>
-<td align="right">281</td>
-<td align="right">402</td>
-<td align="right">1240</td>
+<td align="right">72</td>
 <td align="right">614</td>
+<td align="right">9314</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">DET</td>
+<td align="right">235</td>
+<td align="right">3566</td>
+<td align="right">8231</td>
+<td align="right">316</td>
+</tr>
+<tr class="odd">
+<td align="left">ELP</td>
+<td align="right">1276</td>
+<td align="right">2343</td>
+<td align="right">4146</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">HOU</td>
+<td align="right">230</td>
+<td align="right">10190</td>
+<td align="right">39494</td>
+<td align="right">1641</td>
+</tr>
+<tr class="odd">
+<td align="left">LOS</td>
+<td align="right">719</td>
+<td align="right">17217</td>
+<td align="right">12132</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">MIA</td>
+<td align="right">388</td>
+<td align="right">7408</td>
+<td align="right">19088</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">NEW</td>
+<td align="right">43</td>
+<td align="right">715</td>
+<td align="right">10741</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">NOL</td>
+<td align="right">312</td>
+<td align="right">10758</td>
+<td align="right">21398</td>
+<td align="right">19</td>
+</tr>
+<tr class="odd">
+<td align="left">NYC</td>
+<td align="right">67</td>
+<td align="right">1422</td>
+<td align="right">8690</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">PHI</td>
+<td align="right">211</td>
+<td align="right">3995</td>
+<td align="right">13299</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">PHO</td>
+<td align="right">1167</td>
+<td align="right">17</td>
+<td align="right">23224</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">SEA</td>
+<td align="right">114</td>
+<td align="right">394</td>
+<td align="right">10961</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">SFR</td>
+<td align="right">239</td>
+<td align="right">8598</td>
+<td align="right">15979</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">SLC</td>
+<td align="right">146</td>
+<td align="right">4817</td>
+<td align="right">15620</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">SNA</td>
+<td align="right">4059</td>
+<td align="right">18422</td>
+<td align="right">16170</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td align="left">SND</td>
-<td align="right">1</td>
-<td align="right">3402</td>
-<td align="right">4149</td>
-<td align="right">4760</td>
-<td align="right">1493</td>
+<td align="right">1352</td>
+<td align="right">3532</td>
+<td align="right">11123</td>
+<td align="right">334</td>
 </tr>
 <tr class="odd">
 <td align="left">SPM</td>
-<td align="right">0</td>
-<td align="right">1284</td>
-<td align="right">1823</td>
-<td align="right">1787</td>
-<td align="right">1562</td>
-</tr>
-<tr class="even">
-<td align="left">SPM</td>
-<td align="right">1</td>
-<td align="right">1216</td>
-<td align="right">2352</td>
-<td align="right">2871</td>
-<td align="right">2443</td>
-</tr>
-<tr class="odd">
-<td align="left">WAS</td>
-<td align="right">0</td>
-<td align="right">1412</td>
-<td align="right">1950</td>
-<td align="right">1461</td>
-<td align="right">1501</td>
+<td align="right">52</td>
+<td align="right">4748</td>
+<td align="right">10538</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">WAS</td>
-<td align="right">1</td>
-<td align="right">1471</td>
-<td align="right">2213</td>
-<td align="right">2898</td>
-<td align="right">2233</td>
+<td align="right">93</td>
+<td align="right">4658</td>
+<td align="right">10388</td>
+<td align="right">NA</td>
 </tr>
 </tbody>
 </table>
@@ -1851,420 +1633,202 @@ encounters_2019_q &lt;- encounters %&gt;% filter(fy == 2019) %&gt;%
                              TRUE ~ 4)) %&gt;%
   group_by(aor, quarter) %&gt;%
   summarize(total = n()) </code></pre>
-<pre class="r"><code>encounter_landmark &lt;- encounters %&gt;% group_by(landmark) %&gt;% summarize(total = n())
-write.csv(encounter_landmark, 'encounter_landmark.csv')
+<pre class="r"><code>#encounter_landmark &lt;- encounters %&gt;% group_by(landmark) %&gt;% summarize(total = n())
+#write.csv(encounter_landmark, 'encounter_landmark.csv')
 
 encounters &lt;- encounters %&gt;% mutate(landmark2 = 
-                                case_when(grepl('NON_SPECIFIC|GENERAL AREA|OPERATIONS|FUGITIVE', landmark) ~ 0,
-                                          landmark %in% c('DO NOT USE', 'PHILADELPHIA - SECURE COMMUNITIES', 'LOGANVILLE, GA', '287g', '')  ~ 0,
-                                          TRUE ~ 1))
-test &lt;- encounters %&gt;% select(landmark, landmark2)
-test2 &lt;- encounters %&gt;% filter(landmark2 == 1) %&gt;%
-  group_by(landmark) %&gt;% 
-  summarize(total = n())
+                                case_when(grepl('NON-SPECIFIC|ARREST AT|ATD|BUREAU OF PRISONS-|FEDCAP-', landmark) ~ &quot;Non-specific&quot;,
+                                          landmark %in% c(&quot;LICENSING UNIT/STATE POLICE&quot;, &quot;287g&quot;, &quot;at-large&quot;, &quot;California Healthcare Facility&quot;, &quot;CALIFORNIA HIGHWAY PATROL&quot;, &quot;CAP ACI&quot;, &quot;CIS REFERRAL&quot;, &quot;FEDERAL DETENTION CENTER (FDC)&quot;, &quot;FIELD ARREST&quot;, &quot;FTC CI (Federal Transfer Center)&quot;, &quot;FTM-JCART&quot;, &quot;FTM-VCAS&quot;, &quot;FUG - NON FUGITIVE&quot;, &quot;FUGITIVE OPERATIONS&quot;, &quot;FUGITIVE SOUTH TEAM ARRESTS&quot;, &quot;FUGOP&quot;, &quot;FUGOPS&quot;, &quot;STREET ARREST&quot;, &quot;STREET ARRESTS&quot;, &quot;U.S. Marshalls Service&quot;, &quot;U.S. Marshals&quot;, &quot;U.S. Marshals Service&quot;, &quot;U.S. MARSHALS SERVICE&quot;&lt; &quot;U.S. PROBATION OFFICE&quot;, &quot;UNITED STATES MARSHALL SERVICE&quot;, &quot;UNITED STATES PROBATION &amp; PAROLE&quot;, &quot;UNITED STATES PROBATION&quot;, &quot;US 281 TO FM 493 EXP 83 NORTH TO FM 490&quot;, &quot;US DISTRICT COURT&quot;, &quot;US MARSHALLS&quot;, &quot;US Marshals TF&quot;, &quot;USCIS ARREST&quot;, &quot;USCIS REFERRALS&quot;) ~ &quot;Non-specific&quot;,
+                                          landmark == 'DO NOT USE'  ~ &quot;DO NOT USE&quot;,
+                                          landmark == ''  ~ &quot;NA&quot;,
+                                          TRUE ~ &quot;Specific&quot;))
+#test &lt;- encounters %&gt;% select(landmark, landmark2)
 
 specificity2 &lt;- encounters %&gt;% 
-  group_by(fy, aor, landmark2) %&gt;%
+  group_by(aor, landmark2) %&gt;%
   summarize(total = n()) %&gt;% 
-  pivot_wider(names_from = fy, values_from = total)
+  pivot_wider(names_from = landmark2, values_from = total)
   
-specificity2 %&gt;% kable(caption = 'Encounter landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)')</code></pre>
+specificity2 %&gt;% kable(caption = 'Encounter landmark specificity by AOR FY2016-2019')</code></pre>
 <table>
-<caption>Encounter landmark specificity by AOR FY2016-2019 (1: Specific, 0: Non-specific)</caption>
+<caption>Encounter landmark specificity by AOR FY2016-2019</caption>
 <thead>
 <tr class="header">
 <th align="left">aor</th>
-<th align="right">landmark2</th>
-<th align="right">2016</th>
-<th align="right">2017</th>
-<th align="right">2018</th>
-<th align="right">2019</th>
+<th align="right">NA</th>
+<th align="right">Non-specific</th>
+<th align="right">Specific</th>
+<th align="right">DO NOT USE</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">ATL</td>
-<td align="right">0</td>
-<td align="right">22125</td>
-<td align="right">14456</td>
-<td align="right">15670</td>
-<td align="right">15000</td>
-</tr>
-<tr class="even">
-<td align="left">ATL</td>
-<td align="right">1</td>
-<td align="right">11102</td>
-<td align="right">13807</td>
-<td align="right">13206</td>
-<td align="right">10275</td>
-</tr>
-<tr class="odd">
-<td align="left">BAL</td>
-<td align="right">0</td>
-<td align="right">5090</td>
-<td align="right">3234</td>
-<td align="right">2253</td>
-<td align="right">2286</td>
+<td align="right">23777</td>
+<td align="right">40401</td>
+<td align="right">51463</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">BAL</td>
-<td align="right">1</td>
-<td align="right">1337</td>
-<td align="right">1567</td>
-<td align="right">1685</td>
-<td align="right">1579</td>
+<td align="right">10837</td>
+<td align="right">1591</td>
+<td align="right">6603</td>
+<td align="right">NA</td>
 </tr>
 <tr class="odd">
 <td align="left">BOS</td>
-<td align="right">0</td>
-<td align="right">3959</td>
-<td align="right">5201</td>
-<td align="right">6233</td>
-<td align="right">5171</td>
-</tr>
-<tr class="even">
-<td align="left">BOS</td>
-<td align="right">1</td>
-<td align="right">4910</td>
-<td align="right">4290</td>
-<td align="right">4106</td>
-<td align="right">3311</td>
-</tr>
-<tr class="odd">
-<td align="left">BUF</td>
-<td align="right">0</td>
-<td align="right">4908</td>
-<td align="right">3044</td>
-<td align="right">2097</td>
-<td align="right">2115</td>
+<td align="right">14369</td>
+<td align="right">4990</td>
+<td align="right">17822</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">BUF</td>
-<td align="right">1</td>
-<td align="right">1194</td>
-<td align="right">1294</td>
-<td align="right">1450</td>
-<td align="right">1012</td>
+<td align="right">11051</td>
+<td align="right">908</td>
+<td align="right">5117</td>
+<td align="right">38</td>
 </tr>
 <tr class="odd">
 <td align="left">CHI</td>
-<td align="right">0</td>
-<td align="right">5339</td>
-<td align="right">7632</td>
-<td align="right">7680</td>
-<td align="right">6688</td>
-</tr>
-<tr class="even">
-<td align="left">CHI</td>
-<td align="right">1</td>
-<td align="right">4107</td>
-<td align="right">5182</td>
-<td align="right">5571</td>
-<td align="right">4459</td>
-</tr>
-<tr class="odd">
-<td align="left">DAL</td>
-<td align="right">0</td>
-<td align="right">16099</td>
-<td align="right">19792</td>
-<td align="right">15472</td>
-<td align="right">11476</td>
+<td align="right">7538</td>
+<td align="right">15574</td>
+<td align="right">23546</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">DAL</td>
-<td align="right">1</td>
-<td align="right">12805</td>
-<td align="right">13516</td>
-<td align="right">18286</td>
-<td align="right">18453</td>
+<td align="right">43930</td>
+<td align="right">11569</td>
+<td align="right">70400</td>
+<td align="right">NA</td>
 </tr>
 <tr class="odd">
 <td align="left">DEN</td>
-<td align="right">0</td>
-<td align="right">3994</td>
-<td align="right">4280</td>
-<td align="right">3369</td>
-<td align="right">3060</td>
-</tr>
-<tr class="even">
-<td align="left">DEN</td>
-<td align="right">1</td>
-<td align="right">6295</td>
-<td align="right">5379</td>
-<td align="right">5425</td>
-<td align="right">4699</td>
-</tr>
-<tr class="odd">
-<td align="left">DET</td>
-<td align="right">0</td>
-<td align="right">5900</td>
-<td align="right">7014</td>
-<td align="right">6499</td>
-<td align="right">4333</td>
+<td align="right">14049</td>
+<td align="right">860</td>
+<td align="right">21592</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">DET</td>
-<td align="right">1</td>
-<td align="right">2366</td>
-<td align="right">2755</td>
-<td align="right">2540</td>
-<td align="right">1493</td>
+<td align="right">17349</td>
+<td align="right">5706</td>
+<td align="right">9287</td>
+<td align="right">558</td>
 </tr>
 <tr class="odd">
 <td align="left">ELP</td>
-<td align="right">0</td>
-<td align="right">2039</td>
-<td align="right">1934</td>
-<td align="right">2190</td>
-<td align="right">1892</td>
-</tr>
-<tr class="even">
-<td align="left">ELP</td>
-<td align="right">1</td>
-<td align="right">1080</td>
-<td align="right">1271</td>
-<td align="right">1089</td>
-<td align="right">1110</td>
-</tr>
-<tr class="odd">
-<td align="left">HOU</td>
-<td align="right">0</td>
-<td align="right">5901</td>
-<td align="right">6375</td>
-<td align="right">6700</td>
-<td align="right">5182</td>
+<td align="right">3645</td>
+<td align="right">4088</td>
+<td align="right">4872</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">HOU</td>
-<td align="right">1</td>
-<td align="right">11211</td>
-<td align="right">12029</td>
-<td align="right">12595</td>
-<td align="right">10129</td>
+<td align="right">8070</td>
+<td align="right">14942</td>
+<td align="right">45969</td>
+<td align="right">1141</td>
 </tr>
 <tr class="odd">
 <td align="left">LOS</td>
-<td align="right">0</td>
-<td align="right">10302</td>
-<td align="right">14825</td>
-<td align="right">16887</td>
-<td align="right">14983</td>
-</tr>
-<tr class="even">
-<td align="left">LOS</td>
-<td align="right">1</td>
-<td align="right">16744</td>
-<td align="right">23431</td>
-<td align="right">38084</td>
-<td align="right">36151</td>
-</tr>
-<tr class="odd">
-<td align="left">MIA</td>
-<td align="right">0</td>
-<td align="right">23379</td>
-<td align="right">26273</td>
-<td align="right">37188</td>
-<td align="right">36594</td>
+<td align="right">22480</td>
+<td align="right">31691</td>
+<td align="right">117236</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">MIA</td>
+<td align="right">100915</td>
+<td align="right">21514</td>
+<td align="right">27517</td>
 <td align="right">1</td>
-<td align="right">3735</td>
-<td align="right">5354</td>
-<td align="right">8688</td>
-<td align="right">8736</td>
 </tr>
 <tr class="odd">
 <td align="left">NEW</td>
-<td align="right">0</td>
-<td align="right">580</td>
-<td align="right">1411</td>
-<td align="right">1296</td>
-<td align="right">783</td>
-</tr>
-<tr class="even">
-<td align="left">NEW</td>
-<td align="right">1</td>
-<td align="right">11699</td>
-<td align="right">13694</td>
-<td align="right">9679</td>
-<td align="right">8945</td>
-</tr>
-<tr class="odd">
-<td align="left">NOL</td>
-<td align="right">0</td>
-<td align="right">4291</td>
-<td align="right">6040</td>
-<td align="right">8134</td>
-<td align="right">6499</td>
+<td align="right">2308</td>
+<td align="right">1793</td>
+<td align="right">43986</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">NOL</td>
-<td align="right">1</td>
-<td align="right">4437</td>
-<td align="right">7342</td>
-<td align="right">8965</td>
-<td align="right">7089</td>
+<td align="right">10231</td>
+<td align="right">12207</td>
+<td align="right">30336</td>
+<td align="right">23</td>
 </tr>
 <tr class="odd">
 <td align="left">NYC</td>
-<td align="right">0</td>
-<td align="right">18277</td>
-<td align="right">43314</td>
-<td align="right">34354</td>
-<td align="right">27239</td>
-</tr>
-<tr class="even">
-<td align="left">NYC</td>
-<td align="right">1</td>
-<td align="right">4017</td>
-<td align="right">6568</td>
-<td align="right">7674</td>
-<td align="right">5762</td>
-</tr>
-<tr class="odd">
-<td align="left">PHI</td>
-<td align="right">0</td>
-<td align="right">5740</td>
-<td align="right">6502</td>
-<td align="right">5346</td>
-<td align="right">4003</td>
+<td align="right">118551</td>
+<td align="right">1533</td>
+<td align="right">27044</td>
+<td align="right">77</td>
 </tr>
 <tr class="even">
 <td align="left">PHI</td>
-<td align="right">1</td>
-<td align="right">4252</td>
-<td align="right">4890</td>
-<td align="right">4292</td>
-<td align="right">2855</td>
+<td align="right">8060</td>
+<td align="right">8359</td>
+<td align="right">21461</td>
+<td align="right">NA</td>
 </tr>
 <tr class="odd">
 <td align="left">PHO</td>
-<td align="right">0</td>
-<td align="right">11350</td>
-<td align="right">11382</td>
-<td align="right">11461</td>
-<td align="right">9816</td>
-</tr>
-<tr class="even">
-<td align="left">PHO</td>
-<td align="right">1</td>
-<td align="right">6869</td>
-<td align="right">8313</td>
-<td align="right">8647</td>
-<td align="right">6986</td>
-</tr>
-<tr class="odd">
-<td align="left">SEA</td>
-<td align="right">0</td>
-<td align="right">1981</td>
-<td align="right">3121</td>
-<td align="right">5337</td>
-<td align="right">6675</td>
+<td align="right">36500</td>
+<td align="right">5282</td>
+<td align="right">33042</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">SEA</td>
-<td align="right">1</td>
-<td align="right">10005</td>
-<td align="right">10145</td>
-<td align="right">9443</td>
-<td align="right">5907</td>
+<td align="right">16472</td>
+<td align="right">712</td>
+<td align="right">35430</td>
+<td align="right">NA</td>
 </tr>
 <tr class="odd">
 <td align="left">SFR</td>
-<td align="right">0</td>
-<td align="right">12084</td>
-<td align="right">15013</td>
-<td align="right">8139</td>
-<td align="right">5815</td>
-</tr>
-<tr class="even">
-<td align="left">SFR</td>
-<td align="right">1</td>
-<td align="right">9439</td>
-<td align="right">8279</td>
-<td align="right">10921</td>
-<td align="right">7121</td>
-</tr>
-<tr class="odd">
-<td align="left">SLC</td>
-<td align="right">0</td>
-<td align="right">7565</td>
-<td align="right">8556</td>
-<td align="right">9769</td>
-<td align="right">6662</td>
+<td align="right">25742</td>
+<td align="right">14799</td>
+<td align="right">36270</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">SLC</td>
-<td align="right">1</td>
-<td align="right">4072</td>
-<td align="right">3691</td>
-<td align="right">3357</td>
-<td align="right">3227</td>
+<td align="right">16859</td>
+<td align="right">13392</td>
+<td align="right">16648</td>
+<td align="right">NA</td>
 </tr>
 <tr class="odd">
 <td align="left">SNA</td>
-<td align="right">0</td>
-<td align="right">9744</td>
-<td align="right">13268</td>
-<td align="right">12749</td>
-<td align="right">10107</td>
-</tr>
-<tr class="even">
-<td align="left">SNA</td>
-<td align="right">1</td>
-<td align="right">5808</td>
-<td align="right">6481</td>
-<td align="right">10395</td>
-<td align="right">9725</td>
-</tr>
-<tr class="odd">
-<td align="left">SND</td>
-<td align="right">0</td>
-<td align="right">1920</td>
-<td align="right">2302</td>
-<td align="right">4879</td>
-<td align="right">3190</td>
+<td align="right">21513</td>
+<td align="right">24095</td>
+<td align="right">32669</td>
+<td align="right">NA</td>
 </tr>
 <tr class="even">
 <td align="left">SND</td>
-<td align="right">1</td>
-<td align="right">7317</td>
-<td align="right">6864</td>
-<td align="right">5082</td>
-<td align="right">2715</td>
+<td align="right">6524</td>
+<td align="right">3542</td>
+<td align="right">20061</td>
+<td align="right">4142</td>
 </tr>
 <tr class="odd">
 <td align="left">SPM</td>
-<td align="right">0</td>
-<td align="right">8815</td>
-<td align="right">10168</td>
-<td align="right">6291</td>
-<td align="right">5812</td>
-</tr>
-<tr class="even">
-<td align="left">SPM</td>
+<td align="right">21295</td>
+<td align="right">8014</td>
+<td align="right">38017</td>
 <td align="right">1</td>
-<td align="right">6004</td>
-<td align="right">7530</td>
-<td align="right">11789</td>
-<td align="right">10918</td>
-</tr>
-<tr class="odd">
-<td align="left">WAS</td>
-<td align="right">0</td>
-<td align="right">5824</td>
-<td align="right">5271</td>
-<td align="right">7682</td>
-<td align="right">7351</td>
 </tr>
 <tr class="even">
 <td align="left">WAS</td>
-<td align="right">1</td>
-<td align="right">7180</td>
-<td align="right">5006</td>
-<td align="right">4056</td>
-<td align="right">2441</td>
+<td align="right">10478</td>
+<td align="right">15297</td>
+<td align="right">19036</td>
+<td align="right">NA</td>
 </tr>
 </tbody>
 </table>
