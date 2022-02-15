@@ -168,6 +168,14 @@ specificity <- arrests %>%
 specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')
 ```
 
+```{r}
+arrests %>% 
+  group_by(apprehension_method) %>%
+  summarize(total = n()) %>%
+  arrange(desc(total)) %>%
+  kable(caption = 'Arrests - Apprehension methods')
+```
+
 
 ```{r citizenship}
 # by FY
@@ -397,6 +405,7 @@ removals <- removals %>% filter(aor != "HQ") %>%
 
 ```{r}
 #sum(is.na(removals$apprehension_date2))
+removals %>% select(1:9) %>% head() %>% kable(caption = "`removals` dataframe")
 
 removals <- removals %>% drop_na(apprehension_date2, departed_date2, removal_date2) %>%
   mutate(difference = removal_date2 - apprehension_date2,
@@ -426,6 +435,17 @@ removals %>%
 There are 14,235 observations with empty `apprehension_date`. These were removed from the calculations for the difference between removal date and apprehension date. 
 
 There were no observations with empty `departed_date` or `removal_date`. There are differences between these 2 columns--17,890 rows show a non-0 difference in the number of days between departure and removal.
+
+`apprehension_date` seems unreliable with the years going back to 0999 or 1972 with extremely long stays.
+
+```{r}
+min(removals$removal_date2)
+max(removals$removal_date2)
+min(removals$departed_date2)
+max(removals$departed_date2)
+```
+
+`removal_date` seems like the column that we should use as it falls into the FY 2016-2019 range as we see with the other datasets.
 
 ```{r difference2}
 removals %>% group_by(aor, fy_removal) %>%
