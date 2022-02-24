@@ -8,7 +8,7 @@ output:
 ---
 
 ```{r setup, include=F, warning=F, message=F}
-#rm(list = ls())
+rm(list = ls())
 knitr::opts_chunk$set(warning=F, message=F, cache = T)
 options(scipen = 999)
 library(dplyr)
@@ -166,6 +166,17 @@ specificity <- arrests %>%
   pivot_wider(names_from = apprehension_landmark2, values_from = total)
   
 specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')
+
+specificity2 <- specificity %>% 
+  replace(is.na(.), 0) %>%
+  rowwise() %>%
+  mutate("Non-specific total" = sum(c_across("NA":"DO NOT USE"))) %>%
+  select("Non-specific total", "Specific") %>%
+  rowwise() %>%
+  mutate("Total" =  sum(c_across("Non-specific total": "Specific"))) %>%
+  rowwise() %>% mutate("%specific" = round((Specific/Total), 2))
+
+specificity2 %>% kable(caption = 'Apprehension landmark specificity % by AOR FY2016-2019')
 ```
 
 ```{r}
@@ -348,12 +359,23 @@ encounters <- encounters %>% mutate(landmark2 =
                                           TRUE ~ "Specific"))
 #test <- encounters %>% select(landmark, landmark2)
 
-specificity2 <- encounters %>% 
+specificity_encounters <- encounters %>% 
   group_by(aor, landmark2) %>%
   summarize(total = n()) %>% 
   pivot_wider(names_from = landmark2, values_from = total)
   
-specificity2 %>% kable(caption = 'Encounter landmark specificity by AOR FY2016-2019')
+specificity_encounters %>% kable(caption = 'Encounter landmark specificity by AOR FY2016-2019')
+
+specificity_encounters2 <- specificity_encounters %>% 
+  replace(is.na(.), 0) %>%
+  rowwise() %>%
+  mutate("Non-specific total" = sum(c_across("NA":"DO NOT USE"))) %>%
+  select("Non-specific total", "Specific") %>%
+  rowwise() %>%
+  mutate("Total" =  sum(c_across("Non-specific total": "Specific"))) %>%
+  rowwise() %>% mutate("%specific" = round((Specific/Total), 2))
+
+specificity_encounters2 %>% kable(caption = 'Encounter landmark specificity % by AOR FY2016-2019')
 ```
 
 

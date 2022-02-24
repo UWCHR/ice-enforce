@@ -1040,6 +1040,198 @@ specificity %&gt;% kable(caption = 'Apprehension landmark specificity by AOR FY2
 </tr>
 </tbody>
 </table>
+<pre class="r"><code>specificity2 &lt;- specificity %&gt;% 
+  replace(is.na(.), 0) %&gt;%
+  rowwise() %&gt;%
+  mutate(&quot;Non-specific total&quot; = sum(c_across(&quot;NA&quot;:&quot;DO NOT USE&quot;))) %&gt;%
+  select(&quot;Non-specific total&quot;, &quot;Specific&quot;) %&gt;%
+  rowwise() %&gt;%
+  mutate(&quot;Total&quot; =  sum(c_across(&quot;Non-specific total&quot;: &quot;Specific&quot;))) %&gt;%
+  rowwise() %&gt;% mutate(&quot;%specific&quot; = round((Specific/Total), 2))
+
+specificity2 %&gt;% kable(caption = 'Apprehension landmark specificity % by AOR FY2016-2019')</code></pre>
+<table>
+<caption>Apprehension landmark specificity % by AOR FY2016-2019</caption>
+<thead>
+<tr class="header">
+<th align="left">aor</th>
+<th align="right">Non-specific total</th>
+<th align="right">Specific</th>
+<th align="right">Total</th>
+<th align="right">%specific</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">ATL</td>
+<td align="right">49874</td>
+<td align="right">45098</td>
+<td align="right">94972</td>
+<td align="right">0.47</td>
+</tr>
+<tr class="even">
+<td align="left">BAL</td>
+<td align="right">5938</td>
+<td align="right">5706</td>
+<td align="right">11644</td>
+<td align="right">0.49</td>
+</tr>
+<tr class="odd">
+<td align="left">BOS</td>
+<td align="right">9866</td>
+<td align="right">8303</td>
+<td align="right">18169</td>
+<td align="right">0.46</td>
+</tr>
+<tr class="even">
+<td align="left">BUF</td>
+<td align="right">5455</td>
+<td align="right">4929</td>
+<td align="right">10384</td>
+<td align="right">0.47</td>
+</tr>
+<tr class="odd">
+<td align="left">CHI</td>
+<td align="right">32669</td>
+<td align="right">20296</td>
+<td align="right">52965</td>
+<td align="right">0.38</td>
+</tr>
+<tr class="even">
+<td align="left">DAL</td>
+<td align="right">59369</td>
+<td align="right">54537</td>
+<td align="right">113906</td>
+<td align="right">0.48</td>
+</tr>
+<tr class="odd">
+<td align="left">DEN</td>
+<td align="right">10000</td>
+<td align="right">9314</td>
+<td align="right">19314</td>
+<td align="right">0.48</td>
+</tr>
+<tr class="even">
+<td align="left">DET</td>
+<td align="right">12348</td>
+<td align="right">8231</td>
+<td align="right">20579</td>
+<td align="right">0.40</td>
+</tr>
+<tr class="odd">
+<td align="left">ELP</td>
+<td align="right">7765</td>
+<td align="right">4146</td>
+<td align="right">11911</td>
+<td align="right">0.35</td>
+</tr>
+<tr class="even">
+<td align="left">HOU</td>
+<td align="right">51555</td>
+<td align="right">39494</td>
+<td align="right">91049</td>
+<td align="right">0.43</td>
+</tr>
+<tr class="odd">
+<td align="left">LOS</td>
+<td align="right">30068</td>
+<td align="right">12132</td>
+<td align="right">42200</td>
+<td align="right">0.29</td>
+</tr>
+<tr class="even">
+<td align="left">MIA</td>
+<td align="right">26885</td>
+<td align="right">19088</td>
+<td align="right">45973</td>
+<td align="right">0.42</td>
+</tr>
+<tr class="odd">
+<td align="left">NEW</td>
+<td align="right">11499</td>
+<td align="right">10741</td>
+<td align="right">22240</td>
+<td align="right">0.48</td>
+</tr>
+<tr class="even">
+<td align="left">NOL</td>
+<td align="right">32487</td>
+<td align="right">21398</td>
+<td align="right">53885</td>
+<td align="right">0.40</td>
+</tr>
+<tr class="odd">
+<td align="left">NYC</td>
+<td align="right">10180</td>
+<td align="right">8690</td>
+<td align="right">18870</td>
+<td align="right">0.46</td>
+</tr>
+<tr class="even">
+<td align="left">PHI</td>
+<td align="right">17505</td>
+<td align="right">13299</td>
+<td align="right">30804</td>
+<td align="right">0.43</td>
+</tr>
+<tr class="odd">
+<td align="left">PHO</td>
+<td align="right">24409</td>
+<td align="right">23224</td>
+<td align="right">47633</td>
+<td align="right">0.49</td>
+</tr>
+<tr class="even">
+<td align="left">SEA</td>
+<td align="right">11469</td>
+<td align="right">10961</td>
+<td align="right">22430</td>
+<td align="right">0.49</td>
+</tr>
+<tr class="odd">
+<td align="left">SFR</td>
+<td align="right">24816</td>
+<td align="right">15979</td>
+<td align="right">40795</td>
+<td align="right">0.39</td>
+</tr>
+<tr class="even">
+<td align="left">SLC</td>
+<td align="right">20583</td>
+<td align="right">15620</td>
+<td align="right">36203</td>
+<td align="right">0.43</td>
+</tr>
+<tr class="odd">
+<td align="left">SNA</td>
+<td align="right">38652</td>
+<td align="right">16170</td>
+<td align="right">54822</td>
+<td align="right">0.29</td>
+</tr>
+<tr class="even">
+<td align="left">SND</td>
+<td align="right">16341</td>
+<td align="right">11123</td>
+<td align="right">27464</td>
+<td align="right">0.41</td>
+</tr>
+<tr class="odd">
+<td align="left">SPM</td>
+<td align="right">15338</td>
+<td align="right">10538</td>
+<td align="right">25876</td>
+<td align="right">0.41</td>
+</tr>
+<tr class="even">
+<td align="left">WAS</td>
+<td align="right">15139</td>
+<td align="right">10388</td>
+<td align="right">25527</td>
+<td align="right">0.41</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code>arrests %&gt;% 
   group_by(apprehension_method) %&gt;%
   summarize(total = n()) %&gt;%
@@ -1764,12 +1956,12 @@ encounters &lt;- encounters %&gt;% mutate(landmark2 =
                                           TRUE ~ &quot;Specific&quot;))
 #test &lt;- encounters %&gt;% select(landmark, landmark2)
 
-specificity2 &lt;- encounters %&gt;% 
+specificity_encounters &lt;- encounters %&gt;% 
   group_by(aor, landmark2) %&gt;%
   summarize(total = n()) %&gt;% 
   pivot_wider(names_from = landmark2, values_from = total)
   
-specificity2 %&gt;% kable(caption = 'Encounter landmark specificity by AOR FY2016-2019')</code></pre>
+specificity_encounters %&gt;% kable(caption = 'Encounter landmark specificity by AOR FY2016-2019')</code></pre>
 <table>
 <caption>Encounter landmark specificity by AOR FY2016-2019</caption>
 <thead>
@@ -1949,6 +2141,198 @@ specificity2 %&gt;% kable(caption = 'Encounter landmark specificity by AOR FY201
 <td align="right">15297</td>
 <td align="right">19036</td>
 <td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>specificity_encounters2 &lt;- specificity_encounters %&gt;% 
+  replace(is.na(.), 0) %&gt;%
+  rowwise() %&gt;%
+  mutate(&quot;Non-specific total&quot; = sum(c_across(&quot;NA&quot;:&quot;DO NOT USE&quot;))) %&gt;%
+  select(&quot;Non-specific total&quot;, &quot;Specific&quot;) %&gt;%
+  rowwise() %&gt;%
+  mutate(&quot;Total&quot; =  sum(c_across(&quot;Non-specific total&quot;: &quot;Specific&quot;))) %&gt;%
+  rowwise() %&gt;% mutate(&quot;%specific&quot; = round((Specific/Total), 2))
+
+specificity_encounters2 %&gt;% kable(caption = 'Encounter landmark specificity % by AOR FY2016-2019')</code></pre>
+<table>
+<caption>Encounter landmark specificity % by AOR FY2016-2019</caption>
+<thead>
+<tr class="header">
+<th align="left">aor</th>
+<th align="right">Non-specific total</th>
+<th align="right">Specific</th>
+<th align="right">Total</th>
+<th align="right">%specific</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">ATL</td>
+<td align="right">115641</td>
+<td align="right">51463</td>
+<td align="right">167104</td>
+<td align="right">0.31</td>
+</tr>
+<tr class="even">
+<td align="left">BAL</td>
+<td align="right">19031</td>
+<td align="right">6603</td>
+<td align="right">25634</td>
+<td align="right">0.26</td>
+</tr>
+<tr class="odd">
+<td align="left">BOS</td>
+<td align="right">37181</td>
+<td align="right">17822</td>
+<td align="right">55003</td>
+<td align="right">0.32</td>
+</tr>
+<tr class="even">
+<td align="left">BUF</td>
+<td align="right">17114</td>
+<td align="right">5117</td>
+<td align="right">22231</td>
+<td align="right">0.23</td>
+</tr>
+<tr class="odd">
+<td align="left">CHI</td>
+<td align="right">46658</td>
+<td align="right">23546</td>
+<td align="right">70204</td>
+<td align="right">0.34</td>
+</tr>
+<tr class="even">
+<td align="left">DAL</td>
+<td align="right">125899</td>
+<td align="right">70400</td>
+<td align="right">196299</td>
+<td align="right">0.36</td>
+</tr>
+<tr class="odd">
+<td align="left">DEN</td>
+<td align="right">36501</td>
+<td align="right">21592</td>
+<td align="right">58093</td>
+<td align="right">0.37</td>
+</tr>
+<tr class="even">
+<td align="left">DET</td>
+<td align="right">32900</td>
+<td align="right">9287</td>
+<td align="right">42187</td>
+<td align="right">0.22</td>
+</tr>
+<tr class="odd">
+<td align="left">ELP</td>
+<td align="right">12605</td>
+<td align="right">4872</td>
+<td align="right">17477</td>
+<td align="right">0.28</td>
+</tr>
+<tr class="even">
+<td align="left">HOU</td>
+<td align="right">70122</td>
+<td align="right">45969</td>
+<td align="right">116091</td>
+<td align="right">0.40</td>
+</tr>
+<tr class="odd">
+<td align="left">LOS</td>
+<td align="right">171407</td>
+<td align="right">117236</td>
+<td align="right">288643</td>
+<td align="right">0.41</td>
+</tr>
+<tr class="even">
+<td align="left">MIA</td>
+<td align="right">149947</td>
+<td align="right">27517</td>
+<td align="right">177464</td>
+<td align="right">0.16</td>
+</tr>
+<tr class="odd">
+<td align="left">NEW</td>
+<td align="right">48087</td>
+<td align="right">43986</td>
+<td align="right">92073</td>
+<td align="right">0.48</td>
+</tr>
+<tr class="even">
+<td align="left">NOL</td>
+<td align="right">52797</td>
+<td align="right">30336</td>
+<td align="right">83133</td>
+<td align="right">0.36</td>
+</tr>
+<tr class="odd">
+<td align="left">NYC</td>
+<td align="right">147205</td>
+<td align="right">27044</td>
+<td align="right">174249</td>
+<td align="right">0.16</td>
+</tr>
+<tr class="even">
+<td align="left">PHI</td>
+<td align="right">37880</td>
+<td align="right">21461</td>
+<td align="right">59341</td>
+<td align="right">0.36</td>
+</tr>
+<tr class="odd">
+<td align="left">PHO</td>
+<td align="right">74824</td>
+<td align="right">33042</td>
+<td align="right">107866</td>
+<td align="right">0.31</td>
+</tr>
+<tr class="even">
+<td align="left">SEA</td>
+<td align="right">52614</td>
+<td align="right">35430</td>
+<td align="right">88044</td>
+<td align="right">0.40</td>
+</tr>
+<tr class="odd">
+<td align="left">SFR</td>
+<td align="right">76811</td>
+<td align="right">36270</td>
+<td align="right">113081</td>
+<td align="right">0.32</td>
+</tr>
+<tr class="even">
+<td align="left">SLC</td>
+<td align="right">46899</td>
+<td align="right">16648</td>
+<td align="right">63547</td>
+<td align="right">0.26</td>
+</tr>
+<tr class="odd">
+<td align="left">SNA</td>
+<td align="right">78277</td>
+<td align="right">32669</td>
+<td align="right">110946</td>
+<td align="right">0.29</td>
+</tr>
+<tr class="even">
+<td align="left">SND</td>
+<td align="right">34269</td>
+<td align="right">20061</td>
+<td align="right">54330</td>
+<td align="right">0.37</td>
+</tr>
+<tr class="odd">
+<td align="left">SPM</td>
+<td align="right">67327</td>
+<td align="right">38017</td>
+<td align="right">105344</td>
+<td align="right">0.36</td>
+</tr>
+<tr class="even">
+<td align="left">WAS</td>
+<td align="right">44811</td>
+<td align="right">19036</td>
+<td align="right">63847</td>
+<td align="right">0.30</td>
 </tr>
 </tbody>
 </table>
