@@ -100,6 +100,10 @@ arrests %>%
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45))
 
+#mutate(quarter = quarter(date, with_year = TRUE, fiscal_start = 10), # Here we extract FY on the fly and lose date functionality
+         #fy = stringr::str_sub(quarter, 1, 4)) %>% 
+  #group_by(fy)
+
 # Monthly data
 arrests_2016 <- arrests %>% filter(fy == 2016) %>%
   group_by(aor, apprehension_month) %>%
