@@ -29,10 +29,7 @@ arrests <- arrests %>% filter(aor != "HQ") %>%
                               apprehension_year = format(apprehension_date2, "%Y"))
 ```
 
-```{r}
-arrests %>% select(1:8) %>% head() %>% kable(caption = "`arrests` dataframe")
-```
-
+## Trends in arrest numbers
 
 ```{r fiscalyear}
 arrests <- arrests %>% mutate(fy = case_when(apprehension_date2 < "2016-10-01" ~ 2016,
@@ -60,6 +57,7 @@ arrests %>%
   mutate(Month = factor(month,
                         levels = c(10:12, 1:9),
                         labels = c(month.abb[10:12], month.abb[1:9]))) %>%
+  dplyr::filter(!(Year == 2019 & Month == "Sep")) %>%
   ggplot(aes(x = Month, y = total, color = Year, group = Year)) +
   geom_line() +
   geom_point() +
@@ -84,9 +82,6 @@ arrests %>%
   theme(legend.position = "none",
         axis.text.x = element_text(angle = 45))
 
-#mutate(quarter = quarter(date, with_year = TRUE, fiscal_start = 10), # Here we extract FY on the fly and lose date functionality
-         #fy = stringr::str_sub(quarter, 1, 4)) %>% 
-  #group_by(fy)
 
 yearly_change <- arrests %>% 
   group_by(aor, fy) %>%
@@ -114,128 +109,7 @@ yearly_change %>% select(aor, 6:8) %>%
 
 Consistent trend across all AORs: upward trend in arrests number from 2016-2018 and then a drop in 2019.
 
-``` {r}
-# Monthly data
-arrests_2016 <- arrests %>% filter(fy == 2016) %>%
-  group_by(aor, apprehension_month) %>%
-  summarize(total = n()) %>%
-  pivot_wider(names_from = apprehension_month, values_from = total) 
-
-colnames(arrests_2016) <- c("aor", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-
-arrests_2016 <- arrests_2016 %>% rowwise() %>% 
-  mutate(pct_change_02 = round(((feb-jan)/jan) * 100, 2),
-         pct_change_03 = round(((mar-feb)/feb) * 100, 2),
-         pct_change_04 = round(((apr-mar)/mar) * 100, 2),
-         pct_change_05 = round(((may-apr)/apr) * 100, 2),
-         pct_change_06 = round(((jun-may)/may) * 100, 2),
-         pct_change_07 = round(((jul-jun)/jun) * 100, 2),
-         pct_change_08 = round(((aug-jul)/jul) * 100, 2),
-         pct_change_09 = round(((sep-aug)/aug) * 100, 2),
-         pct_change_10 = round(((oct-sep)/sep) * 100, 2),
-         pct_change_11 = round(((nov-oct)/oct) * 100, 2),
-         pct_change_12 = round(((dec-nov)/nov) * 100, 2))
-
-arrests_2016 %>% select(1, 14:24) %>% kable(caption = "Monthly % change in arrests by AOR in FY 2016")
-
-arrests_2016 %>% select(1, 14:24) %>%
-  pivot_longer(cols = 2:12, names_to = "Type", values_to = "Value") %>%
-  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  coord_flip() +
-  labs(title = "Monthly % change in arrests by AOR in FY 2016") +
-  theme_few()
-
-arrests_2017 <- arrests %>% filter(fy == 2017) %>%
-  group_by(aor, apprehension_month) %>%
-  summarize(total = n()) %>%
-  pivot_wider(names_from = apprehension_month, values_from = total) 
-
-colnames(arrests_2017) <- c("aor", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-
-arrests_2017 <- arrests_2017 %>% rowwise() %>% 
-  mutate(pct_change_02 = round(((feb-jan)/jan) * 100, 2),
-         pct_change_03 = round(((mar-feb)/feb) * 100, 2),
-         pct_change_04 = round(((apr-mar)/mar) * 100, 2),
-         pct_change_05 = round(((may-apr)/apr) * 100, 2),
-         pct_change_06 = round(((jun-may)/may) * 100, 2),
-         pct_change_07 = round(((jul-jun)/jun) * 100, 2),
-         pct_change_08 = round(((aug-jul)/jul) * 100, 2),
-         pct_change_09 = round(((sep-aug)/aug) * 100, 2),
-         pct_change_10 = round(((oct-sep)/sep) * 100, 2),
-         pct_change_11 = round(((nov-oct)/oct) * 100, 2),
-         pct_change_12 = round(((dec-nov)/nov) * 100, 2))
-
-arrests_2017 %>% select(1, 14:24) %>% kable(caption = "Monthly % change in arrests by AOR in FY 2017")
-
-arrests_2017 %>% select(1, 14:24) %>%
-  pivot_longer(cols = 2:12, names_to = "Type", values_to = "Value") %>%
-  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  coord_flip() +
-  labs(title = "Monthly % change in arrests by AOR in FY 2017") +
-  theme_few()
-
-arrests_2018 <- arrests %>% filter(fy == 2018) %>%
-  group_by(aor, apprehension_month) %>%
-  summarize(total = n()) %>%
-  pivot_wider(names_from = apprehension_month, values_from = total) 
-
-colnames(arrests_2018) <- c("aor", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-
-arrests_2018 <- arrests_2018 %>% rowwise() %>% 
-  mutate(pct_change_02 = round(((feb-jan)/jan) * 100, 2),
-         pct_change_03 = round(((mar-feb)/feb) * 100, 2),
-         pct_change_04 = round(((apr-mar)/mar) * 100, 2),
-         pct_change_05 = round(((may-apr)/apr) * 100, 2),
-         pct_change_06 = round(((jun-may)/may) * 100, 2),
-         pct_change_07 = round(((jul-jun)/jun) * 100, 2),
-         pct_change_08 = round(((aug-jul)/jul) * 100, 2),
-         pct_change_09 = round(((sep-aug)/aug) * 100, 2),
-         pct_change_10 = round(((oct-sep)/sep) * 100, 2),
-         pct_change_11 = round(((nov-oct)/oct) * 100, 2),
-         pct_change_12 = round(((dec-nov)/nov) * 100, 2))
-
-arrests_2018 %>% select(1, 14:24) %>% kable(caption = "Monthly % change in arrests by AOR in FY 2018")
-
-arrests_2018 %>% select(1, 14:24) %>%
-  pivot_longer(cols = 2:12, names_to = "Type", values_to = "Value") %>%
-  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  coord_flip() +
-  labs(title = "Monthly % change in arrests by AOR in FY 2018") +
-  theme_few()
-
-arrests_2019 <- arrests %>% filter(fy == 2019) %>%
-  group_by(aor, apprehension_month) %>%
-  summarize(total = n()) %>%
-  pivot_wider(names_from = apprehension_month, values_from = total) 
-
-colnames(arrests_2019) <- c("aor", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-
-arrests_2019 <- arrests_2019 %>% rowwise() %>% 
-  mutate(pct_change_02 = round(((feb-jan)/jan) * 100, 2),
-         pct_change_03 = round(((mar-feb)/feb) * 100, 2),
-         pct_change_04 = round(((apr-mar)/mar) * 100, 2),
-         pct_change_05 = round(((may-apr)/apr) * 100, 2),
-         pct_change_06 = round(((jun-may)/may) * 100, 2),
-         pct_change_07 = round(((jul-jun)/jun) * 100, 2),
-         pct_change_08 = round(((aug-jul)/jul) * 100, 2),
-         pct_change_09 = round(((sep-aug)/aug) * 100, 2),
-         pct_change_10 = round(((oct-sep)/sep) * 100, 2),
-         pct_change_11 = round(((nov-oct)/oct) * 100, 2),
-         pct_change_12 = round(((dec-nov)/nov) * 100, 2))
-
-arrests_2019 %>% select(1, 14:24) %>% kable(caption = "Monthly % change in arrests by AOR in FY 2019")
-
-arrests_2019 %>% select(1, 14:24) %>%
-  pivot_longer(cols = 2:12, names_to = "Type", values_to = "Value") %>%
-  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  coord_flip() +
-  labs(title = "Monthly % change in arrests by AOR in FY 2019") +
-  theme_few()
-
+```{r quarterly}
 # Quarterly data
 arrests_2016_q <- arrests %>% filter(fy == 2016) %>% 
   mutate(quarter = case_when(apprehension_month_y < "2016-01" ~ 1,
@@ -343,6 +217,8 @@ arrests_2019_q %>% select(1, 6:8) %>%
   theme_few()
 ```
 
+## Breakdown of arrest landmark, method, citizenship, and gender
+
 ```{r apprehension_landmark}
 #apprehension_landmark <- arrests %>% group_by(apprehension_landmark) %>% summarize(total = n())
 #write.csv(apprehension_landmark, 'apprehension_landmark.csv')
@@ -424,9 +300,7 @@ encounters <- encounters %>% filter(aor != "HQ") %>%
                               event_year = format(event_date2, "%Y"))
 ```
 
-```{r}
-encounters %>% select(1:7) %>% head() %>% kable(caption = "`encounters` dataframe")
-```
+## Trends in encounter numbers
 
 ```{r fiscalyear_encounters}
 encounters <- encounters %>% mutate(fy = case_when(event_date2 < "2016-10-01" ~ 2016,
@@ -454,6 +328,7 @@ encounters %>%
   mutate(Month = factor(month,
                         levels = c(10:12, 1:9),
                         labels = c(month.abb[10:12], month.abb[1:9]))) %>%
+  dplyr::filter(!(Year == 2019 & Month == "Sep")) %>%
   ggplot(aes(x = Month, y = total, color = Year, group = Year)) +
   geom_line() +
   geom_point() +
@@ -501,102 +376,7 @@ yearly_change_encounters %>% select(aor, 6:8) %>%
   theme_few()
 ```
 
-
-``` {r}
-# Monthly data
-encounters_2016 <- encounters %>% filter(fy == 2016) %>%
-  group_by(aor, event_month) %>%
-  summarize(total = n()) %>%  
-  pivot_wider(names_from = event_month, values_from = total) 
-
-colnames(encounters_2016) <- c("aor", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-
-encounters_2016 <- encounters_2016 %>% rowwise() %>% 
-  mutate(pct_change_02 = round(((feb-jan)/jan) * 100, 2),
-         pct_change_03 = round(((mar-feb)/feb) * 100, 2),
-         pct_change_04 = round(((apr-mar)/mar) * 100, 2),
-         pct_change_05 = round(((may-apr)/apr) * 100, 2),
-         pct_change_06 = round(((jun-may)/may) * 100, 2),
-         pct_change_07 = round(((jul-jun)/jun) * 100, 2),
-         pct_change_08 = round(((aug-jul)/jul) * 100, 2),
-         pct_change_09 = round(((sep-aug)/aug) * 100, 2),
-         pct_change_10 = round(((oct-sep)/sep) * 100, 2),
-         pct_change_11 = round(((nov-oct)/oct) * 100, 2),
-         pct_change_12 = round(((dec-nov)/nov) * 100, 2))
-
-encounters_2016 %>% select(1, 14:24) %>% kable(caption = "Monthly % change in encounters by AOR in FY 2016")
-
-encounters_2016 %>% select(1, 14:24) %>%
-  pivot_longer(cols = 2:12, names_to = "Type", values_to = "Value") %>%
-  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  coord_flip() +
-  labs(title = "Monthly % change in encounters by AOR in FY 2016") +
-  theme_few()
-
-encounters_2017 <- encounters %>% filter(fy == 2017) %>%
-  group_by(aor, event_month) %>%
-  summarize(total = n()) %>%  
-  pivot_wider(names_from = event_month, values_from = total) 
-
-colnames(encounters_2017) <- c("aor", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-
-encounters_2017 <- encounters_2017 %>% rowwise() %>% 
-  mutate(pct_change_02 = round(((feb-jan)/jan) * 100, 2),
-         pct_change_03 = round(((mar-feb)/feb) * 100, 2),
-         pct_change_04 = round(((apr-mar)/mar) * 100, 2),
-         pct_change_05 = round(((may-apr)/apr) * 100, 2),
-         pct_change_06 = round(((jun-may)/may) * 100, 2),
-         pct_change_07 = round(((jul-jun)/jun) * 100, 2),
-         pct_change_08 = round(((aug-jul)/jul) * 100, 2),
-         pct_change_09 = round(((sep-aug)/aug) * 100, 2),
-         pct_change_10 = round(((oct-sep)/sep) * 100, 2),
-         pct_change_11 = round(((nov-oct)/oct) * 100, 2),
-         pct_change_12 = round(((dec-nov)/nov) * 100, 2))
-
-encounters_2017 %>% select(1, 14:24) %>% kable(caption = "Monthly % change in encounters by AOR in FY 2016")
-
-encounters_2017 %>% select(1, 14:24) %>%
-  pivot_longer(cols = 2:12, names_to = "Type", values_to = "Value") %>%
-  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  coord_flip() +
-  labs(title = "Monthly % change in encounters by AOR in FY 2017") +
-  theme_few()
-
-encounters_2018 <- encounters %>% filter(fy == 2018) %>%
-  group_by(aor, event_month) %>%
-  summarize(total = n()) %>%  
-  pivot_wider(names_from = event_month, values_from = total) 
-
-colnames(encounters_2018) <- c("aor", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
-
-encounters_2018 <- encounters_2018 %>% rowwise() %>% 
-  mutate(pct_change_02 = round(((feb-jan)/jan) * 100, 2),
-         pct_change_03 = round(((mar-feb)/feb) * 100, 2),
-         pct_change_04 = round(((apr-mar)/mar) * 100, 2),
-         pct_change_05 = round(((may-apr)/apr) * 100, 2),
-         pct_change_06 = round(((jun-may)/may) * 100, 2),
-         pct_change_07 = round(((jul-jun)/jun) * 100, 2),
-         pct_change_08 = round(((aug-jul)/jul) * 100, 2),
-         pct_change_09 = round(((sep-aug)/aug) * 100, 2),
-         pct_change_10 = round(((oct-sep)/sep) * 100, 2),
-         pct_change_11 = round(((nov-oct)/oct) * 100, 2),
-         pct_change_12 = round(((dec-nov)/nov) * 100, 2))
-
-encounters_2018 %>% select(1, 14:24) %>% kable(caption = "Monthly % change in encounters by AOR in FY 2018")
-
-encounters_2018 %>% select(1, 14:24) %>%
-  pivot_longer(cols = 2:12, names_to = "Type", values_to = "Value") %>%
-  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
-  coord_flip() +
-  labs(title = "Monthly % change in encounters by AOR in FY 2018") +
-  theme_few()
-
-encounters_2019 <- encounters %>% filter(fy == 2019) %>%
-  group_by(aor, event_month) %>%
-  summarize(total = n())
+``` {r encounters_quarterly}
 
 # Quarterly data
 encounters_2016_q <- encounters %>% filter(fy == 2016) %>% 
@@ -704,6 +484,9 @@ encounters_2019_q %>% select(1, 6:8) %>%
   theme_few()
 ```
 
+
+## Breakdown of encounter landmark, citizenship, and gender
+
 ```{r encounters_landmark}
 #encounter_landmark <- encounters %>% group_by(landmark) %>% summarize(total = n())
 #write.csv(encounter_landmark, 'encounter_landmark.csv')
@@ -784,32 +567,24 @@ removals <- removals %>% filter(aor != "HQ") %>%
 
 
 ```{r}
-#sum(is.na(removals$apprehension_date2))
-removals %>% select(1:9) %>% head() %>% kable(caption = "`removals` dataframe")
-
 removals <- removals %>% drop_na(apprehension_date2, departed_date2, removal_date2) %>%
   mutate(difference = removal_date2 - apprehension_date2,
          difference2 = removal_date2 - departed_date2,
          fy_removal = case_when(removal_date2 < "2016-10-01" ~ 2016,
                         removal_date2 < "2017-10-01" ~ 2017,
                         removal_date2 < "2018-10-01" ~ 2018,
-                        removal_date2 < "2019-10-01" ~ 2019))
+                        removal_date2 < "2019-10-01" ~ 2019),
+         removal_month_y = format(removal_date2, "%Y-%m"))
 
-#sum(removals$difference2 != 0)
+#removals %>% 
+  #select(aor, apprehension_date, departed_date, removal_date, difference, difference2) %>% 
+  #arrange(difference) %>%
+  #head(30) %>% kable(caption = "`removals` dataframe sorted by `difference` in ascending order")
 
-removals %>% 
-  select(aor, apprehension_date, departed_date, removal_date, difference, difference2) %>% 
-  arrange(difference) %>%
-  head(30) %>% kable(caption = "`removals` dataframe sorted by `difference` in ascending order")
-
-removals %>% 
-  select(aor, apprehension_date, departed_date, removal_date, difference, difference2) %>% 
-  arrange(desc(difference)) %>%
-  head(30) %>% kable(caption = "`removals` dataframe sorted by `difference` in descending order")
-
-#removals %>% filter(fy == 2016) %>%
-  #group_by(aor) %>%
-  #summarize(mean_length_stay = mean(difference))
+#removals %>% 
+  #select(aor, apprehension_date, departed_date, removal_date, difference, difference2) %>% 
+  #arrange(desc(difference)) %>%
+  #head(30) %>% kable(caption = "`removals` dataframe sorted by `difference` in descending order")
 ```
 
 There are 14,235 observations with empty `apprehension_date`. These were removed from the calculations for the difference between removal date and apprehension date. 
@@ -818,30 +593,26 @@ There were no observations with empty `departed_date` or `removal_date`. There a
 
 `apprehension_date` seems unreliable with the years going back to 0999 or 1972 with extremely long stays.
 
-```{r}
-min(removals$removal_date2)
-max(removals$removal_date2)
-min(removals$departed_date2)
-max(removals$departed_date2)
-```
-
 `removal_date` seems like the column that we should use as it falls into the FY 2016-2019 range as we see with the other datasets.
 
 ```{r difference2}
-removals %>% group_by(aor, fy_removal) %>%
-  summarize(avg_length = mean(difference2),
-            sd_length = sd(difference2),
-            median_length = median(difference2),
-            min_length = min(difference2),
-            max_length = max(difference2)) %>%
-  kable(caption = 'Summary statistics of difference in length between departed and removal dates')
+#removals %>% group_by(aor, fy_removal) %>%
+  #summarize(avg_length = mean(difference2),
+            #sd_length = sd(difference2),
+            #median_length = median(difference2),
+            #min_length = min(difference2),
+            #max_length = max(difference2)) %>%
+  #kable(caption = 'Summary statistics of difference in length between departed and removal dates')
 ```
 
+
+## Trends in removal numbers
+
 ```{r}
-removals %>% group_by(aor, fy_removal) %>%
-  summarize(count = n()) %>%
-  pivot_wider(names_from = fy_removal, values_from = count) %>%
-  kable(caption = 'Number of removals by FY 2016-2019 (by removal_date)')
+#removals %>% group_by(aor, fy_removal) %>%
+  #summarize(count = n()) %>%
+  #pivot_wider(names_from = fy_removal, values_from = count) %>%
+  #kable(caption = 'Number of removals by FY 2016-2019 (by removal_date)')
 
 removals %>% 
   mutate(month = month(removal_date2)) %>%
@@ -851,6 +622,7 @@ removals %>%
   mutate(Month = factor(month,
                         levels = c(10:12, 1:9),
                         labels = c(month.abb[10:12], month.abb[1:9]))) %>%
+  dplyr::filter(!(Year == 2019 & Month == "Sep")) %>%
   ggplot(aes(x = Month, y = total, color = Year, group = Year)) +
   geom_line() +
   geom_point() +
@@ -883,6 +655,115 @@ yearly_change_removals %>% select(aor, 6:8) %>%
   theme_few()
 ```
 
+```{r removals_quarterly}
+# Quarterly data
+removals_2016_q <- removals %>% filter(fy_removal == 2016) %>% 
+  mutate(quarter = case_when(removal_month_y < "2016-01" ~ 1,
+                             removal_month_y < "2016-04" ~ 2,
+                             removal_month_y < "2016-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n()) %>%
+  pivot_wider(names_from = quarter, values_from = total) 
+
+colnames(removals_2016_q) <- c("aor", "q1", "q2", "q3", "q4")
+
+removals_2016_q <- removals_2016_q %>% rowwise() %>% 
+  mutate(pct_change_q2 = round(((q2-q1)/q1) * 100, 2),
+         pct_change_q3 = round(((q3-q2)/q2) * 100, 2),
+         pct_change_q4 = round(((q4-q3)/q3) * 100, 2))
+
+removals_2016_q %>% kable(caption = "Quarterly % change in removals by AOR in FY 2016")
+
+removals_2016_q %>% select(1, 6:8) %>%
+  pivot_longer(cols = 2:4, names_to = "Type", values_to = "Value") %>%
+  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  coord_flip() +
+  labs(title = "Quarterly % change in removals by AOR in FY 2016") +
+  theme_few()
+  
+removals_2017_q <- removals %>% filter(fy_removal == 2017) %>% 
+  mutate(quarter = case_when(removal_month_y < "2017-01" ~ 1,
+                             removal_month_y < "2017-04" ~ 2,
+                             removal_month_y < "2017-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n()) %>%
+  pivot_wider(names_from = quarter, values_from = total) 
+
+colnames(removals_2017_q) <- c("aor", "q1", "q2", "q3", "q4")
+
+removals_2017_q <- removals_2016_q %>% rowwise() %>% 
+  mutate(pct_change_q2 = round(((q2-q1)/q1) * 100, 2),
+         pct_change_q3 = round(((q3-q2)/q2) * 100, 2),
+         pct_change_q4 = round(((q4-q3)/q3) * 100, 2))
+
+removals_2017_q %>% kable(caption = "Quarterly % change in removals by AOR in FY 2017")
+
+removals_2017_q %>% select(1, 6:8) %>%
+  pivot_longer(cols = 2:4, names_to = "Type", values_to = "Value") %>%
+  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  coord_flip() +
+  labs(title = "Quarterly % change in removals by AOR in FY 2017") +
+  theme_few()
+
+  
+removals_2018_q <- removals %>% filter(fy_removal == 2018) %>% 
+  mutate(quarter = case_when(removal_month_y < "2018-01" ~ 1,
+                             removal_month_y < "2018-04" ~ 2,
+                             removal_month_y < "2018-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n()) %>%
+  pivot_wider(names_from = quarter, values_from = total) 
+
+colnames(removals_2018_q) <- c("aor", "q1", "q2", "q3", "q4")
+
+removals_2018_q <- removals_2018_q %>% rowwise() %>% 
+  mutate(pct_change_q2 = round(((q2-q1)/q1) * 100, 2),
+         pct_change_q3 = round(((q3-q2)/q2) * 100, 2),
+         pct_change_q4 = round(((q4-q3)/q3) * 100, 2))
+
+removals_2018_q %>% kable(caption = "Quarterly % change in removals by AOR in FY 2018")
+
+removals_2018_q %>% select(1, 6:8) %>%
+  pivot_longer(cols = 2:4, names_to = "Type", values_to = "Value") %>%
+  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  coord_flip() +
+  labs(title = "Quarterly % change in removals by AOR in FY 2018") +
+  theme_few()
+
+removals_2019_q <- removals %>% filter(fy_removal == 2019) %>% 
+  mutate(quarter = case_when(removal_month_y < "2019-01" ~ 1,
+                             removal_month_y < "2019-04" ~ 2,
+                             removal_month_y < "2019-07" ~ 3,
+                             TRUE ~ 4)) %>%
+  group_by(aor, quarter) %>%
+  summarize(total = n()) %>%
+  pivot_wider(names_from = quarter, values_from = total) 
+
+colnames(removals_2019_q) <- c("aor", "q1", "q2", "q3", "q4")
+
+removals_2019_q <- removals_2019_q %>% rowwise() %>% 
+  mutate(pct_change_q2 = round(((q2-q1)/q1) * 100, 2),
+         pct_change_q3 = round(((q3-q2)/q2) * 100, 2),
+         pct_change_q4 = round(((q4-q3)/q3) * 100, 2))
+
+removals_2019_q %>% kable(caption = "Quarterly % change in removals by AOR in FY 2019")
+
+removals_2019_q %>% select(1, 6:8) %>%
+  pivot_longer(cols = 2:4, names_to = "Type", values_to = "Value") %>%
+  ggplot(aes(x = aor, y = Value)) + geom_bar(stat = "identity") + facet_wrap(~Type) + 
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  coord_flip() +
+  labs(title = "Quarterly % change in removals by AOR in FY 2019") +
+  theme_few()
+```
+
+## Breakdown of removals in terms of citizenship and gender
 
 ```{r citizenship_removals}
 # by FY
