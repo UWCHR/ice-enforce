@@ -1,3 +1,12 @@
-.*
-!/.gitignore
-!/.gitattributes
+.creds
+.ipynb_checkpoints/
+.DS_Store
+.here
+.Rhistory
+.Rproj.user
+.RData
+*.Rproj
+.~lock*
+*.html
+*_cache/
+*_files/
