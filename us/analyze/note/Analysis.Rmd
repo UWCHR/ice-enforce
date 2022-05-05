@@ -11,19 +11,17 @@ output:
 rm(list = ls())
 knitr::opts_chunk$set(warning=F, message=F, cache = T)
 options(scipen = 999)
-library(ggplot2)
-library(RColorBrewer)
-library(tidyr)
-library(knitr)
-library(ggthemes)
-library(lubridate)
-library(dplyr)
+
+pacman::p_load('ggplot2', 'RColorBrewer', 'tidyr', 'knitr', 'ggthemes', 'lubridate', 'dplyr', 'here')
+
 ```
 
 # Arrests
 
 ```{r cache=T}
-arrests <- read.csv("../../export/output/arrests.csv.gz")
+
+file_in <- here::here('us', 'export', 'output', 'arrests.csv.gz')
+arrests <- read.csv(file_in)
 arrests <- arrests %>% filter(aor != "HQ") %>%
   mutate(apprehension_date2 = as.Date(apprehension_date, format = "%m/%d/%Y"),
                               apprehension_year = format(apprehension_date2, "%Y"))
@@ -294,7 +292,8 @@ arrests %>%
 # Encounters
 
 ```{r cache=T}
-encounters <- read.csv("../../export/output/encounters.csv.gz")
+file_in <- here::here('us', 'export', 'output', 'encounters.csv.gz')
+encounters <- read.csv(file_in)
 encounters <- encounters %>% filter(aor != "HQ") %>%
   mutate(event_date2 = as.Date(event_date, format = "%m/%d/%Y"),
                               event_year = format(event_date2, "%Y"))
@@ -557,7 +556,8 @@ encounters %>%
 # Removals
 
 ```{r cache=T}
-removals <- read.csv("../../export/output/removals.csv.gz", sep = "|")
+file_in <- here::here('us', 'export', 'output', 'removals.csv.gz')
+removals <- read.csv(file_in, sep = "|")
 removals <- removals %>% filter(aor != "HQ") %>%
   mutate(apprehension_date2 = as.Date(apprehension_date, format = "%m/%d/%Y"),
          departed_date2 = as.Date(departed_date, format = "%m/%d/%Y"),
