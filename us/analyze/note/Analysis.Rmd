@@ -19,17 +19,11 @@ pacman::p_load('ggplot2', 'RColorBrewer', 'tidyr', 'knitr', 'ggthemes', 'lubrida
 # Arrests
 
 ```{r cache=T}
-
 file_in <- here::here('us', 'export', 'output', 'arrests.csv.gz')
 arrests <- read.csv(file_in)
 arrests <- arrests %>% filter(aor != "HQ") %>%
   mutate(apprehension_date2 = as.Date(apprehension_date, format = "%m/%d/%Y"),
                               apprehension_year = format(apprehension_date2, "%Y"))
-arrests_join <- arrests %>% mutate(quarter = quarter(apprehension_date2, with_year = TRUE, fiscal_start = 10), 
-  fy = stringr::str_sub(quarter, 1, 4)) %>%
-  group_by(apprehension_date2, quarter, fy, aor) %>%
-  summarize(n_arrests = n()) %>%
-  rename(date = apprehension_date2)
 ```
 
 ## Trends in arrest numbers
@@ -302,11 +296,6 @@ encounters <- read.csv(file_in)
 encounters <- encounters %>% filter(aor != "HQ") %>%
   mutate(event_date2 = as.Date(event_date, format = "%m/%d/%Y"),
                               event_year = format(event_date2, "%Y"))
-encounters_join <- encounters %>% mutate(quarter = quarter(event_date2, with_year = TRUE, fiscal_start = 10), 
-  fy = stringr::str_sub(quarter, 1, 4)) %>%
-  group_by(event_date2, quarter, fy, aor) %>%
-  summarize(n_encounters = n()) %>%
-  rename(date = event_date2)
 ```
 
 ## Trends in encounter numbers
@@ -573,11 +562,6 @@ removals <- removals %>% filter(aor != "HQ") %>%
          departed_date2 = as.Date(departed_date, format = "%m/%d/%Y"),
          removal_date2 = as.Date(removal_date, format = "%m/%d/%Y"),
          removal_month = format(removal_date2, "%m"))
-removals_join <- removals %>% mutate(quarter = quarter(removal_date2, with_year = TRUE, fiscal_start = 10), 
-  fy = stringr::str_sub(quarter, 1, 4)) %>%
-  group_by(removal_date2, quarter, fy, aor) %>%
-  summarize(n_removals = n()) %>%
-  rename(date = removal_date2)
 ```
 
 ```{r}
@@ -811,17 +795,6 @@ removals %>%
 
 ```
 
-# Joining the enforcement data for export
-
-```{r}
-enforcement <- full_join(encounters_join, arrests_join, by = c("date", "aor")) %>%
-  full_join(., removals_join, by = c("date", "aor")) %>%
-  select(-c(quarter.y, fy.y, quarter, fy)) %>%
-  rename(quarter = quarter.x,
-         fy = fy.x)
-readr::write_delim(enforcement, here::here('us','export', 'output', 'enforcement.csv.gz'),
-    delim='|')
-```
 
 
 
