@@ -1,0 +1,5 @@
+2022-09-23 15:41:36|Input file: input/arrests.csv.gz
+2022-09-23 15:41:36|Rows in: 544059
+2022-09-23 15:41:38|Dropped records with missing `aor`: 3808
+2022-09-23 15:41:38|Output file: output/arrests.csv.gz
+2022-09-23 15:41:38|Rows out: 540251

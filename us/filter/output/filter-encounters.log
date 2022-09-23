@@ -1,0 +1,5 @@
+2022-09-23 15:41:42|Input file: input/encounters.csv.gz
+2022-09-23 15:41:42|Rows in: 1689378
+2022-09-23 15:41:45|Dropped records with missing `aor`: 80421
+2022-09-23 15:41:45|Output file: output/encounters.csv.gz
+2022-09-23 15:41:45|Rows out: 1608957
