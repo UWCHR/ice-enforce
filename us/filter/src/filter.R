@@ -34,6 +34,13 @@ write_delim(df, args$output, delim='|')
 post_drop <- nrow(df)
 log_info('Dropped records with missing `aor`: {pre_drop - post_drop}')
 
+pre_drop <- nrow(df)
+df <- df %>% 
+	filter(aor != "HQ")
+write_delim(df, args$output, delim='|')
+post_drop <- nrow(df)
+log_info('Dropped records with `aor` == "HQ": {pre_drop - post_drop}')
+
 log_info('Output file: {args$output}')
 rows_out <- nrow(df)
 log_info('Rows out: {rows_out}')
