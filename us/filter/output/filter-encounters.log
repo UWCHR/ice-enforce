@@ -1,11 +1,7 @@
-2022-09-23 15:41:42|Input file: input/encounters.csv.gz
-2022-09-23 15:41:42|Rows in: 1689378
-2022-09-23 15:41:45|Dropped records with missing `aor`: 80421
-2022-09-23 15:41:45|Output file: output/encounters.csv.gz
-2022-09-23 15:41:45|Rows out: 1608957
-2022-09-23 16:10:05|Input file: input/encounters.csv.gz
-2022-09-23 16:10:05|Rows in: 1689378
-2022-09-23 16:10:08|Dropped records with missing `aor`: 80421
-2022-09-23 16:10:11|Dropped records with `aor` == "HQ": 12150
-2022-09-23 16:10:11|Output file: output/encounters.csv.gz
-2022-09-23 16:10:11|Rows out: 1596807
+2022-09-27 16:31:51|Input file: input/encounters.csv.gz
+2022-09-27 16:31:51|Rows in: 1689378
+2022-09-27 16:31:55|Dropped records with missing `aor`: 80421
+2022-09-27 16:31:58|Dropped records with `aor` == "HQ": 12150
+2022-09-27 16:31:58|Output file: output/encounters.csv.gz
+2022-09-27 16:31:58|Rows out: 1596807
+2022-09-27 16:31:58|Total records dropped: 92571

@@ -21,6 +21,7 @@ logger <- layout_glue_generator(format = '{time}|{msg}')
 log_layout(logger)
 
 df <- read_delim(args$input, delim = "|")
+print(glimpse(df))
 
 log_info('Input file: {args$input}')
 rows_in <- nrow(df)
@@ -41,8 +42,38 @@ write_delim(df, args$output, delim='|')
 post_drop <- nrow(df)
 log_info('Dropped records with `aor` == "HQ": {pre_drop - post_drop}')
 
+### Arrests only
+
+if (args$input == 'input/arrests.csv.gz') {
+
+	likely_border_enforcement <- c("Patrol Border", "Inspections", 
+		"Anti-Smuggling", "Patrol Interior", "Boat Patrol", "Traffic Check",
+		"Crewman/Stowaway", "Transportation Check Aircraft", "Transportation Check Bus",
+		"Transportation Check Passenger Train", "Transportation Check Freight Train" )
+
+	pre_drop <- nrow(df)
+	df <- df %>% 
+		filter(!apprehension_method %in% likely_border_enforcement)
+	write_delim(df, args$output, delim='|')
+	post_drop <- nrow(df)
+	log_info('Dropped records with `apprehension_method` reflecting likely border patrol involvement: {pre_drop - post_drop}')
+
+	border_patrol_keywords <- "CBP|USBP|Border Patrol"
+
+	pre_drop <- nrow(df)
+	df <- df %>% 
+		filter(!str_detect(apprehension_method, border_patrol_keywords))
+	write_delim(df, args$output, delim='|')
+	post_drop <- nrow(df)
+	log_info('Dropped records with border patrol keywords in `apprehension_method`: {pre_drop - post_drop}')
+
+}
+
+###
+
 log_info('Output file: {args$output}')
 rows_out <- nrow(df)
 log_info('Rows out: {rows_out}')
+log_info('Total records dropped: {rows_in - rows_out}')
 
 # END.
