@@ -1,9 +1,10 @@
-2022-09-27 16:31:41|Input file: input/arrests.csv.gz
-2022-09-27 16:31:41|Rows in: 544059
-2022-09-27 16:31:43|Dropped records with missing `aor`: 3808
-2022-09-27 16:31:44|Dropped records with `aor` == "HQ": 41
-2022-09-27 16:31:45|Dropped records with `apprehension_method` reflecting likely border patrol involvement: 849
-2022-09-27 16:31:47|Dropped records with border patrol keywords in `apprehension_method`: 0
-2022-09-27 16:31:47|Output file: output/arrests.csv.gz
-2022-09-27 16:31:47|Rows out: 539361
-2022-09-27 16:31:47|Total records dropped: 4698
+2022-09-30 17:33:10|Input file: input/arrests.csv.gz
+2022-09-30 17:33:10|Rows in: 544059
+2022-09-30 17:33:12|Dropped records with missing `aor`: 3808
+2022-09-30 17:33:14|Dropped records with `aor` == "HQ": 41
+2022-09-30 17:33:15|Dropped records with `apprehension_method` reflecting likely border patrol involvement: 849
+2022-09-30 17:33:17|Dropped records with border patrol keywords in `apprehension_method`: 0
+2022-09-30 17:33:17|Dropped records with border-related keywords in `apprehension_landmark`: 178
+2022-09-30 17:33:17|Output file: output/arrests.csv.gz
+2022-09-30 17:33:17|Rows out: 539183
+2022-09-30 17:33:17|Total records dropped: 4876

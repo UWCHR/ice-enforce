@@ -22,6 +22,7 @@ log_layout(logger)
 
 df <- read_delim(args$input, delim = "|")
 print(glimpse(df))
+print(skimr::skim(df))
 
 log_info('Input file: {args$input}')
 rows_in <- nrow(df)
@@ -67,6 +68,16 @@ if (args$input == 'input/arrests.csv.gz') {
 	post_drop <- nrow(df)
 	log_info('Dropped records with border patrol keywords in `apprehension_method`: {pre_drop - post_drop}')
 
+
+	likely_border <- "PORT OF ENTRY|AIRPORT|BORDER"
+
+	pre_drop <- nrow(df)
+	df <- df %>% 
+		filter(is.na(apprehension_landmark) | 
+			   !str_detect(apprehension_landmark, likely_border))
+	post_drop <- nrow(df)
+	log_info('Dropped records with border-related keywords in `apprehension_landmark`: {pre_drop - post_drop}')
+
 }
 
 ###
@@ -75,5 +86,6 @@ log_info('Output file: {args$output}')
 rows_out <- nrow(df)
 log_info('Rows out: {rows_out}')
 log_info('Total records dropped: {rows_in - rows_out}')
+write_delim(df, args$output, delim='|')
 
 # END.
