@@ -12,15 +12,15 @@ rm(list = ls())
 knitr::opts_chunk$set(warning=F, message=F, cache = T)
 options(scipen = 999)
 
-pacman::p_load('ggplot2', 'RColorBrewer', 'tidyr', 'knitr', 'ggthemes', 'lubridate', 'dplyr', 'here')
+pacman::p_load('ggplot2', 'RColorBrewer', 'tidyr', 'knitr', 'ggthemes', 'lubridate', 'dplyr', 'here', 'tidyverse')
 
 ```
 
 # Arrests
 
 ```{r cache=T}
-file_in <- here::here('us', 'export', 'output', 'arrests.csv.gz')
-arrests <- read.csv(file_in)
+file_in <- here::here('us', 'filter', 'input', 'arrests.csv.gz')
+arrests <- read_delim(file_in, delim='|')
 arrests <- arrests %>% filter(aor != "HQ") %>%
   mutate(apprehension_date2 = as.Date(apprehension_date, format = "%m/%d/%Y"),
                               apprehension_year = format(apprehension_date2, "%Y"))
@@ -217,32 +217,44 @@ arrests_2019_q %>% select(1, 6:8) %>%
 ## Breakdown of arrest landmark, method, citizenship, and gender
 
 ```{r apprehension_landmark}
-#apprehension_landmark <- arrests %>% group_by(apprehension_landmark) %>% summarize(total = n())
-#write.csv(apprehension_landmark, 'apprehension_landmark.csv')
+apprehension_landmark <- arrests %>% group_by(apprehension_landmark) %>% summarize(total = n())
+write.csv(apprehension_landmark, 'apprehension_landmark.csv')
+
+apprehension_landmark_aor <- arrests %>% group_by(aor, apprehension_landmark) %>% summarize(total = n())
+write.csv(apprehension_landmark_aor, 'apprehension_landmark_aor.csv')
+
+nonspecific_str <- unique(arrests$apprehension_landmark[grep('NON-SPECIFIC', arrests$apprehension_landmark)])
+nonspecific_str <- nonspecific_str[!grepl('COUNTY|CHICAGO|PLYMOUTH|FORT WORTH|SCOTLANDVILLE|SANTA ANA|NORTH DARTMOUTH', nonspecific_str)]
+
+select_nonspecific <- c("LICENSING UNIT/STATE POLICE", "287g", "at-large", "California Healthcare Facility", "CALIFORNIA HIGHWAY PATROL", "CAP ACI", "CIS REFERRAL", "FEDERAL DETENTION CENTER (FDC)", "FIELD ARREST", "FTC CI (Federal Transfer Center)", "FTM-JCART", "FTM-VCAS", "FUG - NON FUGITIVE", "FUGITIVE OPERATIONS", "FUGITIVE SOUTH TEAM ARRESTS", "FUGOP", "FUGOPS", "STREET ARREST", "STREET ARRESTS", "U.S. Marshalls Service", "U.S. Marshals", "U.S. Marshals Service", "U.S. MARSHALS SERVICE"< "U.S. PROBATION OFFICE", "UNITED STATES MARSHALL SERVICE", "UNITED STATES PROBATION & PAROLE", "UNITED STATES PROBATION", "US 281 TO FM 493 EXP 83 NORTH TO FM 490", "US DISTRICT COURT", "US MARSHALLS", "US Marshals TF", "USCIS ARREST", "USCIS REFERRALS")
 
 arrests <- arrests %>% mutate(apprehension_landmark2 = 
-                                case_when(grepl('NON-SPECIFIC|ARREST AT|ATD|BUREAU OF PRISONS-|FEDCAP-', apprehension_landmark) ~ "Non-specific",
-                                          apprehension_landmark %in% c("LICENSING UNIT/STATE POLICE", "287g", "at-large", "California Healthcare Facility", "CALIFORNIA HIGHWAY PATROL", "CAP ACI", "CIS REFERRAL", "FEDERAL DETENTION CENTER (FDC)", "FIELD ARREST", "FTC CI (Federal Transfer Center)", "FTM-JCART", "FTM-VCAS", "FUG - NON FUGITIVE", "FUGITIVE OPERATIONS", "FUGITIVE SOUTH TEAM ARRESTS", "FUGOP", "FUGOPS", "STREET ARREST", "STREET ARRESTS", "U.S. Marshalls Service", "U.S. Marshals", "U.S. Marshals Service", "U.S. MARSHALS SERVICE"< "U.S. PROBATION OFFICE", "UNITED STATES MARSHALL SERVICE", "UNITED STATES PROBATION & PAROLE", "UNITED STATES PROBATION", "US 281 TO FM 493 EXP 83 NORTH TO FM 490", "US DISTRICT COURT", "US MARSHALLS", "US Marshals TF", "USCIS ARREST", "USCIS REFERRALS") ~ "Non-specific",
+                                case_when(apprehension_landmark %in% nonspecific_str ~ "Non-specific",
+                                          # 'NON-SPECIFIC|ARREST AT|ATD|BUREAU OF PRISONS-|FEDCAP-', apprehension_landmark) ~ "Non-specific",
+                                          # apprehension_landmark %in% select_nonspecific ~ "Non-specific",
                                           apprehension_landmark == 'DO NOT USE'  ~ "DO NOT USE",
-                                          apprehension_landmark == ''  ~ "NA",
+                                          apprehension_landmark == ''  ~ NA_character_,
+                                          is.na(apprehension_landmark) ~ "Missing",
                                           TRUE ~ "Specific"))
 #test <- arrests %>% select(apprehension_landmark, apprehension_landmark2)
 
 specificity <- arrests %>% 
   group_by(aor, apprehension_landmark2) %>%
-  summarize(total = n()) %>% 
+  summarize(total = n()) %>%
   pivot_wider(names_from = apprehension_landmark2, values_from = total)
-  
-specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')
+
+specificity[is.na(specificity)] <- 0
+
+# specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')
 
 specificity2 <- specificity %>% 
   replace(is.na(.), 0) %>%
   rowwise() %>%
-  mutate("Non-specific total" = sum(c_across("NA":"DO NOT USE"))) %>%
-  select("Non-specific total", "Specific") %>%
+  mutate("Non-specific" = sum(c_across(c('Non-specific', 'DO NOT USE', 'Missing')))) %>%
+  select("Non-specific", "Specific", "Missing") %>%
   rowwise() %>%
-  mutate("Total" =  sum(c_across("Non-specific total": "Specific"))) %>%
-  rowwise() %>% mutate("%specific" = round((Specific/Total), 2))
+  mutate("Total" =  sum(c_across(c("Non-specific", "Specific", 'Missing')))) %>%
+  rowwise() %>% mutate("% specific" = round((Specific/Total), 2))
 
 specificity2 %>% kable(caption = 'Apprehension landmark specificity % by AOR FY2016-2019')
 ```
@@ -251,8 +263,17 @@ specificity2 %>% kable(caption = 'Apprehension landmark specificity % by AOR FY2
 arrests %>% 
   group_by(apprehension_method) %>%
   summarize(total = n()) %>%
-  arrange(desc(total)) %>%
-  kable(caption = 'Arrests - Apprehension methods')
+  arrange(desc(total))
+
+  # kable(caption = 'Arrests - Apprehension methods')
+
+likely_border_enforcement <- c("Patrol Border", "Inspections", 
+	"Anti-Smuggling", "Patrol Interior", "Boat Patrol", "Traffic Check",
+	"Crewman/Stowaway", "Transportation Check Aircraft", "Transportation Check Bus",
+	"Transportation Check Passenger Train", "Transportation Check Freight Train" )
+
+df <- arrests %>% 
+	filter(!apprehension_method %in% likely_border_enforcement)
 ```
 
 
