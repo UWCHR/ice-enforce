@@ -20,6 +20,7 @@ def _get_args():
     parser.add_argument("--dtypes", required=True)
     parser.add_argument("--cleanrules", required=True)
     parser.add_argument("--input", required=True)
+    parser.add_argument("--log", required=True)
     parser.add_argument("--output", required=True)
     return parser.parse_args()
 
@@ -35,15 +36,15 @@ def mem_usage(pandas_obj):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(filename='output/clean.log',
-                    filemode='a',
+    args = _get_args()
+
+    logging.basicConfig(filename=args.log,
+                    filemode='w',
                     format=f'%(asctime)s|%(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S',
                     level=logging.INFO)
 
     logging.info('Log Start Time')
-
-    args = _get_args()
 
     with open(args.dtypes, 'r') as yamlfile:
         dtypes = yaml.safe_load(yamlfile)
