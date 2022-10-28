@@ -23,7 +23,7 @@ output/arrests.csv.gz: \
 		--dtypes=hand/arrest_dtypes.yaml \
 		--cleanrules=hand/clean_rules.yaml \
 		--input=input/arrests.csv.gz \
-		--log=output/clean_arrests.log \
+		--log=output/clean-arrests.log \
 		--output=$@
 
 output/encounters.csv.gz: \
@@ -35,7 +35,7 @@ output/encounters.csv.gz: \
 		--dtypes=hand/encounter_dtypes.yaml \
 		--cleanrules=hand/clean_rules.yaml \
 		--input=input/encounters.csv.gz \
-		--log=output/clean_encounters.log \
+		--log=output/clean-encounters.log \
 		--output=$@
 
 output/removals.csv.gz: \
@@ -47,7 +47,7 @@ output/removals.csv.gz: \
 		--dtypes=hand/removal_dtypes.yaml \
 		--cleanrules=hand/clean_rules.yaml \
 		--input=input/removals.csv.gz \
-		--log=output/clean_removals.log \
+		--log=output/clean-removals.log \
 		--output=$@
 
 # End.
