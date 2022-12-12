@@ -1,0 +1,216 @@
+aor|code|office|state|type|count
+ATL|ATL|Atlanta|GA|Field Office|1
+ATL|   |Charleston|SC|Sub Field Office|1
+ATL|   |Charlotte|NC|Sub Field Office|2
+ATL|   |Columbia|SC|Sub Field Office|1
+ATL|DTN|Dalton|GA|Sub Field Office|1
+ATL|   |Folkston|GA|Sub Field Office|1
+ATL|   |Greensboro|NC|Sub Field Office|1
+ATL|   |Greer|SC|Sub Field Office|1
+ATL|   |Hendersonville|NC|Sub Field Office|1
+ATL|   |Lumpkin|GA|Sub Field Office|1
+ATL|   |Ocilla|GA|Sub Field Office|1
+ATL|RDU|Raleigh|NC|Sub Field Office|1
+ATL|SAV|Savannah|GA|Sub Field Office|1
+ATL|WIL|Wilmington|NC|Sub Field Office|1
+BAL|   |Baltimore|MD|Field Office|1
+BAL|   |Salisbury|MD|Sub Field Office|1
+BOS|   |Boston (Burlington)|MA|Field Office|1
+BOS|HAR|Hartford|CT|Sub Field Office|1
+BOS|   |Manchester|NH|Sub Field Office|1
+BOS|POM|S. Portland|ME|Sub Field Office|1
+BOS|STA|St. Albans|VT|Sub Field Office|1
+BOS|   |Warwick|RI|Sub Field Office|1
+BUF|   |Albany|NY|Sub Field Office|1
+BUF|   |Batavia|NY|Sub Field Office|2
+BUF|   |Buffalo|NY|Field Office|1
+BUF|   |Champlain|NY|Sub Field Office|1
+BUF|   |Syracuse|NY|Sub Field Office|1
+CHI|   |Bowling Green KY|Sub Field Office|1
+CHI|   |Broadview|IL|Sub Field Office|1
+CHI|   |Chicago|IL|Field Office|1
+CHI|   |Fort Wayne|IN|Sub Field Office|1
+CHI|   |Garden City|KS|Sub Field Office|1
+CHI|   |Indianapolis|IN|Sub Field Office|1
+CHI|   |Kansas City|MO|Sub Field Office|1
+CHI|   |Lexington|KY|Sub Field Office|1
+CHI|   |Louisville|KY|Sub Field Office|1
+CHI|   |Madison|WI|Sub Field Office|1
+CHI|   |Milwaukee|WI|Sub Field Office|1
+CHI|   |Rock Island|IL|Sub Field Office|1
+CHI|   |St. Louis|MO|Sub Field Office|1
+CHI|   |Stratford|MO|Sub Field Office|1
+CHI|   |Wichita|KS|Sub Field Office|1
+DAL|   |Alvarado|TX|Sub Field Office|1
+DAL|   |Amarillo|TX|Sub Field Office|1
+DAL|   |Athens|TX|Sub Field Office|1
+DAL|   |Big Spring|TX|Sub Field Office|1
+DAL|   |Dallas|TX|Field Office|1
+DAL|   |Lubbock|TX|Sub Field Office|1
+DAL|   |Oklahoma City|OK|Sub Field Office|1
+DAL|   |San Angelo|TX|Sub Field Office|1
+DAL|   |Tulsa|OK|Sub Field Office|1
+DEN|   |Alamosa|CO|Sub Field Office|1
+DEN|   |Aurora|CO|Sub Field Office|1
+DEN|   |Casper|WY|Sub Field Office|1
+DEN|   |Cheyenne|WY|Sub Field Office|1
+DEN|   |Craig|CO|Sub Field Office|1
+DEN|   |Denver|CO|Field Office|1
+DEN|   |Durango|CO|Sub Field Office|1
+DEN|   |Florence|CO|Sub Field Office|1
+DEN|   |Frederick|CO|Sub Field Office|1
+DEN|   |Glenwood Springs|CO|Sub Field Office|1
+DEN|   |Grand Junction|CO|Sub Field Office|1
+DET|   |Cincinatti|OH|Sub Field Office|1
+DET|   |Cleveland|OH|Sub Field Office|1
+DET|   |Columbia|OH|Sub Field Office|1
+DET|   |Detroit|MI|Field Office|1
+DET|   |Grand Rapids|MI|Sub Field Office|1
+DET|   |Sault Saint Marie|MI|Sub Field Office|1
+ELP|   |Albuquerque|NM|Sub Field Office|1
+ELP|   |Chaparral|NM|Sub Field Office|1
+ELP|   |Cibola|NM|Sub Field Office|1
+ELP|   |El Paso|TX|Field Office|1
+ELP|   |Farmington|NM|Sub Field Office|1
+ELP|   |Las Cruces|NM|Sub Field Office|1
+ELP|   |Midland|TX|Sub Field Office|1
+ELP|   |Pecos|TX|Sub Field Office|1
+ELP|   |Roswell|NM|Sub Field Office|1
+HOU|   |Beaumont|TX|Sub Field Office|1
+HOU|   |Conroe|TX|Sub Field Office|2
+HOU|   |Corpus Christi|TX|Sub Field Office|1
+HOU|   |Galveston|TX|Sub Field Office|1
+HOU|   |Houston|TX|Field Office|1
+HOU|   |Huntsville|TX|Sub Field Office|1
+HOU|   |Livingston|TX|Sub Field Office|1
+HOU|   |Victoria|TX|Sub Field Office|1
+LOS|   |Adelanto ICE Processing Center|CA|Sub Field Office|1
+LOS|   |Camarillo|CA|Sub Field Office|1
+LOS|   |Laguna Niguel|CA|Sub Field Office|1
+LOS|   |Long Beach|CA|Sub Field Office|1
+LOS|   |Los Angeles|CA|Field Office|1
+LOS|   |San Bernardino|CA|Sub Field Office|1
+LOS|   |Santa Ana|CA|Sub Field Office|1
+LOS|   |Santa Maria|CA|Sub Field Office|1
+LOS|   |Ventura|CA|Sub Field Office|1
+MIA|   |Aguadilla|PR|Sub Field Office|1
+MIA|   |Ft. Myers|FL|Sub Field Office|1
+MIA|   |Guaynabo|PR|Sub Field Office|1
+MIA|   |Jacksonville|FL|Sub Field Office|1
+MIA|   |Miami|FL|Field Office|1
+MIA|   |Miramar|FL|Sub Field Office|1
+MIA|   |Orlando|FL|Sub Field Office|1
+MIA|   |Panama City|FL|Sub Field Office|1
+MIA|   |Pompano Beach|FL|Sub Field Office|1
+MIA|   |St. Thomas|VI|Sub Field Office|1
+MIA|   |Stuart|FL|Sub Field Office|1
+MIA|   |Tallahassee|FL|Sub Field Office|1
+MIA|   |Tampa|FL|Sub Field Office|1
+NEW|   |Elizabeth CDF|NJ|Sub Field Office|1
+NEW|   |Mt. Laurel|NJ|Sub Field Office|1
+NEW|   |Newark|NJ|Field Office|1
+NOL|   |Alexandria|LA|Sub Field Office|1
+NOL|   |Baton Rouge|LA|Sub Field Office|1
+NOL|   |Birmingham|AL|Sub Field Office|1
+NOL|   |Chattanooga|TN|Sub Field Office|1
+NOL|   |Fayetteville|AR|Sub Field Office|1
+NOL|   |Ft. Smith|AR|Sub Field Office|1
+NOL|   |Gadsen|AL|Sub Field Office|1
+NOL|   |Gulfport|MS|Sub Field Office|1
+NOL|   |Jena|LA|Sub Field Office|1
+NOL|   |Jonesboro|LA|Sub Field Office|1
+NOL|   |Knoxville|TN|Sub Field Office|1
+NOL|   |Lafayette|LA|Sub Field Office|1
+NOL|   |Little Rock|AR|Sub Field Office|1
+NOL|   |Memphis|TN|Sub Field Office|1
+NOL|   |Mobile|AL|Sub Field Office|1
+NOL|   |Montgomery|AL|Sub Field Office|1
+NOL|   |Nashville|TN|Sub Field Office|1
+NOL|   |New Orleans|LA|Field Office|1
+NOL|   |Oakdale|LA|Sub Field Office|1
+NOL|   |Pearl|MS|Sub Field Office|1
+NOL|   |Shreveport|LA|Sub Field Office|1
+NOL|   |Texarkana|AR|Sub Field Office|1
+NOL|   |Winnfield|LA|Sub Field Office|1
+NYC|   |Central Islip|NY|Sub Field Office|1
+NYC|   |East Meadow|NY|Sub Field Office|1
+NYC|   |New York City|NY|Field Office|1
+NYC|   |Newburgh|NY|Sub Field Office|1
+NYC|   |Riverhead|NY|Sub Field Office|1
+PHI|   |Allenwood|PA|Sub Field Office|1
+PHI|   |Berks County|PA|Sub Field Office|1
+PHI|   |Charleston|WV|Sub Field Office|1
+PHI|   |Dover|DE|Sub Field Office|1
+PHI|   |Philadelphia|PA|Field Office|1
+PHI|   |Pike County|PA|Sub Field Office|1
+PHI|   |Pittsburgh|PA|Sub Field Office|1
+PHI|   |York|PA|Sub Field Office|1
+PHO|   |Eloy|AZ|1|Sub Field Office|1
+PHO|   |Florence|AZ|1|Sub Field Office|1
+PHO|   |Phoenix|AZ|1|Field Office|1
+PHO|   |Tucson|AZ|1|Sub Field Office|1
+PHO|   |Yuma|AZ|1|Sub Field Office|1
+SEA|ANC/ANC|Anchorage|AK|Sub Field Office|1
+SEA|EUG/POO|Eugene|OR|Sub Field Office|1
+SEA|MED/POO|Medford|OR|Sub Field Office|1
+SEA|POO/POO|Portland|OR|Sub Field Office|1
+SEA|RIC/SEA|Richland|WA|Sub Field Office|1
+SEA|SEA/SEA|Seattle|WA|Field Office|1
+SEA|SPO/SEA|Spokane|WA|Sub Field Office|1
+SEA|TAC/SEA|Tacoma|WA|Sub Field Office|1
+SEA|WNT/SEA|Wenatchee|WA|Sub Field Office|1
+SEA|YAK/SEA|Yakima|WA|Sub Field Office|1
+SFR|   |Bakersfield|CA|Sub Field Office|1
+SFR|   |Fresno|CA|Sub Field Office|1
+SFR|   |Guam|GU|Sub Field Office|1
+SFR|   |Honolulu|HI|Sub Field Office|1
+SFR|   |Redding|CA|Sub Field Office|1
+SFR|   |Sacramento|CA|Sub Field Office|1
+SFR|   |Saipan|Sub Field Office|1
+SFR|   |San Francisco|CA|Field Office|1
+SFR|   |San Jose|CA|Sub Field Office|1
+SFR|   |Stockton|CA|Sub Field Office|1
+SLC|   |Billings|MT|1|Sub Field Office|1
+SLC|   |Boise|ID|1|Sub Field Office|1
+SLC|   |Helena|MT|1|Sub Field Office|1
+SLC|   |Idaho Falls|ID|1|Sub Field Office|1
+SLC|   |Las Vegas|NV|1|Sub Field Office|1
+SLC|   |Ogden|UT|1|Sub Field Office|1
+SLC|   |Orem|UT|1|Sub Field Office|1
+SLC|   |Reno|NV|1|Sub Field Office|1
+SLC|   |Salt Lake City|UT|1|Field Office|1
+SLC|   |Shelby|MT|1|Sub Field Office|1
+SLC|   |St. George|UT|1|Sub Field Office|1
+SLC|   |Twin Falls|ID|1|Sub Field Office|1
+SNA|   |Austin|TX|Sub Field Office|1
+SNA|   |Del Rio|TX|Sub Field Office|1
+SNA|   |Dilley|TX|Sub Field Office|1
+SNA|   |Edinberg|TX|Sub Field Office|1
+SNA|   |Haringen|TX|Sub Field Office|1
+SNA|   |Karnes City|TX|Sub Field Office|1
+SNA|   |Laredo|TX|Sub Field Office|2
+SNA|   |Los Fresons|TX|Sub Field Office|1
+SNA|   |Pearsall|TX|Sub Field Office|1
+SNA|   |San Antonio|TX|Field Office|1
+SNA|   |Taylor|TX|Sub Field Office|1
+SNA|   |Waco|TX|Sub Field Office|1
+SND|   |Calexico|CA|Sub Field Office|1
+SND|   |El Centro|CA|Sub Field Office|1
+SND|   |Otay Mesa|CA|Sub Field Office|1
+SND|   |Rancho Bernardo|CA|Sub Field Office|1
+SND|   |San Diego|CA|Field Office|1
+SPM|   |Cedar Rapids|IA|Sub Field Office|1
+SPM|   |Des Moines|IA|Sub Field Office|1
+SPM|   |Grand Forks|ND|Sub Field Office|1
+SPM|   |Grand Island|NE|Sub Field Office|1
+SPM|   |North Platte|NE|Sub Field Office|1
+SPM|   |Omaha|NE|Sub Field Office|1
+SPM|   |Rapid City|SD|Sub Field Office|1
+SPM|   |Sioux City|IA|Sub Field Office|1
+SPM|   |St. Paul|MN|Field Office|1
+WAS|   |Harrisonburg|VA|Sub Field Office|1
+WAS|   |Lorton|VA|Sub Field Office|1
+WAS|   |Norfolk|VA|Sub Field Office|1
+WAS|   |Richmond|VA|Sub Field Office|1
+WAS|   |Roanoke|VA|Sub Field Office|1
+WAS|   |Washington|DC|Field Office|1

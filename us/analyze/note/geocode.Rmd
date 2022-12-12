@@ -1,0 +1,92 @@
+---
+title: "geocode"
+author: "UWCHR"
+date: "2022-11-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+library(pacman)
+pacman::p_load(argparse, pdftools, tesseract, dplyr, assertr, readr,
+               digest, qpdf, digest, purrr, stringr, yaml, tidyr, ggmap, gdata)
+
+ggkey = Sys.getenv("GEOCODE_API_KEY")
+register_google(key = ggkey)
+
+df <- read_delim(here::here('us', 'analyze', 'input', 'arrests.csv.gz'), delim = "|")
+
+glimpse(df)
+
+locs <- df %>%
+  mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark))) %>% 
+  group_by(aor, apprehension_landmark) %>% 
+  summarize(n = n())
+
+write_delim(locs, here::here('us', 'analyze', 'hand', 'arrest_landmarks.csv'), delim="|")
+
+general_locs <- df %>%
+  mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark))) %>%
+  filter(str_detect(apprehension_landmark, 'GENERAL AREA')) %>% 
+  group_by(aor, apprehension_landmark) %>% 
+  summarize(n = n())
+
+general_locs <- general_locs %>% 
+  arrange(aor, desc(n))
+
+write_delim(general_locs, here::here('us', 'analyze', 'hand', 'general_arrest_landmarks.csv'), delim="|")
+
+```
+
+- Non-specific apprehension landmarks that refer to a (sub) field office, docket or ERO unit. For key cities with major field offices, city name can't be taken as 100% accurate map to county: e.g. Seattle, Portland, Eugene, Richland.
+- Specificity will be likely correlated with type of arrest, i.e. CAP transfers from facilities highly specific; street arrests or fugitive ops non-specific (we can test this). Apprehension landmarks outside of AOR will be much more rare.
+
+Notes: 
+- Ambiguities:
+  - Portland spans Multnomah & Washington Counties; Salem spans Marion & Polk
+  - Counties/institutions in multiple states: e.g. Columbia County Jail in both WA, OR; Jefferson counties in both WA, OR
+- Violent Criminal Alien Section (VCAS)
+
+```{r SEA}
+
+sea <- df %>% 
+  filter(aor == 'SEA')
+
+sea_count <- sea %>% 
+  group_by(apprehension_landmark) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+sea_count$county <- NA
+
+sea_locs <- unique(sea$apprehension_landmark[!is.na(sea$apprehension_landmark)])
+
+sea_locs.geo <- geocode(sea_locs, output = "latlona")
+
+sea_locs.geo$apprehension_landmark = sea_locs
+
+sea_locs_hand <- read_delim(here::here('us', 'analyze', 'hand', 'sea-locs.csv'), delim = ",")
+
+glimpse(sea_locs_hand)
+
+sea_locs_hand <- sea_locs_hand %>% 
+  filter(!is.na(apprehension_landmark))
+
+sea_locs_hand$apprehension_landmark <- stringr::str_trim(toupper(sea_locs_hand$apprehension_landmark))
+sea_locs_hand$specificity <- stringr::str_trim(toupper(sea_locs_hand$specificity))
+sea_locs_hand$county <- stringr::str_trim(toupper(sea_locs_hand$county))
+
+sea_locs_hand <- sea_locs_hand %>% 
+  separate(county, into = c("county_only", "state"), sep=", ", remove=FALSE) %>% 
+  dplyr::select(-county_only)
+
+sea_locs_hand %>%
+  group_by(county, specificity) %>% 
+  summarize(n = sum(n))
+
+sea_locs_hand %>%
+  filter(specificity != "NONAOR") %>% 
+  group_by(state, specificity) %>% 
+  summarize(n = sum(n))
+
+```
