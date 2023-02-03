@@ -1,0 +1,89 @@
+---
+title: "OR ICE arrest trends for Task Force"
+author: "PN"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+    code_folding: hide
+  word_document:
+    toc: yes
+    toc_depth: '2'
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+---
+
+```{r setup}
+library(pacman)
+p_load(tidyverse, lubridate, ggplot2, viridis)
+
+arrests <- read_delim(here::here('aor-seattle', 'analyze', 'input', 'arrests.csv.gz'),
+                      delim='|',
+                      skip=6)
+
+names(arrests) <- tolower(names(arrests))
+names(arrests) <- str_replace_all(names(arrests), "\\s", "_")
+
+arrests$arrest_date <- mdy(arrests$arrest_date)
+arrests$year <- year(arrests$arrest_date)
+arrests$month <- month(arrests$arrest_date)
+arrests$day <- day(arrests$arrest_date)
+arrests$wday <- wday(arrests$arrest_date)
+
+arrests <- arrests %>% 
+  dplyr::select(-c(event_number, date_of_birth))
+```
+
+```{r arrests_by_year}
+
+p1 <- arrests %>% 
+  group_by(year) %>% 
+  summarize(total_arrests = n()) %>% 
+  ggplot(aes(x = year, y = total_arrests)) +
+  geom_bar(stat='identity') +
+  geom_text(aes(label=total_arrests, vjust=1.5), color='white') +
+  ylim(0, NA) +
+  scale_color_viridis() +
+  theme_minimal()
+
+p1
+
+p2 <- arrests %>% 
+  group_by(year, month) %>% 
+  summarize(total_arrests = n()) %>% 
+  ggplot(aes(x = month, y = total_arrests, color= as.factor(year), group = year)) +
+  geom_line() +
+  ylim(0, NA) +
+  scale_color_viridis(discrete=TRUE) +
+  theme_minimal()
+
+p2
+
+p3 <- arrests %>% 
+  group_by(year, wday) %>% 
+  summarize(total_arrests = n()) %>% 
+  ggplot(aes(x = wday, y = total_arrests, group = year)) +
+  geom_bar(stat='identity', aes(color=year, fill=year)) +
+  scale_color_viridis() +
+  ylim(0, NA)
+
+p3
+
+```
+
+```{r arrest_method}
+
+p1 <- arrests %>% 
+  group_by(year, arrest_method) %>% 
+  summarize(total_arrests = n()) %>% 
+  ggplot(aes(x = year, y = total_arrests, color= arrest_method)) +
+  geom_line() +
+  ylim(0, NA)
+
+p1
+```
+
