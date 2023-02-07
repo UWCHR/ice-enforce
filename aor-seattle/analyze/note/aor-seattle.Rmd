@@ -1,0 +1,128 @@
+---
+title: Seattle AOR aggregated arrest data
+author:
+- "[Phil Neff](https://github.com/philneff)"
+date: 25 January, 2023
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+
+
+```{r import}
+pacman::p_load(tidyverse, stringr, lubridate)
+
+arrests <- read_delim(here::here('aor-seattle', 'analyze', 'input', 'arrests.csv.gz'), delim='|', skip=6)
+bookins <- read_delim(here::here('aor-seattle', 'analyze', 'input', 'bookins.csv.gz'), delim='|', skip=6)
+
+arrests <- arrests %>% 
+  select_all(~gsub("\\s+|\\.", "_", .)) %>% 
+  select_all(tolower)
+
+bookins <- bookins %>% 
+  select_all(~gsub("\\s+|\\.", "_", .)) %>% 
+  select_all(tolower)
+
+arrests <- arrests %>% 
+  mutate(apprehension_landmark = toupper(apprehension_landmark))
+
+bookins <- bookins %>% 
+  mutate(detention_facility = toupper(detention_facility))
+
+arrests$apprehension_landmark <- str_trim(arrests$apprehension_landmark)
+bookins$detention_facility <- str_trim(bookins$detention_facility)
+
+arrests$arrest_date <- mdy(arrests$arrest_date)
+arrests$year <- year(arrests$arrest_date)
+arrests$month <- month(arrests$arrest_date)
+arrests$day <- day(arrests$arrest_date)
+
+bookins$book_in_date <- mdy(bookins$book_in_date)
+bookins$year <- year(bookins$book_in_date)
+bookins$month <- month(bookins$book_in_date)
+bookins$day <- day(bookins$book_in_date)
+
+```
+
+```{r get_locs}
+
+arrest_locs <- arrests %>% 
+  dplyr::select(apprehension_landmark) %>% 
+  distinct() %>% 
+  arrange(apprehension_landmark)
+
+det_locs <- bookins %>% 
+  dplyr::select(detention_facility) %>% 
+  distinct() %>% 
+  arrange(detention_facility)
+
+arrest_locs$state <- NA
+arrest_locs$correct <- NA
+
+det_locs$state <- NA
+det_locs$correct <- NA
+
+# write_delim(arrest_locs, here::here('aor-seattle', 'analyze', 'output', 'arrest_locs.csv'), delim=',')
+# write_delim(det_locs, here::here('aor-seattle', 'analyze', 'output', 'det_locs.csv'), delim=',')
+
+```
+
+```{r hand_locs}
+
+arrest_hand <- read_delim(here::here('aor-seattle', 'analyze', 'hand', 'arrest_locs.csv'), delim=',')
+det_hand <- read_delim(here::here('aor-seattle', 'analyze', 'hand', 'det_locs.csv'), delim=',')
+
+arrests <- left_join(arrests, arrest_hand, by='apprehension_landmark')
+bookins <- left_join(bookins, det_hand, by='detention_facility')
+
+arrests$apprehension_landmark[!is.na(arrests$correct)] <- arrests$correct[!is.na(arrests$correct)]
+
+arrests <- arrests %>% 
+  dplyr::select(-correct)
+
+bookins <- bookins %>% 
+  dplyr::select(-correct)
+
+
+write_delim(arrests, here::here('aor-seattle', 'analyze', 'output', 'arrests_with_state.csv'), delim=',')
+write_delim(bookins, here::here('aor-seattle', 'analyze', 'output', 'bookins_with_state.csv'), delim=',')
+
+```
+
+```{r skim_arrests}
+
+skimr::skim(arrests)
+
+```
+
+```{r state_arrests_per_year}
+
+data <- arrests %>% group_by(state, year) %>% 
+  summarize(n = n())
+
+data
+
+p1 <- data %>% 
+  ggplot(aes(x=year, y=n, color=state)) +
+  geom_line()
+
+p1
+```
+
+```{r state_arrests_per_method}
+
+data <- arrests %>%
+  filter(state %in% c('WA', 'OR')) %>% 
+  group_by(state, year, arrest_method) %>% 
+  summarize(n = n())
+
+p1 <- data %>% 
+  ggplot(aes(x=year, y=n, color=state)) +
+  geom_line()
+
+p1
+```
