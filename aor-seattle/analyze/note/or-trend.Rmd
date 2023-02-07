@@ -1,0 +1,242 @@
+---
+title: "OR ICE arrest trends for Task Force"
+author: "PN"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+    code_folding: hide
+  word_document:
+    toc: yes
+    toc_depth: '2'
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+---
+
+```{r setup}
+library(pacman)
+p_load(tidyverse, lubridate, ggplot2, plotly, viridis, gplots)
+
+# arrests <- read_delim(here::here('aor-seattle', 'analyze', 'input', 'arrests.csv.gz'),
+#                       delim='|',
+#                       skip=6)
+arrests <- read_delim(here::here('aor-seattle', 'analyze', 'frozen', 'arrests_with_state.csv.gz'),
+                      delim=',',
+                      col_types = cols(arrest_date = col_character(),
+                                       date_of_birth = col_factor(),
+                                       gender = col_factor(),
+                                       country_of_citizenship = col_factor(),
+                                       event_number = col_factor(),
+                                       apprehension_landmark = col_character(),
+                                       arrest_method = col_factor(),
+                                       most_serious_conviction = col_factor(),
+                                       year = col_factor(),
+                                       month = col_factor(),
+                                       day = col_factor(),
+                                       state = col_factor()))
+
+
+# names(arrests) <- tolower(names(arrests))
+# names(arrests) <- str_replace_all(names(arrests), "\\s", "_")
+
+arrests$arrest_date <- mdy(arrests$arrest_date)
+# arrests$year <- year(arrests$arrest_date)
+# arrests$month <- month(arrests$arrest_date)
+# arrests$day <- day(arrests$arrest_date)
+arrests$wday <- as.factor(wday(arrests$arrest_date, label=TRUE, abbr=TRUE))
+
+arrests <- arrests %>% 
+  dplyr::select(-c(event_number, date_of_birth))
+```
+
+Arrest counts by state: absolute arrest totals higher in WA; both states show overall decline in arrests but note WA increase in 2017-2018 which is not mirrored in OR.
+
+```{r arrests_by_year}
+
+p1 <- arrests %>%
+  filter(state %in% c("OR", "WA")) %>% 
+  group_by(state,year) %>% 
+  ggplot(aes(x = year, fill=state)) +
+  geom_bar(stat='count') +
+  geom_text(aes(label = after_stat(count)), stat = 'count', vjust=-1.5, color='black') +
+  ylim(0, 5000) +
+  facet_wrap(~state) +
+  scale_fill_viridis_d() +
+  theme_minimal()
+
+p1
+```
+
+OR arrests by month; no notable seasonal trends:
+
+```{r arrest_seasonality}
+p2 <- arrests %>% 
+  filter(state == "OR") %>% 
+  group_by(year, month) %>% 
+  summarize(total_arrests = n()) %>% 
+  ggplot(aes(x = month, y = total_arrests, color= year, group = year)) +
+  geom_line() +
+  ylim(0, NA) +
+  scale_color_viridis_d() +
+  theme_minimal()
+
+p2
+
+```
+
+OR arrests by weekday, note most arrests during weekdays.
+
+```{r}
+
+p3 <- arrests %>% 
+  filter(state == "OR") %>% 
+  group_by(year, wday) %>%
+  ggplot(aes(x = wday, fill=year, color=year, group = year)) +
+  geom_bar() +
+  scale_color_viridis_d() +
+  scale_fill_viridis_d() +
+  ylim(0, NA)
+
+p3
+
+```
+Arrest method by state. Note OR shift from "CAP Local Incarceration" to "Non-Custodial Arrest" starting in 2015, not mirrored in WA.
+
+```{r}
+
+p1 <- arrests %>% 
+  filter(state %in% c("OR", "WA")) %>% 
+  group_by(state, year, arrest_method) %>%
+  ggplot(aes(x = year, fill= arrest_method, color=arrest_method)) +
+  geom_bar(stat='count') +
+  scale_fill_viridis_d(direction=-1) +
+  scale_color_viridis_d(direction=-1) +
+  ylim(0, NA) +
+  facet_grid(~state)
+
+ggplotly(p1)
+```
+
+Arrest methods in OR only as percent of total:
+
+```{r arrest_method}
+
+p1 <- arrests %>% 
+  filter(state %in% c("OR")) %>% 
+  mutate(arrest_method = as.factor(arrest_method)) %>% 
+  group_by(state, year, arrest_method) %>%
+  ggplot(aes(x = year, fill= arrest_method, color=arrest_method)) +
+  geom_bar(stat='count', position='fill') +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_viridis_d(direction=-1) +
+  scale_color_viridis_d(direction=-1) +
+  ylim(0, NA)
+
+ggplotly(p1)
+
+```
+
+Arrest method by day of week; not very interesting:
+
+```{r}
+
+p1 <- arrests %>% 
+  filter(state == "OR") %>% 
+  mutate(arrest_method = as.factor(arrest_method)) %>% 
+  group_by(arrest_method, wday) %>%
+  ggplot(aes(x = wday, fill=arrest_method, color=arrest_method, group = arrest_method)) +
+  geom_bar() +
+  scale_color_viridis_d() +
+  scale_fill_viridis_d() +
+  ylim(0, NA)
+
+p1
+
+```
+
+Country of citizenship, top 5 annually
+
+```{r}
+
+years <- unique(arrests$year)
+
+# Need to standardize scales/labels if keep this
+
+for (i in 1:length(years)) {
+  current_year <- years[i]
+  
+  top <- arrests %>% 
+    filter(state == "OR") %>% 
+    filter(year == current_year) %>% 
+    count(country_of_citizenship) %>% 
+    arrange(desc(n)) %>% 
+    head(5)
+  
+  p1 <- arrests %>% 
+    filter(state == "OR") %>% 
+    filter(year == current_year) %>% 
+    mutate(country = case_when(
+      country_of_citizenship %in% unlist(top$country_of_citizenship) ~ as.character(country_of_citizenship),
+      TRUE ~ "ALL OTHERS"
+    )) %>% 
+    ggplot(aes(x = country, fill = country)) +
+    geom_bar(stat='count') +
+    labs(title=current_year)
+  
+  plot(p1)
+  }
+
+```
+
+Note decreasing proportion of Mexican nationality, increase Guatemala and Honduras
+
+```{r}
+
+top <- arrests %>% 
+    filter(state == "OR") %>% 
+    count(country_of_citizenship) %>% 
+    arrange(desc(n)) %>% 
+    head(5)
+  
+  p1 <- arrests %>%
+    filter(state == "OR") %>% 
+    mutate(country = case_when(
+      country_of_citizenship %in% unlist(top$country_of_citizenship) ~ as.character(country_of_citizenship),
+      TRUE ~ "ALL OTHERS")) %>%
+    group_by(year, country) %>%
+    ggplot(aes(x = year, color = country, fill=country, group=country)) +
+    geom_bar(stat='count', position='fill')
+  
+  ggplotly(p1)
+
+```
+
+```{r country_method}
+
+country_method <- arrests %>% 
+  filter(state =="OR") %>% 
+  select(country_of_citizenship, arrest_method) %>% 
+  group_by(country_of_citizenship, arrest_method) %>% 
+  count() %>% 
+  pivot_wider(id_cols = arrest_method, names_from = country_of_citizenship, values_from = n) %>% 
+  replace(is.na(.), 0) %>% 
+  ungroup()
+
+m <- country_method %>% 
+  select(-arrest_method) %>% 
+  data.matrix()
+
+rownames(m) <- as.character(country_method$arrest_method)
+
+heatmap.2(m,
+          scale = 'row',
+          density.info="none",  # turns off density plot inside color legend
+          trace="none",         # turns off trace lines inside the heat map
+          main="",
+          margins =c(12,12) )
+```
+
