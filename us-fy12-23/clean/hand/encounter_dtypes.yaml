@@ -1,0 +1,13 @@
+---
+area_of_responsibility: str
+event_date: category
+landmark: category
+operation: category
+processing_disposition: category
+citizenship_country: category
+gender: category
+encounter_threat_level: category
+alien_file_number: category
+id: int
+hashid: str
+...
