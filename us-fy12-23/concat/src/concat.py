@@ -60,7 +60,8 @@ if __name__ == "__main__":
                      'quotechar': '"',
                      'compression': 'gzip',
                      'encoding': 'utf-8',
-                     'header': 5}
+                     'header': 5,
+                     'skipinitialspace': True}
 
     input_fy12 = pd.read_csv(args.input_fy12, **read_csv_opts)
     logging.info(f'Input file: {args.input_fy12}')
@@ -111,11 +112,15 @@ if __name__ == "__main__":
              input_fy21,
              input_fy22,
              input_fy23]
+    
+    for f in files:
 
+        f.columns = f.columns.str.strip()
+        f.columns = f.columns.str.lower()
+        f.columns = f.columns.str.replace(' ', '_')
+        logging.info(f'{f.columns}')
+    
     df = pd.concat(files, sort=False)
-
-    df.columns = df.columns.str.lower()
-    df.columns = df.columns.str.replace(' ', '_')    
 
     df['id'] = range(len(df))
     hash_fields = df.columns
