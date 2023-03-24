@@ -8,3 +8,13 @@
 2023-03-23 13:38:01|Output file: output/arrests.csv.gz
 2023-03-23 13:38:01|Rows out: 1659778
 2023-03-23 13:38:01|Total records dropped: 26417
+2023-03-23 17:34:47|Input file: input/arrests.csv.gz
+2023-03-23 17:34:47|Rows in: 1741174
+2023-03-23 17:35:01|Dropped records with missing `aor`: 16414
+2023-03-23 17:35:12|Dropped records with `aor` == "HQ": 108
+2023-03-23 17:35:24|Dropped records with `arrest_method` reflecting likely border patrol involvement: 8312
+2023-03-23 17:35:37|Dropped records with border patrol keywords in `arrest_method`: 0
+2023-03-23 17:35:39|Dropped records with border-related keywords in `apprehension_landmark`: 1223
+2023-03-23 17:35:39|Output file: output/arrests.csv.gz
+2023-03-23 17:35:39|Rows out: 1715117
+2023-03-23 17:35:39|Total records dropped: 26057
