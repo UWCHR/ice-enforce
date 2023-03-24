@@ -1316,3 +1316,102 @@
 2023-03-23 13:16:21|Output file: output/removals.csv.gz
 2023-03-23 13:16:21|Rows out: 2665505
 2023-03-23 13:16:21|Log End Time
+2023-03-23 17:25:52|Log Start Time
+2023-03-23 17:25:52|Input file: input/ERO_Arrests_FY2012.csv.gz
+2023-03-23 17:25:52|Rows in: 265573
+2023-03-23 17:25:53|Input file: input/ERO_Arrests_FY2013.csv.gz
+2023-03-23 17:25:53|Rows in: 232287
+2023-03-23 17:25:54|Input file: input/ERO_Arrests_FY2014.csv.gz
+2023-03-23 17:25:54|Rows in: 183703
+2023-03-23 17:25:54|Input file: input/ERO_Arrests_FY2015.csv.gz
+2023-03-23 17:25:54|Rows in: 119772
+2023-03-23 17:25:54|Input file: input/ERO_Arrests_FY2016.csv.gz
+2023-03-23 17:25:54|Rows in: 110104
+2023-03-23 17:25:55|Input file: input/ERO_Arrests_FY2017.csv.gz
+2023-03-23 17:25:55|Rows in: 143470
+2023-03-23 17:25:56|Input file: input/ERO_Arrests_FY2018.csv.gz
+2023-03-23 17:25:56|Rows in: 158581
+2023-03-23 17:25:57|Input file: input/ERO_Arrests_FY2019.csv.gz
+2023-03-23 17:25:57|Rows in: 143099
+2023-03-23 17:25:57|Input file: input/ERO_Arrests_FY2020.csv.gz
+2023-03-23 17:25:57|Rows in: 103603
+2023-03-23 17:25:58|Input file: input/ERO_Arrests_FY2021.csv.gz
+2023-03-23 17:25:58|Rows in: 74082
+2023-03-23 17:25:58|Input file: input/ERO_Arrests_FY2022.csv.gz
+2023-03-23 17:25:58|Rows in: 142107
+2023-03-23 17:25:58|Input file: input/ERO_Arrests_FY2023YTD.csv.gz
+2023-03-23 17:25:58|Rows in: 64793
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'arrest_method', 'apprehension_landmark', 'operation',
+       'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'arrest_method', 'apprehension_landmark', 'operation',
+       'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'arrest_method', 'apprehension_landmark', 'operation',
+       'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'case_closed_date', 'arrest_method', 'apprehension_landmark',
+       'operation', 'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'case_closed_date', 'arrest_method', 'apprehension_landmark',
+       'operation', 'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'arrest_method', 'apprehension_landmark', 'operation',
+       'processing_disposition', 'citizenship_country', 'gender',
+       'apprehension_threat_level', 'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'case_closed_date', 'arrest_method', 'apprehension_landmark',
+       'operation', 'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'case_closed_date', 'arrest_method', 'apprehension_landmark',
+       'operation', 'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'case_closed_date', 'arrest_method', 'apprehension_landmark',
+       'operation', 'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'case_closed_date', 'arrest_method', 'apprehension_landmark',
+       'operation', 'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'case_closed_date', 'arrest_method', 'apprehension_landmark',
+       'operation', 'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:25:58|Index(['area_of_responsibility', 'arrest_date', 'departed_date',
+       'case_closed_date', 'arrest_method', 'apprehension_landmark',
+       'operation', 'processing_disposition', 'citizenship_country', 'gender',
+       'removal_threat_level', 'apprehension_threat_level',
+       'alien_file_number'],
+      dtype='object')
+2023-03-23 17:28:56|Output file: output/arrests.csv.gz
+2023-03-23 17:28:56|Rows out: 1741174
+2023-03-23 17:28:56|Log End Time
