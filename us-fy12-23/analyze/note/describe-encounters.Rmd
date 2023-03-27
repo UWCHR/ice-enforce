@@ -1,0 +1,204 @@
+---
+title: "FY12-23YTD ICE ERO descriptive analysis"
+author: "UWCHR"
+date: "2023-03-27"
+output:
+  pdf_document: default
+  html_document: default
+---
+ 
+
+```{r setup, echo=FALSE, message=FALSE, include=TRUE}
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
+
+enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'encounters.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                   event_date = col_character(),
+                                   landmark = col_character(),
+                                   operation = col_factor(),
+                                   processing_disposition = col_factor(),
+                                   citizenship_country = col_factor(),
+                                   gender = col_factor(),
+                                   hashid = col_character(),
+                                   id = col_number())) 
+# arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|') 
+# rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'removals.csv.gz'), delim='|') 
+
+glimpse(enc)
+
+redacted <- c('encounter_threat_level', 'alien_file_number')
+
+enc <- enc %>% 
+  dplyr::select(-redacted)
+
+enc <- enc %>% 
+  mutate(event_date = as_date(event_date, format="%m/%d/%Y"),
+         year = year(event_date),
+         month = month(event_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(event_date))
+
+```
+
+```{r gender, echo=FALSE, message=FALSE, include=TRUE}
+
+enc %>%
+  mutate(gender = tolower(gender)) %>% 
+  group_by(gender) %>% 
+  summarize(n = n())
+
+```
+
+
+```{r cit, echo=FALSE, message=FALSE, include=TRUE}
+
+enc %>%
+  mutate(citizenship_country = tolower(citizenship_country)) %>% 
+  group_by(citizenship_country) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+```
+
+Note "Not amenable to removal" largest category; check % of this and other categories like "foreign born usc", "not in custody" (also indicates no arrest?)
+
+```{r disp, echo=FALSE, message=FALSE, include=TRUE}
+
+enc %>%
+  mutate(processing_disposition = tolower(processing_disposition)) %>% 
+  group_by(processing_disposition) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+```
+
+```{r annual, echo=FALSE, message=FALSE, include=TRUE}
+
+p1 <- enc %>% 
+  group_by(year, aor) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year, y=n)) +
+  geom_bar(stat="identity") +
+  facet_wrap(~aor)
+
+p1
+
+```
+
+```{r buf, echo=FALSE, message=FALSE, include=TRUE}
+
+buf <- enc %>% 
+  filter(aor == "BUF")
+
+p1 <- buf %>% 
+  group_by(year_mth) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year_mth, y = n)) +
+  geom_line()
+
+p1
+
+p2 <- buf %>% 
+  group_by(year, month) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = month, y = n, color=as.factor(year), group=as.factor(year))) +
+  geom_line() +
+  scale_color_discrete()
+
+p2
+
+p3 <- buf %>% 
+  group_by(year, processing_disposition) %>% 
+  ggplot(aes(x=year, fill=processing_disposition)) +
+  geom_bar(stat='count') +
+  gghighlight()
+
+ggplotly(p3)
+
+p4 <- buf %>% 
+  filter(processing_disposition != 'Not in Custody') %>% 
+  group_by(year_mth) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year_mth, y = n)) +
+  geom_line()
+
+p4
+
+p5 <- buf %>% 
+  filter(toupper(citizenship_country) == 'UNKNOWN') %>% 
+  group_by(year_mth) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year_mth, y = n)) +
+  geom_line()
+
+p5
+
+
+p6 <- buf %>% 
+  group_by(year, operation) %>% 
+  ggplot(aes(x = year, fill=operation)) +
+  geom_bar(stat='count') + 
+  gghighlight()
+
+ggplotly(p6)
+```
+
+```{r los, echo=FALSE, message=FALSE, include=TRUE}
+
+los <- enc %>% 
+  filter(aor == "LOS")
+
+p1 <- los %>% 
+  group_by(year_mth) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year_mth, y = n)) +
+  geom_line()
+
+p1
+
+p2 <- los %>% 
+  group_by(year, month) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = month, y = n, color=as.factor(year), group=as.factor(year))) +
+  geom_line() +
+  scale_color_discrete()
+
+p2
+
+p3 <- los %>% 
+  group_by(year, processing_disposition) %>% 
+  ggplot(aes(x=year, fill=processing_disposition)) +
+  geom_bar(stat='count') +
+  gghighlight()
+
+ggplotly(p3)
+
+p4 <- los %>% 
+  filter(processing_disposition != 'Not in Custody') %>% 
+  group_by(year_mth) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year_mth, y = n)) +
+  geom_line()
+
+p4
+
+p5 <- los %>% 
+  filter(toupper(citizenship_country) == 'UNKNOWN') %>% 
+  group_by(year_mth) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year_mth, y = n)) +
+  geom_line()
+
+p5
+
+p6 <- los %>% 
+  group_by(year, operation) %>% 
+  ggplot(aes(x = year, fill=operation)) +
+  geom_bar(stat='count') + 
+  gghighlight()
+
+ggplotly(p6)
+
+```
