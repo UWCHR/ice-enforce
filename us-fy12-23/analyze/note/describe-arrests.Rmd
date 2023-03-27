@@ -15,7 +15,7 @@ library(pacman)
 p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
 
 arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|',
-                  col_types = cols(aor = col_factor(),
+                  col_types = cols(aor = col_character(),
                                   arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
                                   apprehension_landmark = col_character(),
@@ -106,6 +106,79 @@ p2 <- arr %>%
   geom_line()
 
 ggplotly(p2)
+
+```
+
+```{r non-specific, echo=FALSE, message=FALSE, include=TRUE}
+
+
+arr <- arr %>% 
+  mutate(non_spec = case_when(str_detect(toupper(apprehension_landmark), 'NON-SPECIFIC') & !str_detect(toupper(apprehension_landmark), 'COUNTY') ~ TRUE,
+                              is.na(apprehension_landmark) ~ TRUE,
+                              TRUE ~ FALSE))
+
+arr %>% 
+  group_by(aor, non_spec) %>% 
+  summarize(n = n()) %>% 
+  mutate(freq = n / sum(n))
+
+p1 <- arr %>% 
+  group_by(aor, fy, non_spec) %>% 
+  summarize(n = n()) %>% 
+  mutate(freq = n / sum(n)) %>% 
+  filter(non_spec == TRUE) %>% 
+  ggplot(aes(x = fy, y = freq, color=aor, group=aor)) +
+  geom_line() +
+  gghighlight(max(freq) > .5)
+
+p1
+
+arr %>% filter(non_spec == TRUE) %>%
+  count(apprehension_landmark) %>%
+  arrange(desc(n))
+
+```
+
+```{r meth, echo=FALSE, message=FALSE, include=TRUE}
+
+methods <- arr %>% 
+  count(arrest_method) %>% 
+  arrange(desc(n))
+
+top_methods <- methods %>% 
+  filter(n > 1000)
+
+arr <- arr %>% 
+  mutate(arrest_method_short = case_when(arrest_method %in% unlist(top_methods$arrest_method) ~ as.character(arrest_method), 
+                                         TRUE ~ "All others"))
+
+p1 <- arr %>% 
+  group_by(fy, arrest_method_short) %>%
+  ggplot(aes(x = fy, fill=arrest_method_short)) +
+  geom_bar(stat='count')
+
+ggplotly(p1)
+
+p2 <- arr %>% 
+  filter(!is.na(aor),
+         aor != "HQ") %>% 
+  group_by(aor, fy, arrest_method_short) %>%
+  ggplot(aes(x = fy, fill=arrest_method_short)) +
+  geom_bar(stat='count') +
+  facet_wrap(~aor)
+
+ggplotly(p2)
+
+p3 <- arr %>% 
+  filter(!is.na(aor),
+         aor != "HQ") %>% 
+  group_by(aor, fy, arrest_method_short) %>%
+  summarize(n = n()) %>% 
+  ggplot(aes(x = fy, y = n, color=arrest_method_short, group=arrest_method_short)) +
+  geom_line() +
+  facet_wrap(~aor)
+
+ggplotly(p3)
 
 ```
 
