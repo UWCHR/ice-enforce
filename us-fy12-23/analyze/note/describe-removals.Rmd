@@ -80,7 +80,25 @@ rem %>%
 
 ```{r date_compare, echo=FALSE, message=FALSE, include=TRUE}
 
+rem$dep_diff_rem <- difftime(rem$departed_date, rem$removal_date, units='days')
 
+median(rem$dep_diff_rem, na.rm=TRUE)
+mean(rem$dep_diff_rem, na.rm=TRUE)
+max(rem$dep_diff_rem, na.rm=TRUE)
+min(rem$dep_diff_rem, na.rm=TRUE)
 
+h1 <- hist(as.numeric(rem$dep_diff_rem))
+
+p1 <- plot(as.numeric(rem$dep_diff_rem))
+
+```
+
+```{r plot dates}
+
+p1 <- plot(rem$id, rem$departed_date)
+
+p2 <- plot(rem$id, rem$removal_date)
+
+p3 <- plot(rem$removal_date, rem$departed_date)
 ```
 

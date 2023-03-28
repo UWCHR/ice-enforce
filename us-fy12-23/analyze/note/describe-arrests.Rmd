@@ -182,3 +182,19 @@ ggplotly(p3)
 
 ```
 
+
+```{r plot dates}
+
+p1 <- plot(arr$id, arr$arrest_date)
+
+p1
+
+p2 <- arr %>% 
+  group_by(arrest_date, fy) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = arrest_date, y = n)) +
+  geom_line()
+
+ggplotly(p2)
+
+```
