@@ -42,6 +42,13 @@ arr <- arr %>%
          year_mth = zoo::as.yearmon(arrest_date),
          fy = substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4))
 
+arr_methods_unique <- unique(tolower(arr$arrest_method))
+arr_disp_unique <- unique(tolower(arr$processing_disposition))
+
+
+write_lines(arr_methods_unique, '../output/arr_methods.txt')
+write_lines(arr_disp_unique, '../output/arr_disp.txt')
+
 ```
 
 ```{r gender, echo=FALSE, message=FALSE, include=TRUE}

@@ -1,0 +1,51 @@
+detainer
+warrant of arrest/notice to appear
+reinstatement of deport order i-871
+administrative deportation i-851/i-851a
+other
+notice to appear detained (i-862)
+bag and baggage
+prosecutorial discretion
+release
+voluntary return
+notice to appear released (i-862)
+NA
+not amenable to removal
+not in custody
+expedited removal (i-860)
+turned over to
+admitted
+withdrawal (i-275)
+paroled
+foreign born usc
+deported
+vwpp removal
+i-210
+(b)(3)
+formal removal
+crewmember (i-99)
+deferred inspection
+stowaway
+exclusion
+vwp refusal
+expedited removal limited review
+crewmember detained on board
+deferred inspection - no show
+released/prosecutorial discretion
+withdrawal in lieu of er
+notice to appear/prosecutorial discretion
+in-transit refusal
+crewmember refused landing rights
+reinstatement of deportation reasonable fear
+vwp removal
+notice to appear (i-862)
+vwp - removal - limited review
+withdrawal (wd2)
+vwp - refusal - limited review
+vwp removal (guam-cnmi)
+withdrawal in lieu of nta
+crew member (i-99) removal
+admissibility review
+expedited removal (i-860) - full scope
+expedited removal temporary final rule
+stowaway - limited review

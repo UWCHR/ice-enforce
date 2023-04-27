@@ -1,0 +1,28 @@
+cap local incarceration
+cap state incarceration
+located
+law enforcement agency response unit
+other agency (turned over to ins)
+cap federal incarceration
+other efforts
+other task force
+non-custodial arrest
+287(g) program
+inspections
+ero reprocessed arrest
+patrol border
+traffic check
+anti-smuggling
+patrol interior
+organized crime drug enforcement task force
+criminal alien program
+boat patrol
+worksite enforcement
+transportation check aircraft
+crewman/stowaway
+probation and parole
+transportation check freight train
+transportation check passenger train
+transportation check bus
+arrest (fugitive alien removal)
+foreign fugitive
