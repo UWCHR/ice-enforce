@@ -30,6 +30,21 @@ log_info('Rows in: {rows_in}')
 
 arrests <- arrests %>%
   mutate(arrest_date = as.Date(arrest_date, format = "%m/%d/%Y"))
+
+arrests_by_method <- arrests %>% 
+  mutate(arrest_method = tolower(arrest_method)) %>%
+  group_by(arrest_date, aor, arrest_method) %>% 
+  summarise(n = n())
+
+write_delim(arrests_by_method, 'output/arrests_by_method.csv.gz', delim='|')
+
+arrests_by_disp <- arrests %>% 
+  mutate(processing_disposition = tolower(processing_disposition)) %>%
+  group_by(arrest_date, aor, processing_disposition) %>% 
+  summarise(n = n())
+
+write_delim(arrests_by_disp, 'output/arrests_by_disposition.csv.gz', delim='|')
+
 arrests <- arrests %>%
   mutate(quarter = quarter(arrest_date, with_year = TRUE, fiscal_start = 10), 
          fy = stringr::str_sub(quarter, 1, 4)) %>%
@@ -62,7 +77,15 @@ log_info('Rows in: {rows_in}')
 removals <- removals %>%
   mutate(removal_date = as.Date(removal_date, format = "%m/%d/%Y"),
          departed_date = as.Date(departed_date, format = "%m/%d/%Y"),
-         date = case_when(is.na(removal_date) ~ departed_date, .default=removal_date))
+         date = coalesce(departed_date, removal_date),
+         processing_disp = coalesce(processing_disposition_code, processing_disposition))
+
+removals_by_disp <- removals %>% 
+  mutate(processing_disp = tolower(processing_disp)) %>%
+  group_by(date, aor, processing_disp) %>% 
+  summarise(n = n())
+
+write_delim(removals_by_disp, 'output/removals_by_disposition.csv.gz', delim='|')
 
 removals <- removals %>% 
   mutate(quarter = quarter(date, with_year = TRUE, fiscal_start = 10), 
