@@ -41,7 +41,12 @@ rem <- rem %>%
          month = month(departed_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(departed_date),
          fy = substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4),
-         processing_disp = coalesce(processing_disposition_code, processing_disposition))
+         processing_disp = coalesce(processing_disposition_code, processing_disposition),
+         date = coalesce(departed_date, removal_date))
+
+rem_by_disp <- rem %>% 
+  group_by(departed_date, aor, processing_disp) %>% 
+  summarise(n = n())
 
 ```
 
@@ -69,14 +74,45 @@ Note "Not amenable to removal" largest category; check % of this and other categ
 
 ```{r disp, echo=FALSE, message=FALSE, include=TRUE}
 
-rem %>%
+top_10 <- rem %>%
   mutate(processing_disp = tolower(processing_disp)) %>% 
   group_by(processing_disp) %>% 
   summarize(n = n()) %>% 
-  arrange(desc(n))
+  arrange(desc(n)) %>%
+  head(10)
+
+print(top_10)
 
 ```
 
+
+```{r expedited_removal, echo=FALSE, message=FALSE, include=TRUE}
+
+er <- c('er', 'ex')
+
+rem <- rem %>% 
+  mutate(processing_disp = tolower(processing_disp),
+         ex_rem = case_when(processing_disp %in% er ~ 'expedited removal',
+                            str_detect(processing_disp, 'expedited removal') ~ 'expedited removal',
+                            is.na(processing_disp) ~ 'all others',
+                            TRUE ~ 'all others'))
+
+p1 <- rem %>% 
+  group_by(year, ex_rem) %>%
+  ggplot(aes(x = year, fill=ex_rem)) +
+  geom_bar(stat='count')
+
+p1
+
+p1 <- rem %>% 
+  group_by(year, aor, ex_rem) %>%
+  ggplot(aes(x = year, fill=ex_rem)) +
+  geom_bar(stat='count') +
+  facet_wrap(~aor, scales="free_y")
+
+p1
+
+```
 
 ```{r date_compare, echo=FALSE, message=FALSE, include=TRUE}
 
