@@ -116,3 +116,16 @@
 2023-05-28 20:24:58|Rows out: 101036
 2023-05-28 20:24:58|Output file: output/enforcement.csv.gz
 2023-05-28 20:24:58|Log End Time
+2023-05-28 21:22:50|Log Start Time
+2023-05-28 21:22:57|Input file: input/arrests.csv.gz
+2023-05-28 21:22:57|Rows in: 1715117
+2023-05-28 21:22:59|Arrests in range: 1338322
+2023-05-28 21:23:35|Input file: input/encounters.csv.gz
+2023-05-28 21:23:35|Rows in: 5233032
+2023-05-28 21:23:43|Encounters in range: 3964948
+2023-05-28 21:24:09|Input file: input/removals.csv.gz
+2023-05-28 21:24:09|Rows in: 2663452
+2023-05-28 21:24:13|Removals in range: 2320288
+2023-05-28 21:24:27|Rows out: 100453
+2023-05-28 21:24:27|Output file: output/enforcement.csv.gz
+2023-05-28 21:24:27|Log End Time
