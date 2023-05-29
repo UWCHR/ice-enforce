@@ -66,3 +66,27 @@
 2023-04-27 15:30:26|Rows out: 101036
 2023-04-27 15:30:26|Output file: output/enforcement.csv.gz
 2023-04-27 15:30:26|Log End Time
+2023-05-28 20:03:00|Log Start Time
+2023-05-28 20:03:07|Input file: input/arrests.csv.gz
+2023-05-28 20:03:07|Rows in: 1715117
+2023-05-28 20:03:09|Arrest record date in project scope: 1338322
+2023-05-28 20:03:44|Input file: input/encounters.csv.gz
+2023-05-28 20:03:44|Rows in: 5233032
+2023-05-28 20:04:19|Input file: input/removals.csv.gz
+2023-05-28 20:04:19|Rows in: 2663452
+2023-05-28 20:04:35|Rows out: 101036
+2023-05-28 20:04:35|Output file: output/enforcement.csv.gz
+2023-05-28 20:04:35|Log End Time
+2023-05-28 20:07:33|Log Start Time
+2023-05-28 20:07:40|Input file: input/arrests.csv.gz
+2023-05-28 20:07:40|Rows in: 1715117
+2023-05-28 20:07:41|Arrest record date in project scope: 1338322
+2023-05-28 20:08:17|Input file: input/encounters.csv.gz
+2023-05-28 20:08:17|Rows in: 5233032
+2023-05-28 20:08:25|Encounter record date in project scope: 3964948
+2023-05-28 20:08:44|Input file: input/removals.csv.gz
+2023-05-28 20:08:44|Rows in: 2663452
+2023-05-28 20:08:50|Removal record date in project scope: 2320288
+2023-05-28 20:09:05|Rows out: 101036
+2023-05-28 20:09:05|Output file: output/enforcement.csv.gz
+2023-05-28 20:09:05|Log End Time

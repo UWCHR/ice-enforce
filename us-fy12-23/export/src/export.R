@@ -6,7 +6,11 @@
 # ---
 
 library(pacman)
-pacman::p_load("argparse", "tidyverse", "lubridate", "logger")
+pacman::p_load("argparse", "tidyverse", "lubridate", "logger", "yaml")
+
+constants <- read_yaml(here::here('share', 'hand', 'constants.yaml'))
+start_date <- constants$project_scope_start_date
+end_date <- constants$project_scope_end_date
 
 parser <- ArgumentParser()
 parser$add_argument("--arrests", default = 'us-fy12-23/export/input/arrests.csv.gz')
@@ -30,6 +34,12 @@ log_info('Rows in: {rows_in}')
 
 arrests <- arrests %>%
   mutate(arrest_date = as.Date(arrest_date, format = "%m/%d/%Y"))
+
+date_in_bounds <- arrests %>%
+  filter(arrest_date >= constants$project_scope_start_date & 
+         arrest_date <= constants$project_scope_end_date)
+
+log_info('Arrest record date in project scope: {nrow(date_in_bounds)}')
 
 arrests_by_method <- arrests %>% 
   mutate(arrest_method = tolower(arrest_method)) %>%
@@ -60,6 +70,13 @@ log_info('Rows in: {rows_in}')
 
 encounters <- encounters %>%
   mutate(event_date = as.Date(event_date, format = "%m/%d/%Y"))
+
+date_in_bounds <- encounters %>%
+  filter(event_date >= constants$project_scope_start_date & 
+         event_date <= constants$project_scope_end_date)
+
+log_info('Encounter record date in project scope: {nrow(date_in_bounds)}')
+
 encounters <- encounters %>%
   mutate(quarter = quarter(event_date, with_year = TRUE, fiscal_start = 10), 
          fy = stringr::str_sub(quarter, 1, 4)) %>%
@@ -79,6 +96,12 @@ removals <- removals %>%
          departed_date = as.Date(departed_date, format = "%m/%d/%Y"),
          date = coalesce(departed_date, removal_date),
          processing_disp = coalesce(processing_disposition_code, processing_disposition))
+
+date_in_bounds <- removals %>%
+  filter(date >= constants$project_scope_start_date & 
+         date <= constants$project_scope_end_date)
+
+log_info('Removal record date in project scope: {nrow(date_in_bounds)}')
 
 removals_by_disp <- removals %>% 
   mutate(processing_disp = tolower(processing_disp)) %>%
