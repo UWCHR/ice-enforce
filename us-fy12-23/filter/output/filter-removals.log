@@ -5,3 +5,10 @@
 2023-03-23 13:42:07|Output file: output/removals.csv.gz
 2023-03-23 13:42:07|Rows out: 2663452
 2023-03-23 13:42:07|Total records dropped: 2053
+2023-05-28 21:08:12|Input file: input/removals.csv.gz
+2023-05-28 21:08:12|Rows in: 2665505
+2023-05-28 21:08:33|Dropped records with missing `aor`: 0
+2023-05-28 21:08:52|Dropped records with `aor` == "HQ": 2053
+2023-05-28 21:08:52|Output file: output/removals.csv.gz
+2023-05-28 21:08:52|Rows out: 2663452
+2023-05-28 21:08:52|Total records dropped: 2053

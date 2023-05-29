@@ -6,7 +6,11 @@
 # ---
 
 library(pacman)
-pacman::p_load("argparse", "tidyverse", "logger")
+pacman::p_load("argparse", "tidyverse", "logger", "yaml")
+
+constants <- read_yaml(here::here('share', 'hand', 'constants.yaml'))
+start_date <- constants$project_scope_start_date
+end_date <- constants$project_scope_end_date
 
 parser <- ArgumentParser()
 parser$add_argument("--year", default = 2012)
@@ -57,7 +61,7 @@ if (args$input == 'input/arrests.csv.gz') {
 		filter(!arrest_method %in% likely_border_enforcement)
 	write_delim(df, args$output, delim='|')
 	post_drop <- nrow(df)
-	log_info('Dropped records with `arrest_method` reflecting likely border patrol involvement: {pre_drop - post_drop}')
+	log_info('Dropped records with arrest_method reflecting likely border patrol involvement: {pre_drop - post_drop}')
 
 	border_patrol_keywords <- "CBP|USBP|Border Patrol"
 
@@ -66,7 +70,7 @@ if (args$input == 'input/arrests.csv.gz') {
 		filter(!str_detect(arrest_method, border_patrol_keywords))
 	write_delim(df, args$output, delim='|')
 	post_drop <- nrow(df)
-	log_info('Dropped records with border patrol keywords in `arrest_method`: {pre_drop - post_drop}')
+	log_info('Dropped records with border keywords in arrest_method: {pre_drop - post_drop}')
 
 
 	likely_border <- "PORT OF ENTRY|AIRPORT|BORDER"
@@ -76,7 +80,7 @@ if (args$input == 'input/arrests.csv.gz') {
 		filter(is.na(apprehension_landmark) | 
 			   !str_detect(apprehension_landmark, likely_border))
 	post_drop <- nrow(df)
-	log_info('Dropped records with border-related keywords in `apprehension_landmark`: {pre_drop - post_drop}')
+	log_info('Dropped records with border keywords in apprehension_landmark: {pre_drop - post_drop}')
 
 }
 
