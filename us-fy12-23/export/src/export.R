@@ -75,7 +75,7 @@ date_in_bounds <- encounters %>%
   filter(event_date >= constants$project_scope_start_date & 
          event_date <= constants$project_scope_end_date)
 
-log_info('Encounter in range: {nrow(date_in_bounds)}')
+log_info('Encounters in range: {nrow(date_in_bounds)}')
 
 encounters <- encounters %>%
   mutate(quarter = quarter(event_date, with_year = TRUE, fiscal_start = 10), 
@@ -101,7 +101,7 @@ date_in_bounds <- removals %>%
   filter(date >= constants$project_scope_start_date & 
          date <= constants$project_scope_end_date)
 
-log_info('Removal in range: {nrow(date_in_bounds)}')
+log_info('Removals in range: {nrow(date_in_bounds)}')
 
 removals_by_disp <- removals %>% 
   mutate(processing_disp = tolower(processing_disp)) %>%
