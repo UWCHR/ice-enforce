@@ -44,9 +44,9 @@ rem <- rem %>%
          processing_disp = coalesce(processing_disposition_code, processing_disposition),
          date = coalesce(departed_date, removal_date))
 
-rem_by_disp <- rem %>% 
-  group_by(departed_date, aor, processing_disp) %>% 
-  summarise(n = n())
+rem_processing_disp_unique <- unique(tolower(rem$processing_disp))
+
+write_lines(rem_processing_disp_unique, '../output/rem_processing_disp.txt')
 
 ```
 

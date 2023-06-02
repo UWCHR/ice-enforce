@@ -81,6 +81,28 @@ arr %>%
   summarize(n = n()) %>% 
   arrange(desc(n))
 
+arr <- arr %>%
+  mutate(processing_disposition = tolower(processing_disposition),
+         disp_exp = case_when(str_detect(processing_disposition, 'expedited removal') ~ 'expedited removal',
+                             TRUE ~ 'all other')) 
+
+p1 <- arr %>% 
+  group_by(year, disp_exp) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year, y = n, fill=disp_exp)) +
+  geom_col()
+
+p1
+
+p2 <- arr %>% 
+  group_by(year, aor, disp_exp) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year, y = n, fill=disp_exp)) +
+  geom_col() +
+  facet_wrap(~aor, scales='free_y')
+
+p2
+
 ```
 
 ```{r meth, echo=FALSE, message=FALSE, include=TRUE}
