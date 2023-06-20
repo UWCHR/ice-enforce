@@ -71,7 +71,6 @@ arr %>%
 
 ```
 
-Note "Not amenable to removal" largest category; check % of this and other categories like "foreign born usc", "not in custody" (also indicates no arrest?)
 
 ```{r disp, echo=FALSE, message=FALSE, include=TRUE}
 
@@ -99,7 +98,7 @@ p2 <- arr %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = year, y = n, fill=disp_exp)) +
   geom_col() +
-  facet_wrap(~aor, scales='free_y')
+  facet_wrap(~aor)
 
 p2
 

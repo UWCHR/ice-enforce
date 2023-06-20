@@ -70,7 +70,7 @@ rem %>%
 
 ```
 
-Note "Not amenable to removal" largest category; check % of this and other categories like "foreign born usc", "not in custody" (also indicates no arrest?)
+
 
 ```{r disp, echo=FALSE, message=FALSE, include=TRUE}
 
