@@ -12,7 +12,9 @@ output:
 
 library(pacman)
 
-p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, yaml)
+
+pd_dict <- read_yaml(here('share', 'hand', 'processing_disp.yaml'))
 
 enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'encounters.csv.gz'), delim='|',
                   col_types = cols(aor = col_character(),
@@ -38,63 +40,85 @@ enc <- enc %>%
          month = month(event_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(event_date))
 
-# arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|',
-#                   col_types = cols(aor = col_character(),
-#                                   arrest_date = col_date(format="%m/%d/%Y"),
-#                                   departed_date = col_date(format="%m/%d/%Y"),
-#                                   apprehension_landmark = col_character(),
-#                                   operation = col_factor(),
-#                                   processing_disposition = col_factor(),
-#                                   citizenship_country = col_factor(),
-#                                   gender = col_factor(),
-#                                   case_closed_date = col_date(format="%m/%d/%Y"),
-#                                   id = col_integer(),
-#                                   hashid = col_character()
-#                                   )) 
+arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|',
+                  col_types = cols(aor = col_character(),
+                                  arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_landmark = col_character(),
+                                  operation = col_factor(),
+                                  processing_disposition = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  case_closed_date = col_date(format="%m/%d/%Y"),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  ))
 
-# glimpse(arr)
+glimpse(arr)
+
+redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
+
+arr <- arr %>%
+  dplyr::select(-redacted)
+
+arr <- arr %>%
+  mutate(arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+         year = year(arrest_date),
+         month = month(arrest_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(arrest_date),
+         fy = substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4))
+
+rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'removals.csv.gz'), delim='|',
+                  col_types = cols(aor = col_character(),
+                                   arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  case_close_date = col_date(format="%m/%d/%Y"),
+                                  removal_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_method_code = col_character(),
+                                  processing_disposition_code = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  final_charge_section = col_factor(),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  ))
+
+# glimpse(rem)
+
+redacted <- c('removal_threat_level', 'alien_file_number')
+
+rem <- rem %>%
+  dplyr::select(-redacted)
+
+rem <- rem %>%
+  mutate(year = year(departed_date),
+         month = month(departed_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(departed_date),
+         fy = substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4),
+         processing_disp = coalesce(processing_disposition_code, processing_disposition), # No correspondence of these two values
+         date = coalesce(departed_date, removal_date))
+
+```
+
+```{r get_unique_pd_vals}
+
+# enc_pd <- unique(str_to_upper(enc$processing_disposition))
+# arr_pd <- unique(str_to_upper(arr$processing_disposition))
+# rem_pd <- unique(str_to_upper(rem$processing_disp))
 # 
-# redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
+# rem_n_pd <- rem %>% 
+#   group_by(processing_disposition) %>% 
+#   summarize(n=n()) %>% 
+#   arrange(desc(n))
 # 
-# arr <- arr %>% 
-#   dplyr::select(-redacted)
+# rem_n_pdc <- rem %>% 
+#   group_by(processing_disposition_code) %>% 
+#   summarize(n=n()) %>% 
+#   arrange(desc(n))
 # 
-# arr <- arr %>% 
-#   mutate(arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
-#          year = year(arrest_date),
-#          month = month(arrest_date, label=TRUE, abbr=TRUE),
-#          year_mth = zoo::as.yearmon(arrest_date),
-#          fy = substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4))
+# pd <- unique(c(enc_pd, arr_pd, rem_pd))
 # 
-# rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'removals.csv.gz'), delim='|',
-#                   col_types = cols(aor = col_character(),
-#                                    arrest_date = col_date(format="%m/%d/%Y"),
-#                                   departed_date = col_date(format="%m/%d/%Y"),
-#                                   case_close_date = col_date(format="%m/%d/%Y"),
-#                                   removal_date = col_date(format="%m/%d/%Y"),
-#                                   apprehension_method_code = col_character(),
-#                                   processing_disposition_code = col_factor(),
-#                                   citizenship_country = col_factor(),
-#                                   gender = col_factor(),
-#                                   final_charge_section = col_factor(),
-#                                   id = col_integer(),
-#                                   hashid = col_character()
-#                                   )) 
-# 
-# # glimpse(rem)
-# 
-# redacted <- c('removal_threat_level', 'alien_file_number')
-# 
-# rem <- rem %>% 
-#   dplyr::select(-redacted)
-# 
-# rem <- rem %>% 
-#   mutate(year = year(departed_date),
-#          month = month(departed_date, label=TRUE, abbr=TRUE),
-#          year_mth = zoo::as.yearmon(departed_date),
-#          fy = substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4),
-#          processing_disp = coalesce(processing_disposition_code, processing_disposition),
-#          date = coalesce(departed_date, removal_date))
+# write_lines(pd, here('us-fy12-23', 'analyze', 'output', 'processing_disp.txt'))
 
 ```
 1. "Morton memo" era: 2011-11/2014
