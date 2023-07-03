@@ -14,7 +14,7 @@ library(pacman)
 
 p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, yaml)
 
-pd_dict <- read_yaml(here('share', 'hand', 'processing_disp.yaml'))
+pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
 
 enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'encounters.csv.gz'), delim='|',
                   col_types = cols(aor = col_character(),
@@ -95,7 +95,7 @@ rem <- rem %>%
          month = month(departed_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(departed_date),
          fy = substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4),
-         processing_disp = coalesce(processing_disposition_code, processing_disposition), # No correspondence of these two values
+         processing_disposition = coalesce(processing_disposition_code, processing_disposition), # No correspondence of these two values
          date = coalesce(departed_date, removal_date))
 
 ```
@@ -121,6 +121,26 @@ rem <- rem %>%
 # write_lines(pd, here('us-fy12-23', 'analyze', 'output', 'processing_disp.txt'))
 
 ```
+
+```{r standardize_pd_vals}
+
+arr <- arr %>% 
+  mutate(processing_disposition = str_to_upper(processing_disposition))
+
+arr <- left_join(arr, pd_dict, by=c('processing_disposition' = 'raw_processing_disposition'))
+
+enc <- enc %>% 
+  mutate(processing_disposition = str_to_upper(processing_disposition))
+
+enc <- left_join(enc, pd_dict, by=c('processing_disposition' = 'raw_processing_disposition'))
+
+rem <- rem %>% 
+  mutate(processing_disposition = str_to_upper(processing_disposition))
+
+rem <- left_join(rem, pd_dict, by=c('processing_disposition' = 'raw_processing_disposition'))
+
+```
+
 1. "Morton memo" era: 2011-11/2014
 2.  "Felons not families" era: 11/2014-1/2017
 3. Trump era: 1/2017-9/30/2021
