@@ -135,6 +135,16 @@ p2 <- arr %>%
 
 ggplotly(p2)
 
+p3 <- arr %>% 
+  filter(arrest_date <= "2022-09-30",
+         aor == "SEA") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
+  geom_line()
+
+p3
+
 ```
 
 ```{r non-specific, echo=FALSE, message=FALSE, include=TRUE}

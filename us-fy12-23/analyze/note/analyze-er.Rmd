@@ -1,0 +1,126 @@
+---
+title: "FY12-23YTD ICE ERO: Expedited removal trends"
+author: "UWCHR"
+date: "2023-10-27"
+output:
+  pdf_document: default
+  html_document: default
+---
+ 
+
+```{r setup, echo=FALSE, message=FALSE, include=TRUE}
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, yaml)
+
+pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
+
+rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'removals.csv.gz'), delim='|',
+                  col_types = cols(aor = col_character(),
+                                  arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  case_close_date = col_date(format="%m/%d/%Y"),
+                                  removal_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_method_code = col_character(),
+                                  processing_disposition_code = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  final_charge_section = col_factor(),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  ))
+
+
+# glimpse(arr)
+
+redacted <- c('removal_threat_level', 'alien_file_number')
+
+rem <- rem %>%
+  dplyr::select(-any_of(redacted))
+
+rem <- rem %>%
+  mutate(year = year(departed_date),
+         month = month(departed_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(departed_date),
+         fy = substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4),
+         processing_disposition = coalesce(processing_disposition_code, processing_disposition), # No correspondence of these two values
+         date = coalesce(departed_date, removal_date))
+
+```
+
+
+
+```{r standardize_pd_vals}
+
+rem <- rem %>% 
+  mutate(processing_disposition = str_to_upper(processing_disposition))
+
+rem <- left_join(rem, pd_dict, by=c('processing_disposition' = 'processing_disposition_raw'))
+
+rem <- rem %>% 
+  mutate(expedited_removal = case_when(str_detect(processing_disposition_clean, "EXPEDITED") ~ TRUE,
+         TRUE ~ FALSE))
+
+```
+
+```{r disp_annual, echo=FALSE, message=FALSE, include=TRUE}
+
+p1 <- rem %>% 
+  count(year, expedited_removal) %>% 
+  ggplot(aes(x=year, y=n, fill=expedited_removal)) +
+  geom_col()
+
+p1
+
+p2 <- rem %>% 
+  count(year, aor, expedited_removal) %>% 
+  ggplot(aes(x=year, y=n, fill=expedited_removal)) +
+  geom_col() +
+   labs(main="Total removals") +
+  facet_wrap(~aor)
+ 
+
+p2
+
+p3 <- rem %>% 
+  count(year, aor, expedited_removal) %>% 
+  filter(aor == "SEA") %>% 
+  ggplot(aes(x=year, y=n, fill=expedited_removal)) +
+  geom_col() +
+  facet_wrap(~aor) +
+  labs(main="Total removals",
+         subtitle="Seattle AOR")
+
+p3
+
+```
+
+```{r prop_aor}
+
+p1 <- rem %>% 
+  filter(year >= 2012) %>% 
+  group_by(year) %>% 
+  summarize(prop_er = mean(expedited_removal)) %>% 
+  ggplot(aes(x = year, y = prop_er)) +
+  geom_line() +
+  scale_y_continuous(labels=scales::percent) +
+  labs(title = "Proportion of expedited removals",
+       subtitle = "National")
+
+p1
+
+p2 <- rem %>% 
+  filter(year >= 2012) %>% 
+  group_by(year, aor) %>% 
+  summarize(prop_er = mean(expedited_removal)) %>% 
+  ggplot(aes(x = year, y = prop_er, color = aor, fill = aor)) +
+  geom_line() +
+  gghighlight(aor == "SEA") +
+  scale_y_continuous(labels=scales::percent) +
+  labs(title = "Proportion of expedited removals",
+       subtitle = "By AOR, SEA highlighted")
+
+p2
+
+```
