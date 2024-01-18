@@ -1,0 +1,231 @@
+---
+title: "FY12-23YTD ICE ERO descriptive analysis"
+author: "UWCHR"
+date: "2023-03-27"
+output:
+  pdf_document: default
+  html_document: default
+---
+ 
+
+```{r setup, echo=FALSE, message=FALSE, include=TRUE}
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
+
+arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|',
+                  col_types = cols(aor = col_character(),
+                                  arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_landmark = col_character(),
+                                  operation = col_factor(),
+                                  processing_disposition = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  case_closed_date = col_date(format="%m/%d/%Y"),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+glimpse(arr)
+
+redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
+
+arr <- arr %>% 
+  dplyr::select(-all_of(redacted))
+
+arr <- arr %>% 
+  mutate(arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+         year = year(arrest_date),
+         month = month(arrest_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(arrest_date),
+         fy = as.numeric(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)))
+
+# arr_methods_unique <- unique(tolower(arr$arrest_method))
+# arr_disp_unique <- unique(tolower(arr$processing_disposition))
+# 
+# 
+# write_lines(arr_methods_unique, '../output/arr_methods.txt')
+# write_lines(arr_disp_unique, '../output/arr_disp.txt')
+
+demog <- read_delim(here('us-fy12-23', 'analyze', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
+  arrange(aor, year)
+
+```
+ 
+ 
+## Total arrests
+
+```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
+
+p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n)) +
+  geom_col() +
+  labs(title = "Total ICE arrests per FY")
+
+p1
+
+```
+
+## Total arrests per capita per aor
+
+```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
+
+arr_per_aor <- arr %>% 
+  filter(!is.na(aor),
+         aor != "HQ",
+        arrest_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n())
+
+arr_per_aor <- left_join(arr_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
+  group_by(aor) %>% 
+  fill(contains('pop'))
+
+pc_scale <- 100000
+
+arr_per_aor <- arr_per_aor %>% 
+  mutate(n_per_cap = (n / total_pop) * pc_scale,
+         n_per_undocu = (n / undocu_pop) * pc_scale)
+
+```
+
+
+Below is an interactive chart of total ICE arrests per FY by AOR:
+
+```{r annual, echo=FALSE, message=FALSE, include=TRUE}
+
+p1 <- arr_per_aor %>% 
+  ggplot(aes(x = as.factor(fy), y=n_per_undocu, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "Total ICE arrests per 100,000 likely undocumented FY by AOR")
+
+ggplotly(p1)
+
+```
+
+Below is a chart of total ICE arrests per FY, highlighting the Seattle AOR ("SEA"):
+
+```{r annual_sea}
+
+
+p2 <- arr_per_aor %>% 
+  ggplot(aes(x = as.factor(fy), y=n_per_undocu, color=aor, group=aor)) +
+  geom_line() +
+  gghighlight(aor == "SEA") +
+  labs(title = "Total ICE arrests per likely undocumented per FY",
+       subtitle = "Seattle AOR highlighted")
+
+p2
+
+```
+
+Percent change in arrests per FY nationally and by AOR. Note comparison between groups may be misleading because smaller population AORs will be more volatile.
+
+```{r arrests_pct_chg}
+
+natl_pct_chg_per_undocu <- arr_per_aor %>% 
+  mutate(pct_change = (n_per_undocu/lag(n_per_undocu) - 1))
+
+p1 <- natl_pct_chg_per_undocu %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="FY % change in total ICE arrests per 100000 likely undocumented")
+
+p1
+
+p2 <- natl_pct_chg_per_undocu %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor)  +
+  labs(title="FY % change in total ICE arrests per AOR") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p2
+
+# Could try superimposing line chart of total arrests as above
+
+```
+
+## Arrests by `arrest_method`
+
+```{r method_setup, echo=FALSE, message=FALSE, include=TRUE}
+
+methods <- arr %>% 
+  count(arrest_method) %>% 
+  arrange(desc(n))
+
+top_methods <- methods %>% 
+  filter(n > 10000)
+
+arr <- arr %>% 
+  mutate(arrest_method_short = case_when(arrest_method %in% unlist(top_methods$arrest_method) ~ as.character(arrest_method), 
+                                         TRUE ~ "All others"))
+
+```
+
+
+```{r arr_method_pct_chg}
+
+method_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         !is.na(aor)) %>% 
+  group_by(fy, arrest_method_short) %>%
+  summarize(n = n()) %>% 
+  group_by(arrest_method_short) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- method_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~arrest_method_short, scales='free_y')  +
+  labs(title="FY % change in total ICE arrests by arrest method") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p1
+
+```
+
+```{r method_pc_per_aor}
+
+method_pc_per_aor <- arr %>% 
+  filter(!is.na(aor),
+         aor != "HQ") %>% 
+  count(aor, fy, arrest_method_short)
+
+method_pc_per_aor <- left_join(method_pc_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
+  group_by(aor) %>% 
+  fill(contains('pop'))
+
+method_pc_per_aor <- method_pc_per_aor %>% 
+  mutate(n_per_cap = (n / total_pop) * pc_scale,
+         n_per_undocu = (n / undocu_pop) * pc_scale)
+
+p1 <- method_pc_per_aor %>%
+  filter(arrest_method_short == "CAP Local Incarceration") %>% 
+  ggplot(aes(x=as.factor(fy), y=n_per_undocu, color=aor, group=aor)) +
+  geom_line()
+
+ggplotly(p1)
+
+p2 <- method_pc_per_aor %>%
+  filter(arrest_method_short == "Non-Custodial Arrest") %>% 
+  ggplot(aes(x=as.factor(fy), y=n_per_undocu, color=aor, group=aor)) +
+  geom_line()
+
+ggplotly(p2)
+
+```
+
+
+
