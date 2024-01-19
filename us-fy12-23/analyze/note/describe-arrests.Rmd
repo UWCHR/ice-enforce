@@ -174,7 +174,7 @@ methods <- arr %>%
   arrange(desc(n))
 
 top_methods <- methods %>% 
-  filter(n > 10000)
+  filter(n > 5000)
 
 arr <- arr %>% 
   mutate(arrest_method_short = case_when(arrest_method %in% unlist(top_methods$arrest_method) ~ as.character(arrest_method), 

@@ -38,7 +38,10 @@ enc <- enc %>%
   mutate(event_date = as_date(event_date, format="%m/%d/%Y"),
          year = year(event_date),
          month = month(event_date, label=TRUE, abbr=TRUE),
-         year_mth = zoo::as.yearmon(event_date))
+         year_mth = zoo::as.yearmon(event_date),
+         fy = substr(quarter(event_date, fiscal_start=10, type="year.quarter"), 1,4),
+         operation = toupper(operation),
+         processing_disposition = toupper(processing_disposition))
 
 ```
 
@@ -62,143 +65,215 @@ enc %>%
 
 ```
 
-Note "Not amenable to removal" largest category; check % of this and other categories like "foreign born usc", "not in custody" (also indicates no arrest?)
+## Total encounters
 
-```{r disp, echo=FALSE, message=FALSE, include=TRUE}
+```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
 
-enc %>%
-  mutate(processing_disposition = tolower(processing_disposition)) %>% 
-  group_by(processing_disposition) %>% 
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
   summarize(n = n()) %>% 
-  arrange(desc(n))
+  ggplot(aes(x = as.factor(fy), y=n)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per FY")
+
+p1
 
 ```
+
+Below is an interactive chart of total ICE arrests per FY by AOR:
 
 ```{r annual, echo=FALSE, message=FALSE, include=TRUE}
 
 p1 <- enc %>% 
-  group_by(year, aor) %>% 
+  filter(event_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
   summarize(n = n()) %>% 
-  ggplot(aes(x = year, y=n)) +
-  geom_bar(stat="identity") +
+  ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "Total ICE encounters per FY by AOR")
+
+ggplotly(p1)
+
+```
+
+Below is a chart of total ICE arrests per FY, highlighting the Seattle AOR ("SEA"):
+
+```{r annual_specific}
+
+specific_aor = "SEA"
+
+p2 <- enc %>% 
+  filter(event_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
+  geom_line() +
+  gghighlight(aor == specific_aor) +
+  labs(title = "Total ICE encounters per FY",
+       subtitle = paste0(specific_aor, " AOR highlighted"))
+
+p2
+
+```
+
+## Operation
+
+```{r enc_op}
+
+ops <- enc %>% 
+  count(operation) %>% 
+  arrange(desc(n))
+
+top_ops <- ops %>% 
+  filter(n > 10000)
+
+enc <- enc %>% 
+  mutate(operation_short = case_when(operation %in% unlist(top_ops$operation) ~ as.character(operation), 
+                                         TRUE ~ "ALL OTHERS"))
+
+```
+
+```{r enc_op_fy}
+
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30",
+         !is.na(operation)) %>% 
+  group_by(fy, operation_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=operation_short)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per FY by operation (excluding NA)")
+
+ggplotly(p1)
+
+```
+
+```{r enc_op_fy}
+
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30",
+         # !is.na(operation)
+         ) %>% 
+  group_by(fy, aor, operation_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=operation_short)) +
+  geom_col() +
+  facet_wrap(~aor) +
+  labs(title = "Total ICE encounters per FY by operation")
+
+p1
+
+```
+
+```{r enc_op_sea}
+
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30",
+         aor == "SEA",
+         # !is.na(operation)
+         ) %>% 
+  group_by(fy, aor, operation_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=operation_short)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per FY by operation")
+
+ggplotly(p1)
+
+```
+
+
+## Processing disposition
+
+```{r enc_disp}
+
+disps <- enc %>% 
+  count(processing_disposition) %>% 
+  arrange(desc(n))
+
+top_disps <- disps %>% 
+  filter(n > 10000)
+
+enc <- enc %>% 
+  mutate(disp_short = case_when(processing_disposition %in% unlist(top_disps$processing_disposition) ~ as.character(processing_disposition), 
+                                         TRUE ~ "ALL OTHERS"))
+
+```
+
+```{r enc_disp_fy}
+
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30",
+         # !is.na(operation)
+         ) %>% 
+  group_by(fy, disp_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per FY by processing disposition")
+
+ggplotly(p1)
+
+```
+
+```{r enc_disp_fy_pct_not_amenable}
+
+not_amenable = c("NOT AMENABLE TO REMOVAL", "FOREIGN BORN USC")
+
+fy_total <- enc %>% 
+  group_by(fy) %>% 
+  summarize(n_total = n())
+
+fy_not_amenable <- enc %>% 
+  filter(disp_short %in% not_amenable) %>% 
+  group_by(fy) %>% 
+  summarize(n_not_amenable = n())
+
+dat <- left_join(fy_not_amenable, fy_total, by=c('fy')) %>% 
+  mutate(pct_not_amenable = n_not_amenable/n_total)
+
+p1 <- dat %>% 
+  ggplot(aes(x = fy, y = pct_not_amenable)) +
+  geom_col()
+
+p1
+
+fy_aor_total <- enc %>% 
+  group_by(fy, aor) %>% 
+  summarize(n_total = n())
+
+fy_aor_not_amenable <- enc %>% 
+  filter(disp_short %in% not_amenable) %>% 
+  group_by(fy, aor) %>% 
+  summarize(n_not_amenable = n())
+
+dat <- left_join(fy_aor_not_amenable, fy_aor_total, by=c('fy', 'aor')) %>% 
+  mutate(pct_not_amenable = n_not_amenable/n_total)
+
+p2 <- dat %>% 
+  ggplot(aes(x = fy, y = pct_not_amenable, fill = aor)) +
+  geom_col() +
   facet_wrap(~aor)
 
-p1
-
-```
-
-```{r buf, echo=FALSE, message=FALSE, include=TRUE}
-
-buf <- enc %>% 
-  filter(aor == "BUF")
-
-p1 <- buf %>% 
-  group_by(year_mth) %>% 
-  summarize(n = n()) %>% 
-  ggplot(aes(x = year_mth, y = n)) +
-  geom_line()
-
-p1
-
-p2 <- buf %>% 
-  group_by(year, month) %>% 
-  summarize(n = n()) %>% 
-  ggplot(aes(x = month, y = n, color=as.factor(year), group=as.factor(year))) +
-  geom_line() +
-  scale_color_discrete()
-
 p2
-
-p3 <- buf %>% 
-  group_by(year, processing_disposition) %>% 
-  ggplot(aes(x=year, fill=processing_disposition)) +
-  geom_bar(stat='count') +
-  gghighlight()
-
-ggplotly(p3)
-
-p4 <- buf %>% 
-  filter(processing_disposition != 'Not in Custody') %>% 
-  group_by(year_mth) %>% 
-  summarize(n = n()) %>% 
-  ggplot(aes(x = year_mth, y = n)) +
-  geom_line()
-
-p4
-
-p5 <- buf %>% 
-  filter(toupper(citizenship_country) == 'UNKNOWN') %>% 
-  group_by(year_mth) %>% 
-  summarize(n = n()) %>% 
-  ggplot(aes(x = year_mth, y = n)) +
-  geom_line()
-
-p5
-
-
-p6 <- buf %>% 
-  group_by(year, operation) %>% 
-  ggplot(aes(x = year, fill=operation)) +
-  geom_bar(stat='count') + 
-  gghighlight()
-
-ggplotly(p6)
+  
 ```
 
-```{r los, echo=FALSE, message=FALSE, include=TRUE}
+```{r enc_disp_sea}
 
-los <- enc %>% 
-  filter(aor == "LOS")
-
-p1 <- los %>% 
-  group_by(year_mth) %>% 
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30",
+         aor == "SEA",
+         # !is.na(operation)
+         ) %>% 
+  group_by(fy, aor, disp_short) %>% 
   summarize(n = n()) %>% 
-  ggplot(aes(x = year_mth, y = n)) +
-  geom_line()
+  ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per FY by processing_disposition")
 
-p1
-
-p2 <- los %>% 
-  group_by(year, month) %>% 
-  summarize(n = n()) %>% 
-  ggplot(aes(x = month, y = n, color=as.factor(year), group=as.factor(year))) +
-  geom_line() +
-  scale_color_discrete()
-
-p2
-
-p3 <- los %>% 
-  group_by(year, processing_disposition) %>% 
-  ggplot(aes(x=year, fill=processing_disposition)) +
-  geom_bar(stat='count') +
-  gghighlight()
-
-ggplotly(p3)
-
-p4 <- los %>% 
-  filter(processing_disposition != 'Not in Custody') %>% 
-  group_by(year_mth) %>% 
-  summarize(n = n()) %>% 
-  ggplot(aes(x = year_mth, y = n)) +
-  geom_line()
-
-p4
-
-p5 <- los %>% 
-  filter(toupper(citizenship_country) == 'UNKNOWN') %>% 
-  group_by(year_mth) %>% 
-  summarize(n = n()) %>% 
-  ggplot(aes(x = year_mth, y = n)) +
-  geom_line()
-
-p5
-
-p6 <- los %>% 
-  group_by(year, operation) %>% 
-  ggplot(aes(x = year, fill=operation)) +
-  geom_bar(stat='count') + 
-  gghighlight()
-
-ggplotly(p6)
+ggplotly(p1)
 
 ```
+
