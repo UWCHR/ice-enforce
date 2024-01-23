@@ -3,8 +3,8 @@ title: "FY12-23YTD ICE ERO descriptive analysis"
 author: "UWCHR"
 date: "2023-03-27"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
  
 
@@ -258,7 +258,7 @@ ggplotly(p4)
 
 ### Trends in SEA NCA arrests
 
-```{r trend_specific_aor_method}
+```{r trend_specific_aor_method_nca}
 
 specific_aor = "SEA"
 specific_method = "Non-Custodial Arrest"
@@ -281,7 +281,7 @@ p4
 
 ```
 
-```{r trend_compare_method_highlight_aor}
+```{r trend_compare_method_nca_highlight_aor}
 
 p1 <- arr %>% 
   filter(!is.na(aor),
@@ -390,7 +390,7 @@ ggplotly(p3)
 
 ### Trends in SEA CLC arrests
 
-```{r trend_specific_aor_method}
+```{r trend_specific_aor_method_clc}
 
 specific_aor = "SEA"
 specific_method = "CAP Local Incarceration"
@@ -413,7 +413,7 @@ p4
 
 ```
 
-```{r trend_compare_method_highlight_aor}
+```{r trend_compare_method_clc_highlight_aor}
 
 p1 <- arr %>% 
   filter(!is.na(aor),
