@@ -14,6 +14,8 @@ library(pacman)
 
 p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
 
+pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
+
 rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'removals.csv.gz'), delim='|',
                   col_types = cols(aor = col_character(),
                                    arrest_date = col_date(format="%m/%d/%Y"),
@@ -40,13 +42,11 @@ rem <- rem %>%
   mutate(year = year(departed_date),
          month = month(departed_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(departed_date),
-         fy = substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4),
-         processing_disp = coalesce(processing_disposition_code, processing_disposition),
-         date = coalesce(departed_date, removal_date))
+         processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
+         date = coalesce(departed_date, removal_date),
+         fy = as.numeric(substr(quarter(date, fiscal_start=10, type="year.quarter"), 1,4)))
 
-rem_processing_disp_unique <- unique(tolower(rem$processing_disp))
-
-write_lines(rem_processing_disp_unique, '../output/rem_processing_disp.txt')
+rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
 
 ```
 
@@ -70,21 +70,137 @@ rem %>%
 
 ```
 
+## Total removals
 
+```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
 
-```{r disp, echo=FALSE, message=FALSE, include=TRUE}
-
-top_10 <- rem %>%
-  mutate(processing_disp = tolower(processing_disp)) %>% 
-  group_by(processing_disp) %>% 
+p1 <- rem %>% 
+  filter(date >= "2011-10-01",
+         date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
   summarize(n = n()) %>% 
-  arrange(desc(n)) %>%
-  head(10)
+  ggplot(aes(x = as.factor(fy), y=n)) +
+  geom_col() +
+  labs(title = "Total removals per FY")
 
-print(top_10)
+p1
 
 ```
 
+```{r annual, echo=FALSE, message=FALSE, include=TRUE}
+
+p1 <- rem %>% 
+  filter(date >= "2011-10-01",
+         date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "Total removals per FY by AOR")
+
+ggplotly(p1)
+
+```
+
+Below is a chart of total ICE arrests per FY, highlighting the Seattle AOR ("SEA"):
+
+```{r annual_sea}
+
+
+p2 <- rem %>% 
+  filter(date >= "2011-10-01",
+         date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
+  geom_line() +
+  gghighlight(aor == "SEA") +
+  labs(title = "Total removals per FY",
+       subtitle = "Seattle AOR highlighted")
+
+p2
+
+```
+
+```{r removals_pct_chg}
+
+natl_pct_chg <- rem %>%
+  filter(date >= "2011-10-01",
+         date <= "2022-09-30") %>% 
+  group_by(fy) %>%
+  summarize(n = n()) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- natl_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="FY % change in total removals")
+
+p1
+
+aor_pct_chg <- rem %>%
+  filter(date >= "2011-10-01",
+         date <= "2022-09-30",
+         aor != "HQ",
+         !is.na(aor)) %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p2 <- aor_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor)  +
+  labs(title="FY % change in total removals per AOR") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p2
+
+# Could try superimposing line chart of total arrests as above
+
+```
+
+## Removals by processing disposition
+
+```{r disp, echo=FALSE, message=FALSE, include=TRUE}
+
+disps <- rem %>% 
+  filter(date >= "2012-10-01",
+         date <= "2022-09-30",
+         ) %>% 
+  count(processing_disposition_clean) %>% 
+  arrange(desc(n))
+
+top_disp <- disps %>% 
+  filter(n > 50000)
+
+rem <- rem %>% 
+  mutate(disp_short = case_when(processing_disposition_clean %in% unlist(top_disp$processing_disposition_clean) ~ as.character(processing_disposition_clean), 
+                                         TRUE ~ "ALL OTHERS"))
+
+
+```
+
+```{r rem_disp_fy}
+
+p1 <- rem %>% 
+  filter(date >= "2012-10-01",
+         date <= "2022-09-30",
+         ) %>% 
+  group_by(fy, disp_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
+  geom_col() +
+  labs(title = "Total removals per FY by processing disposition")
+
+ggplotly(p1)
+
+```
 
 ```{r expedited_removal, echo=FALSE, message=FALSE, include=TRUE}
 
