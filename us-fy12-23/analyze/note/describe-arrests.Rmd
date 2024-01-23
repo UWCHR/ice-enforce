@@ -3,12 +3,17 @@ title: "FY12-23YTD ICE ERO descriptive analysis"
 author: "UWCHR"
 date: "2023-03-27"
 output:
-  html_document: default
-  pdf_document: default
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
 ---
- 
 
-```{r setup, echo=FALSE, message=FALSE, include=TRUE}
+# Data overview
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 library(pacman)
 
@@ -28,8 +33,6 @@ arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), deli
                                   hashid = col_character()
                                   )) 
 
-glimpse(arr)
-
 redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
 
 arr <- arr %>% 
@@ -42,18 +45,13 @@ arr <- arr %>%
          year_mth = zoo::as.yearmon(arrest_date),
          fy = substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4))
 
-# arr_methods_unique <- unique(tolower(arr$arrest_method))
-# arr_disp_unique <- unique(tolower(arr$processing_disposition))
-# 
-# 
-# write_lines(arr_methods_unique, '../output/arr_methods.txt')
-# write_lines(arr_disp_unique, '../output/arr_disp.txt')
+skimr::skim(arr)
 
 ```
+
+## Basic demographics
  
- ## Basic demographics
- 
-```{r gender, echo=FALSE, message=FALSE, include=TRUE}
+```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 arr %>%
   mutate(gender = tolower(gender)) %>% 
@@ -72,7 +70,7 @@ arr %>%
 
 ```
 
-## Total arrests
+# Total arrests
 
 ```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
 
@@ -106,7 +104,7 @@ ggplotly(p1)
 
 Below is a chart of total ICE arrests per FY, highlighting the Seattle AOR ("SEA"):
 
-```{r annual_sea}
+```{r annual_sea, message=FALSE, warning=FALSE}
 
 
 p2 <- arr %>% 
@@ -123,9 +121,11 @@ p2
 
 ```
 
+# Percent change
+
 Percent change in arrests per FY nationally and by AOR. Note comparison between groups may be misleading because smaller population AORs will be more volatile.
 
-```{r arrests_pct_chg}
+```{r arrests_pct_chg, message=FALSE, warning=FALSE}
 
 natl_pct_chg <- arr %>%
   filter(arrest_date <= "2022-09-30") %>% 
@@ -165,7 +165,7 @@ p2
 
 ```
 
-## Arrests by `arrest_method`
+# Arrests by `arrest_method`
 
 ```{r method_setup, echo=FALSE, message=FALSE, include=TRUE}
 
@@ -184,7 +184,7 @@ arr <- arr %>%
 
 Arrests trend down nationwide; slight bump up during Trump admin; big bump of NCA in 2022 (as ICE processed people initially encountered at souther border by BP?). Global decline CLC; NCA now >50% of arrests--but are these at-large community arrests or self-report? Look at trends in `processing_disposition`, `operation`, `apprehension_landmark`.
 
-```{r national_arrest_method}
+```{r national_arrest_method, message=FALSE, warning=FALSE}
 
 p1 <- arr %>% 
   group_by(fy, arrest_method_short) %>%
@@ -195,7 +195,7 @@ ggplotly(p1)
 
 ```
 
-```{r arr_method_pct_chg}
+```{r arr_method_pct_chg, message=FALSE, warning=FALSE}
 
 method_pct_chg <- arr %>%
   filter(arrest_date <= "2022-09-30",
@@ -219,7 +219,7 @@ p1
 
 ```
 
-```{r method_per_aor}
+```{r method_per_aor, message=FALSE, warning=FALSE}
 
 p2 <- arr %>% 
   filter(!is.na(aor),
@@ -237,7 +237,9 @@ ggplotly(p2)
 
 ```
 
-```{r trend_specific_aor}
+# SEA arrest methods
+
+```{r trend_specific_aor, message=FALSE, warning=FALSE}
 
 specific_aor = "SEA"
 
@@ -256,9 +258,9 @@ ggplotly(p4)
 
 ```
 
-### Trends in SEA NCA arrests
+## Trends in SEA NCA arrests
 
-```{r trend_specific_aor_method_nca}
+```{r trend_specific_aor_method_nca, message=FALSE, warning=FALSE}
 
 specific_aor = "SEA"
 specific_method = "Non-Custodial Arrest"
@@ -281,7 +283,7 @@ p4
 
 ```
 
-```{r trend_compare_method_nca_highlight_aor}
+```{r trend_compare_method_nca_highlight_aor, message=FALSE, warning=FALSE}
 
 p1 <- arr %>% 
   filter(!is.na(aor),
@@ -318,7 +320,7 @@ ggplotly(p1)
 
 Landmarks often reflect operational nature of arrest, not location. Recent increase largely "Seattle Non-Detained Docket" and other non-detained categories, compared to categories which suggest street/fugitive operations arrests. Should compare to other non-custodial categories (i.e. "Located").
 
-```{r sea_nca_landmark}
+```{r sea_nca_landmark, message=FALSE, warning=FALSE}
 
 sea_nca_landmarks <- arr %>% 
   filter(!is.na(aor),
@@ -344,15 +346,20 @@ ggplotly(p2)
 
 ```
 
-```{r zoom}
+```{r zoom_sea_nca, message=FALSE, warning=FALSE}
 
-p2 <- arr %>% 
+dat <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
          arrest_date > '2020-09-30',
-         arrest_method_short == specific_method) %>%
-  # mutate(apprehension_landmark = case_when(apprehension_landmark %in% head(sea_nca_landmarks$apprehension_landmark, 10) ~ apprehension_landmark,
-  #                                          TRUE ~ "ALL OTHERS")) %>% 
+         arrest_method_short == specific_method)
+
+top_temp <- dat %>% count(apprehension_landmark) %>% 
+  arrange(desc(n))
+
+p2 <- dat %>%
+  mutate(apprehension_landmark = case_when(apprehension_landmark %in% head(top_temp$apprehension_landmark, 10) ~ apprehension_landmark,
+                                           TRUE ~ "ALL OTHERS")) %>%
   count(year_mth, apprehension_landmark) %>% 
   ggplot(aes(x=year_mth, y=n, fill=apprehension_landmark, group=apprehension_landmark)) +
   geom_col()
@@ -363,7 +370,7 @@ ggplotly(p2)
 
 Most arrests missing `operation` data but for those that do recent arrests largely associated with "Southwest Border SWB PD".
 
-```{r sea_nca_ops}
+```{r sea_nca_ops, message=FALSE, warning=FALSE}
 
 sea_nca_operations <- arr %>% 
   filter(!is.na(aor),
@@ -388,9 +395,9 @@ ggplotly(p3)
 
 ```
 
-### Trends in SEA CLC arrests
+## Trends in SEA CLC arrests
 
-```{r trend_specific_aor_method_clc}
+```{r trend_specific_aor_method_clc, message=FALSE, warning=FALSE}
 
 specific_aor = "SEA"
 specific_method = "CAP Local Incarceration"
@@ -413,7 +420,7 @@ p4
 
 ```
 
-```{r trend_compare_method_clc_highlight_aor}
+```{r trend_compare_method_clc_highlight_aor, message=FALSE, warning=FALSE}
 
 p1 <- arr %>% 
   filter(!is.na(aor),
@@ -432,7 +439,7 @@ p1
 
 
 
-```{r sea_cap}
+```{r sea_cap, message=FALSE, warning=FALSE}
 
 p1 <- arr %>% 
   filter(!is.na(aor),
@@ -449,7 +456,7 @@ ggplotly(p1)
 ```
 
 
-```{r sea_cap_landmark}
+```{r sea_cap_landmark, message=FALSE, warning=FALSE}
 
 sea_cap_landmarks <- arr %>% 
   filter(!is.na(aor),
@@ -475,7 +482,7 @@ ggplotly(p2)
 
 ```
 
-```{r zoom_sea_cap}
+```{r zoom_sea_cap, message=FALSE, warning=FALSE}
 
 p2 <- arr %>% 
   filter(!is.na(aor),
@@ -494,7 +501,7 @@ ggplotly(p2)
 
 Most arrests missing `operation` data but for those that do recent arrests largely associated with "Southwest Border SWB PD".
 
-```{r sea_cap_ops}
+```{r sea_cap_ops, message=FALSE, warning=FALSE}
 
 sea_cap_operations <- arr %>% 
   filter(!is.na(aor),
@@ -519,7 +526,7 @@ ggplotly(p3)
 
 ```
 
-```{r tab_sea_cap}
+```{r tab_sea_cap, message=FALSE, warning=FALSE}
 
 arr %>% 
   filter(!is.na(aor),
