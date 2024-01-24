@@ -1,5 +1,5 @@
 ---
-title: "FY12-23YTD ICE ERO descriptive analysis"
+title: "FY12-23YTD ICE ERO arrests descriptive analysis"
 author: "UWCHR"
 date: "2023-03-27"
 output:
@@ -11,7 +11,7 @@ output:
         code_folding: hide
 ---
 
-# Data overview
+# ICE ERO arrests: Data overview
 
 ```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -20,10 +20,11 @@ library(pacman)
 p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
 
 arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|',
-                  col_types = cols(aor = col_character(),
+                  col_types = cols(aor = col_factor(),
                                   arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
-                                  apprehension_landmark = col_character(),
+                                  apprehension_landmark = col_factor(),
+                                  arrest_method = col_factor(),
                                   operation = col_factor(),
                                   processing_disposition = col_factor(),
                                   citizenship_country = col_factor(),
@@ -43,34 +44,14 @@ arr <- arr %>%
          year = year(arrest_date),
          month = month(arrest_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(arrest_date),
-         fy = substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4))
+         fy = as.factor(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)),
+         citizenship_country = as.factor(tolower(citizenship_country)))
 
 skimr::skim(arr)
 
 ```
 
-## Basic demographics
- 
-```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
-
-arr %>%
-  mutate(gender = tolower(gender)) %>% 
-  group_by(gender) %>% 
-  summarize(n = n())
-
-```
-
-```{r cit, echo=FALSE, message=FALSE, include=TRUE}
-
-arr %>%
-  mutate(citizenship_country = tolower(citizenship_country)) %>% 
-  group_by(citizenship_country) %>% 
-  summarize(n = n()) %>% 
-  arrange(desc(n))
-
-```
-
-# Total arrests
+# Total arrests by FY
 
 ```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
 
@@ -85,6 +66,79 @@ p1 <- arr %>%
 p1
 
 ```
+
+## Basic demographics
+
+Increasing proportion of females arrested since FY 2021:
+ 
+```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+# arr %>%
+#   mutate(gender = tolower(gender)) %>% 
+#   group_by(gender) %>% 
+#   summarize(n = n())
+
+p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>%
+  count(fy, gender) %>% 
+  ggplot(aes(x=fy, y=n, fill=gender)) +
+  geom_col(position='fill') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Total ICE arrests, % by gender")
+
+p1
+
+```
+
+Changing composition of arrest nationality: Mexico, Guatemala, El Salvador decrease as proportion; absolute increase in Venezeula, Colombia, Nicaragua.
+
+```{r cit, echo=FALSE, message=FALSE, include=TRUE}
+
+cit <- arr %>%
+  filter(arrest_date <= "2022-09-30") %>% 
+  mutate(citizenship_country = tolower(citizenship_country)) %>% 
+  group_by(citizenship_country) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>%
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
+    TRUE ~ "all others"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  geom_col() +
+  labs(title = "Total ICE arrests by country of citizenship (top 15)")
+
+p1
+
+```
+
+
+```{r cit_rank, echo=FALSE, message=FALSE, include=TRUE}
+
+cit_rank <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>% 
+  count(fy, citizenship_country) %>% 
+  arrange(fy, desc(n), citizenship_country) %>% 
+  group_by(fy) %>% 
+  mutate(ranking = row_number())
+
+p1 <- cit_rank %>% 
+  filter(ranking <= 10) %>% 
+  ggplot(aes(x = fy, y = ranking, group = citizenship_country)) +
+  geom_line(aes(color = citizenship_country, alpha = 1), size = 1) +
+  geom_point(aes(color = citizenship_country, alpha = 1), size = 2) +
+  scale_y_reverse() +
+  labs(title = "Ranked country of citizenship for ICE arrests")
+
+ggplotly(p1)
+
+```
+
+# Total arrests by AOR
 
 Below is an interactive chart of total ICE arrests per FY by AOR:
 
@@ -182,7 +236,7 @@ arr <- arr %>%
 
 ```
 
-Arrests trend down nationwide; slight bump up during Trump admin; big bump of NCA in 2022 (as ICE processed people initially encountered at souther border by BP?). Global decline CLC; NCA now >50% of arrests--but are these at-large community arrests or self-report? Look at trends in `processing_disposition`, `operation`, `apprehension_landmark`.
+Arrests trend down nationwide; slight bump up during Trump admin; big bump of NCA in 2022 (as ICE processed people initially encountered at southern border by BP?). Global decline CLC; NCA now >50% of arrests--but are these at-large community arrests or self-report? Look at trends in `processing_disposition`, `operation`, `apprehension_landmark`.
 
 ```{r national_arrest_method, message=FALSE, warning=FALSE}
 
@@ -239,6 +293,8 @@ ggplotly(p2)
 
 # SEA arrest methods
 
+Overview of arrest methods for Seattle Area of Responsiblity:
+
 ```{r trend_specific_aor, message=FALSE, warning=FALSE}
 
 specific_aor = "SEA"
@@ -251,7 +307,6 @@ p4 <- arr %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = year_mth, y = n, fill=arrest_method_short, group=arrest_method_short)) +
   geom_col() +
-  geom_vline(aes(xintercept=as.yearmon("2019-06"))) +
   labs(title=paste0("Total arrests by arrest method, ", specific_aor, " AOR"))
 
 ggplotly(p4)
@@ -259,6 +314,8 @@ ggplotly(p4)
 ```
 
 ## Trends in SEA NCA arrests
+
+Significant increase in non-custodial arrests, similar to national trends:
 
 ```{r trend_specific_aor_method_nca, message=FALSE, warning=FALSE}
 
@@ -275,7 +332,9 @@ p4 <- arr %>%
   ggplot(aes(x = year_mth, y = n, fill=arrest_method_short, group=arrest_method_short)) +
   geom_col() +
   geom_vline(aes(xintercept=as.yearmon("2019-06"))) +
+  geom_text(aes(x=as.yearmon("2019-06"), y=max(n * .9), label="\nKWW"), color='black', angle='90', text=element_text(size=8), check_overlap = TRUE) +
   geom_vline(aes(xintercept=as.yearmon("2021-11"))) +
+  geom_text(aes(x=as.yearmon("2021-11"), y=max(n * .9), label="\nSPA"), color='black', angle='90', text=element_text(size=8), check_overlap = TRUE) +
   labs(title = "Total ICE arrests",
        subtitle = paste(specific_method, specific_aor, sep=", "))
 
@@ -300,7 +359,7 @@ p1
 
 ```
 
-Most served w/ NTA
+Most people involved in non-custodial arrests served w/ warrant or NTA; decreasing proportion of reinstatement of deportation:
 
 ```{r sea_nca}
 
@@ -318,7 +377,7 @@ ggplotly(p1)
 
 ```
 
-Landmarks often reflect operational nature of arrest, not location. Recent increase largely "Seattle Non-Detained Docket" and other non-detained categories, compared to categories which suggest street/fugitive operations arrests. Should compare to other non-custodial categories (i.e. "Located").
+Landmarks for "non-custodial arrests" often reflect operational nature of arrest, not location. Recent increase largely "Seattle Non-Detained Docket" and other non-detained categories, compared to categories which suggest street/fugitive operations arrests. Should compare to other non-custodial categories (i.e. "Located").
 
 ```{r sea_nca_landmark, message=FALSE, warning=FALSE}
 
@@ -335,18 +394,18 @@ p2 <- arr %>%
          aor == specific_aor,
          arrest_date > '2016-09-30',
          arrest_method_short == specific_method) %>%
-  # mutate(apprehension_landmark = case_when(apprehension_landmark %in% head(sea_nca_landmarks$apprehension_landmark, 10) ~ apprehension_landmark,
-  #                                          TRUE ~ "ALL OTHERS")) %>% 
+  mutate(apprehension_landmark = case_when(
+    apprehension_landmark %in% head(sea_nca_landmarks$apprehension_landmark, 10) ~ apprehension_landmark,
+    TRUE ~ "ALL OTHERS")) %>%
   count(year_mth, apprehension_landmark) %>% 
   ggplot(aes(x=year_mth, y=n, fill=apprehension_landmark, group=apprehension_landmark)) +
-  geom_col() +
-  theme(legend.position = "none")
+  geom_col()
 
 ggplotly(p2)
 
 ```
 
-```{r zoom_sea_nca, message=FALSE, warning=FALSE}
+```{r zoom_sea_nca, inclde=FALSE, message=FALSE, warning=FALSE}
 
 dat <- arr %>% 
   filter(!is.na(aor),
@@ -368,7 +427,7 @@ ggplotly(p2)
 
 ```
 
-Most arrests missing `operation` data but for those that do recent arrests largely associated with "Southwest Border SWB PD".
+Most NCA arrests missing `operation` data but for those that do recent arrests largely associated with "Southwest Border SWB PD".
 
 ```{r sea_nca_ops, message=FALSE, warning=FALSE}
 
@@ -397,6 +456,8 @@ ggplotly(p3)
 
 ## Trends in SEA CLC arrests
 
+Criminal Alien Program (CAP) Local Incarceration arrests declined through latter Obama admin, rebounded during Trump, declined precipitously during COVID, have not returned to pre-COVID level in SEA:
+
 ```{r trend_specific_aor_method_clc, message=FALSE, warning=FALSE}
 
 specific_aor = "SEA"
@@ -405,7 +466,7 @@ specific_method = "CAP Local Incarceration"
 p4 <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         arrest_date >= '2016-10-30',
+         arrest_date >= '2016-09-30',
          arrest_method_short == specific_method) %>%
   group_by(aor, year_mth, arrest_method_short) %>%
   summarize(n = n()) %>% 
@@ -424,7 +485,7 @@ p4
 
 p1 <- arr %>% 
   filter(!is.na(aor),
-         arrest_date >= '2016-10-30',
+         # arrest_date >= '2016-10-30',
          arrest_method_short == specific_method) %>%
   count(aor, year_mth, arrest_method_short) %>%
   ggplot(aes(x = year_mth, y = n, color=aor, group=aor)) +
@@ -436,8 +497,6 @@ p1 <- arr %>%
 p1
 
 ```
-
-
 
 ```{r sea_cap, message=FALSE, warning=FALSE}
 
@@ -455,6 +514,7 @@ ggplotly(p1)
 
 ```
 
+Landmarks reflect both operational nature of arrest and potential location, including specific incarceration locations:
 
 ```{r sea_cap_landmark, message=FALSE, warning=FALSE}
 
@@ -476,11 +536,14 @@ p2 <- arr %>%
   count(year_mth, apprehension_landmark) %>% 
   ggplot(aes(x=year_mth, y=n, fill=apprehension_landmark, group=apprehension_landmark)) +
   geom_col() +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  labs(title = "CLC arrest location (all)")
 
 ggplotly(p2)
 
 ```
+
+Zooming in on recent CLC arrests. Note several state and federal correctional instutions included in this category (erroneously); other values do not appear to suggest incarceration ("Non-Detained"):
 
 ```{r zoom_sea_cap, message=FALSE, warning=FALSE}
 
@@ -499,7 +562,7 @@ ggplotly(p2)
 
 ```
 
-Most arrests missing `operation` data but for those that do recent arrests largely associated with "Southwest Border SWB PD".
+Vast majority of CLC arrests missing `operation` data:
 
 ```{r sea_cap_ops, message=FALSE, warning=FALSE}
 
@@ -526,7 +589,7 @@ ggplotly(p3)
 
 ```
 
-```{r tab_sea_cap, message=FALSE, warning=FALSE}
+```{r tab_sea_cap, include=FALSE, message=FALSE, warning=FALSE}
 
 arr %>% 
   filter(!is.na(aor),
@@ -539,3 +602,38 @@ arr %>%
 
 ```
 
+
+```{r output_plots, include=FALSE, message=FALSE, warning=FALSE}
+
+specific_aor <- "SEA"
+
+methods <- arr %>% 
+  filter(aor == specific_aor) %>% 
+  count(arrest_method_short) %>% 
+  filter(n > 50) %>% 
+  arrange(arrest_method_short)
+
+pdf(here('us-fy12-23', 'analyze', 'output', paste0(specific_aor, "_method_trends.pdf")),width=6,height=3.25)
+
+for (i in 1:length(methods$arrest_method_short)) {
+  current_method <- as.character(methods$arrest_method_short[i])
+
+  p1 <- arr %>% 
+    filter(!is.na(aor),
+           arrest_date >= '2016-10-30',
+           arrest_method_short == current_method) %>%
+    count(aor, year_mth, arrest_method_short) %>%
+    ggplot(aes(x = year_mth, y = n, color=aor, group=aor)) +
+    geom_line() +
+    gghighlight(aor == specific_aor,
+                use_direct_label = FALSE) +
+    labs(title = "Total ICE arrests per AOR",
+         subtitle = paste(current_method))
+  
+  plot(p1)
+
+}
+
+dev.off()
+
+```
