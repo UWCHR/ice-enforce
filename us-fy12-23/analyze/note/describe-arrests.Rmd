@@ -45,7 +45,7 @@ arr <- arr %>%
          month = month(arrest_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(arrest_date),
          fy = as.factor(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)),
-         citizenship_country = as.factor(tolower(citizenship_country)))
+         citizenship_country = as.factor(toupper(citizenship_country)))
 
 skimr::skim(arr)
 
@@ -67,14 +67,14 @@ p1
 
 ```
 
-## Basic demographics
+# Basic demographics
 
 Increasing proportion of females arrested since FY 2021:
  
 ```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 # arr %>%
-#   mutate(gender = tolower(gender)) %>% 
+#   mutate(gender = toupper(gender)) %>% 
 #   group_by(gender) %>% 
 #   summarize(n = n())
 
@@ -96,7 +96,7 @@ Changing composition of arrest nationality: Mexico, Guatemala, El Salvador decre
 
 cit <- arr %>%
   filter(arrest_date <= "2022-09-30") %>% 
-  mutate(citizenship_country = tolower(citizenship_country)) %>% 
+  mutate(citizenship_country = toupper(citizenship_country)) %>% 
   group_by(citizenship_country) %>% 
   summarize(n = n()) %>% 
   arrange(desc(n))
@@ -314,6 +314,32 @@ ggplotly(p4)
 ```
 
 ## Trends in SEA NCA arrests
+
+```{r arr_method_pct_chg, message=FALSE, warning=FALSE}
+
+method_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         aor == specific_aor,
+         !is.na(aor)) %>% 
+  group_by(fy, arrest_method_short) %>%
+  summarize(n = n()) %>% 
+  group_by(arrest_method_short) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- method_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~arrest_method_short, scales='free_y')  +
+  labs(title="FY % change in total ICE arrests by arrest method",
+       subtitle=paste0(specific_aor, " AOR")) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p1
+
+```
 
 Significant increase in non-custodial arrests, similar to national trends:
 

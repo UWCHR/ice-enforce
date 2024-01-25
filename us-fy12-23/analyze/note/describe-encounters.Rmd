@@ -1,14 +1,18 @@
 ---
-title: "FY12-23YTD ICE ERO descriptive analysis"
+title: "FY12-23YTD ICE ERO encounters descriptive analysis"
 author: "UWCHR"
 date: "2023-03-27"
 output:
-  pdf_document: default
-  html_document: default
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
 ---
  
 
-```{r setup, echo=FALSE, message=FALSE, include=TRUE}
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 library(pacman)
 
@@ -23,11 +27,9 @@ enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'encounters.csv.gz'), d
                                    citizenship_country = col_factor(),
                                    gender = col_factor(),
                                    hashid = col_character(),
-                                   id = col_number())) 
-# arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|') 
-# rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'removals.csv.gz'), delim='|') 
+                                   id = col_number()))
 
-glimpse(enc)
+# glimpse(enc)
 
 redacted <- c('encounter_threat_level', 'alien_file_number')
 
@@ -40,34 +42,18 @@ enc <- enc %>%
          month = month(event_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(event_date),
          fy = substr(quarter(event_date, fiscal_start=10, type="year.quarter"), 1,4),
+         gender = toupper(gender),
          operation = toupper(operation),
-         processing_disposition = toupper(processing_disposition))
+         processing_disposition = toupper(processing_disposition),
+         citizenship_country = toupper(citizenship_country))
+
+skimr::skim(enc)
 
 ```
 
-```{r gender, echo=FALSE, message=FALSE, include=TRUE}
+# Total encounters by FY
 
-enc %>%
-  mutate(gender = tolower(gender)) %>% 
-  group_by(gender) %>% 
-  summarize(n = n())
-
-```
-
-
-```{r cit, echo=FALSE, message=FALSE, include=TRUE}
-
-enc %>%
-  mutate(citizenship_country = tolower(citizenship_country)) %>% 
-  group_by(citizenship_country) %>% 
-  summarize(n = n()) %>% 
-  arrange(desc(n))
-
-```
-
-## Total encounters
-
-```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
+```{r fy_total, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   filter(event_date <= "2022-09-30") %>% 
@@ -81,9 +67,77 @@ p1
 
 ```
 
-Below is an interactive chart of total ICE arrests per FY by AOR:
+# Basic demographics
 
-```{r annual, echo=FALSE, message=FALSE, include=TRUE}
+Note increasing proportion of encounters involving females:
+
+```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+# enc %>%
+#   mutate(gender = toupper(gender)) %>% 
+#   group_by(gender) %>% 
+#   summarize(n = n())
+
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30") %>%
+  count(fy, gender) %>% 
+  ggplot(aes(x=fy, y=n, fill=gender)) +
+  geom_col(position='fill') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Total ICE encounters, % by gender")
+
+p1
+
+```
+
+Total ICE encounters by country of citizenship:
+
+```{r cit, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+cit <- enc %>%
+  filter(event_date <= "2022-09-30") %>% 
+  mutate(citizenship_country = toupper(citizenship_country)) %>% 
+  group_by(citizenship_country) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30") %>%
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
+    TRUE ~ "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  geom_col() +
+  labs(title = "Total ICE encounters by country of citizenship (top 15)")
+
+ggplotly(p1)
+
+```
+
+Decreasing proportion of ICE encounters of U.S. citizens/and "unknown" nationality.
+
+```{r cit_us_unk, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+p2 <- enc %>% 
+  filter(event_date <= "2022-09-30") %>%
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% c("UNITED STATES", "UNKNOWN") ~ citizenship_country,
+    TRUE ~ "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  geom_col(position="fill") +
+  labs(title = "Total ICE encounters, proportion U.S./UNKNOWN")
+
+p2
+
+```
+
+Below is an interactive chart of total ICE arrests per FY by AOR. Note significant quantity of encounters with missing ("NA") AOR, trend of missing values does not parallel overall trends.
+
+```{r annual, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   filter(event_date <= "2022-09-30") %>% 
@@ -97,9 +151,9 @@ ggplotly(p1)
 
 ```
 
-Below is a chart of total ICE arrests per FY, highlighting the Seattle AOR ("SEA"):
+Below is a chart of total ICE encounters per FY, highlighting the Seattle AOR ("SEA"). Note relative stability of trend through presidential administrations, COVID pandemic:
 
-```{r annual_specific}
+```{r annual_specific, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 specific_aor = "SEA"
 
@@ -117,7 +171,51 @@ p2
 
 ```
 
-## Operation
+# Percent change
+
+Percent change in arrests per FY nationally and by AOR. Note comparison between groups may be misleading because smaller population AORs will be more volatile.
+
+```{r arrests_pct_chg, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+natl_pct_chg <- enc %>%
+  filter(event_date <= "2022-09-30") %>% 
+  group_by(fy) %>%
+  summarize(n = n()) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- natl_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="FY % change in total ICE encounters")
+
+p1
+
+aor_pct_chg <- enc %>%
+  filter(event_date <= "2022-09-30",
+         !is.na(aor)) %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p2 <- aor_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor)  +
+  labs(title="FY % change in total ICE encounters per AOR") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p2
+
+# Could try superimposing line chart of total arrests as above
+
+```
+
+# Operation
 
 ```{r enc_op}
 
@@ -134,39 +232,23 @@ enc <- enc %>%
 
 ```
 
-```{r enc_op_fy}
-
-p1 <- enc %>% 
-  filter(event_date <= "2022-09-30",
-         !is.na(operation)) %>% 
-  group_by(fy, operation_short) %>% 
-  summarize(n = n()) %>% 
-  ggplot(aes(x = as.factor(fy), y=n, fill=operation_short)) +
-  geom_col() +
-  labs(title = "Total ICE encounters per FY by operation (excluding NA)")
-
-ggplotly(p1)
-
-```
-
-```{r enc_op_fy}
+```{r enc_op_fy, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   filter(event_date <= "2022-09-30",
          # !is.na(operation)
          ) %>% 
-  group_by(fy, aor, operation_short) %>% 
+  group_by(fy, operation_short) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, fill=operation_short)) +
   geom_col() +
-  facet_wrap(~aor) +
   labs(title = "Total ICE encounters per FY by operation")
 
-p1
+ggplotly(p1)
 
 ```
 
-```{r enc_op_sea}
+```{r enc_op_sea, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   filter(event_date <= "2022-09-30",
@@ -177,16 +259,16 @@ p1 <- enc %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, fill=operation_short)) +
   geom_col() +
-  labs(title = "Total ICE encounters per FY by operation")
+  labs(title = "Total ICE encounters per FY by operation (SEA AOR)")
 
 ggplotly(p1)
 
 ```
 
 
-## Processing disposition
+# Processing disposition
 
-```{r enc_disp}
+```{r enc_disp, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 disps <- enc %>% 
   count(processing_disposition) %>% 
@@ -201,7 +283,7 @@ enc <- enc %>%
 
 ```
 
-```{r enc_disp_fy}
+```{r enc_disp_fy, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   filter(event_date <= "2022-09-30",
@@ -217,7 +299,7 @@ ggplotly(p1)
 
 ```
 
-```{r enc_disp_fy_pct_not_amenable}
+```{r enc_disp_fy_pct_not_amenable, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 not_amenable = c("NOT AMENABLE TO REMOVAL", "FOREIGN BORN USC")
 
@@ -260,7 +342,7 @@ p2
   
 ```
 
-```{r enc_disp_sea}
+```{r enc_disp_sea, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   filter(event_date <= "2022-09-30",
@@ -270,10 +352,83 @@ p1 <- enc %>%
   group_by(fy, aor, disp_short) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
-  geom_col() +
-  labs(title = "Total ICE encounters per FY by processing_disposition")
+  geom_col()
 
 ggplotly(p1)
 
 ```
 
+# Landmark SEA
+
+```{r enc_landmark, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+landmarks <- enc %>% 
+  filter(event_date <= "2022-09-30",
+         aor == "SEA") %>% 
+  count(landmark) %>% 
+  arrange(desc(n))
+
+# top_landmarks <- landmarks %>% 
+#   filter(n > 2500)
+
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30",
+         aor == "SEA"
+         ) %>% 
+  mutate(landmark = case_when(landmark %in% head(landmarks$landmark, 15) ~ as.character(landmark), 
+                                         TRUE ~ "ALL OTHERS")) %>% 
+  group_by(fy, landmark) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=landmark)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per FY by landmark (top 15)")
+
+ggplotly(p1)
+
+p2 <- enc %>% 
+  filter(event_date <= "2022-09-30",
+         event_date >= "2021-10-01",
+         aor == "SEA",
+         !is.na(landmark)
+         ) %>%
+  group_by(year_mth, landmark) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year_mth, y=n, fill=landmark)) +
+  geom_col() +
+  labs(title = "Total ICE encounters by landmark (all)")
+
+ggplotly(p2)
+
+```
+
+```{r enc_landmark_not_amenable, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- enc %>% 
+  filter(event_date <= "2022-09-30",
+         event_date >= "2021-10-01",
+         aor == "SEA",
+         processing_disposition %in% not_amenable,
+         !is.na(landmark)
+         ) %>%
+  group_by(year_mth, landmark) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year_mth, y=n, fill=landmark)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per FY by landmark, not amenable to removal")
+
+ggplotly(p1)
+
+```
+
+```{r tab_sea_enc_landmark, include=FALSE, message=FALSE, warning=FALSE}
+
+tab_sea_enc_landmark <- enc %>% 
+  filter(!is.na(aor),
+         aor == specific_aor,
+         event_date > '2021-09-30') %>%
+  count(year_mth, landmark) %>% 
+    arrange(year_mth, landmark)
+
+write_delim(tab_sea_enc_landmark, here('us-fy12-23', 'analyze', 'output', 'tab_sea_enc_landmark.csv'), delim=',')
+
+```
