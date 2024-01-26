@@ -315,7 +315,7 @@ ggplotly(p4)
 
 ## Trends in SEA NCA arrests
 
-```{r arr_method_pct_chg, message=FALSE, warning=FALSE}
+```{r sea_arr_method_pct_chg, message=FALSE, warning=FALSE}
 
 method_pct_chg <- arr %>%
   filter(arrest_date <= "2022-09-30",
