@@ -1,10 +1,14 @@
 ---
-title: "FY12-23YTD ICE ERO descriptive analysis"
+title: "FY12-23YTD ICE ERO removals descriptive analysis"
 author: "UWCHR"
 date: "2023-03-27"
 output:
-  pdf_document: default
-  html_document: default
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
 ---
  
 
@@ -36,47 +40,31 @@ glimpse(rem)
 redacted <- c('removal_threat_level', 'alien_file_number')
 
 rem <- rem %>% 
-  dplyr::select(-redacted)
+  dplyr::select(-redacted, -case_closed_date)
 
 rem <- rem %>% 
   mutate(year = year(departed_date),
          month = month(departed_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(departed_date),
          processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
-         date = coalesce(departed_date, removal_date),
-         fy = as.numeric(substr(quarter(date, fiscal_start=10, type="year.quarter"), 1,4)))
+         fy =substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4))
 
 rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
 
-```
-
-```{r gender, echo=FALSE, message=FALSE, include=TRUE}
-
-rem %>%
-  mutate(gender = tolower(gender)) %>% 
-  group_by(gender) %>% 
-  summarize(n = n())
+skimr::skim(rem)
 
 ```
 
+# Total removals per FY
 
-```{r cit, echo=FALSE, message=FALSE, include=TRUE}
-
-rem %>%
-  mutate(citizenship_country = tolower(citizenship_country)) %>% 
-  group_by(citizenship_country) %>% 
-  summarize(n = n()) %>% 
-  arrange(desc(n))
-
-```
-
-## Total removals
+Major decrease in removals by ICE, but note CBP expulsions at Southern border are not counted here.
 
 ```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
 
 p1 <- rem %>% 
-  filter(date >= "2011-10-01",
-         date <= "2022-09-30") %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30"
+         ) %>% 
   group_by(fy) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n)) +
@@ -87,11 +75,60 @@ p1
 
 ```
 
-```{r annual, echo=FALSE, message=FALSE, include=TRUE}
+# Basic demographics
+
+```{r gender, echo=FALSE, message=FALSE, include=TRUE}
+
+# rem %>%
+#   mutate(gender = tolower(gender)) %>% 
+#   group_by(gender) %>% 
+#   summarize(n = n())
 
 p1 <- rem %>% 
-  filter(date >= "2011-10-01",
-         date <= "2022-09-30") %>% 
+  filter(departed_date >= "2011-10-01",
+       departed_date <= "2022-09-30") %>% 
+  count(fy, gender) %>% 
+  ggplot(aes(x=fy, y=n, fill=gender)) +
+  geom_col(position='fill') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Total ICE removals, % by gender")
+
+p1
+
+```
+
+```{r cit, echo=FALSE, message=FALSE, include=TRUE}
+
+cit <- rem %>%
+  filter(departed_date >= "2011-10-01",
+       departed_date <= "2022-09-30") %>% 
+  mutate(citizenship_country = toupper(citizenship_country)) %>% 
+  group_by(citizenship_country) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+p1 <- rem %>% 
+  filter(departed_date >= "2011-10-01",
+       departed_date <= "2022-09-30") %>% 
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
+    TRUE ~ "all others"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  geom_col() +
+  labs(title = "Total ICE removals by country of citizenship (top 15)")
+
+ggplotly(p1)
+```
+
+# ICE removals per AOR
+
+```{r removals_per_aor_fy, echo=FALSE, message=FALSE, include=TRUE}
+
+p1 <- rem %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
@@ -108,8 +145,8 @@ Below is a chart of total ICE arrests per FY, highlighting the Seattle AOR ("SEA
 
 
 p2 <- rem %>% 
-  filter(date >= "2011-10-01",
-         date <= "2022-09-30") %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
@@ -125,8 +162,8 @@ p2
 ```{r removals_pct_chg}
 
 natl_pct_chg <- rem %>%
-  filter(date >= "2011-10-01",
-         date <= "2022-09-30") %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
   group_by(fy) %>%
   summarize(n = n()) %>% 
   mutate(pct_change = (n/lag(n) - 1))
@@ -140,8 +177,8 @@ p1 <- natl_pct_chg %>%
 p1
 
 aor_pct_chg <- rem %>%
-  filter(date >= "2011-10-01",
-         date <= "2022-09-30",
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30",
          aor != "HQ",
          !is.na(aor)) %>% 
   group_by(fy, aor) %>%
@@ -165,13 +202,13 @@ p2
 
 ```
 
-## Removals by processing disposition
+# Removals by processing disposition
 
 ```{r disp, echo=FALSE, message=FALSE, include=TRUE}
 
 disps <- rem %>% 
-  filter(date >= "2012-10-01",
-         date <= "2022-09-30",
+  filter(departed_date >= "2012-10-01",
+         departed_date <= "2022-09-30",
          ) %>% 
   count(processing_disposition_clean) %>% 
   arrange(desc(n))
@@ -186,11 +223,13 @@ rem <- rem %>%
 
 ```
 
+Fewer reinstatements of removal.
+
 ```{r rem_disp_fy}
 
 p1 <- rem %>% 
-  filter(date >= "2012-10-01",
-         date <= "2022-09-30",
+  filter(departed_date >= "2012-10-01",
+         departed_date <= "2022-09-30",
          ) %>% 
   group_by(fy, disp_short) %>% 
   summarize(n = n()) %>% 
@@ -201,6 +240,8 @@ p1 <- rem %>%
 ggplotly(p1)
 
 ```
+
+Decline of expedited removal.
 
 ```{r expedited_removal, echo=FALSE, message=FALSE, include=TRUE}
 
@@ -230,7 +271,25 @@ p1
 
 ```
 
+# Dates
+
+Removals data includes four separate date fields. `departed_date` is most complete, with no missing values.
+
 ```{r date_compare, echo=FALSE, message=FALSE, include=TRUE}
+rem %>% 
+  dplyr::select(contains('date')) %>% 
+skimr::skim()
+
+hist(rem$departed_date, breaks='years', col='pink')
+hist(rem$removal_date, breaks='years', col='lightblue')
+hist(rem$arrest_date, breaks='years', col='lightyellow')
+hist(rem$case_close_date, breaks='years', col='lightgreen')
+
+```
+
+We can calculate lag between different dates for example between departed date and removal date; unclear if this is particularly meaningful.
+
+```{r dep_diff_rem}
 
 rem$dep_diff_rem <- difftime(rem$departed_date, rem$removal_date, units='days')
 
@@ -245,6 +304,21 @@ p1 <- plot(as.numeric(rem$dep_diff_rem))
 
 ```
 
+```{r arr_diff_rem}
+
+rem$arr_diff_rem <- difftime(rem$arrest_date, rem$removal_date, units='days')
+
+median(rem$arr_diff_rem, na.rm=TRUE)
+mean(rem$arr_diff_rem, na.rm=TRUE)
+max(rem$arr_diff_rem, na.rm=TRUE)
+min(rem$arr_diff_rem, na.rm=TRUE)
+
+h1 <- hist(as.numeric(rem$arr_diff_rem))
+
+p1 <- plot(as.numeric(rem$arr_diff_rem))
+
+```
+
 ```{r plot dates}
 
 p1 <- plot(rem$id, rem$departed_date)
@@ -252,5 +326,11 @@ p1 <- plot(rem$id, rem$departed_date)
 p2 <- plot(rem$id, rem$removal_date)
 
 p3 <- plot(rem$removal_date, rem$departed_date)
+
+p4 <- rem %>% 
+  ggplot(aes(x = removal_date, y = departed_date)) +
+  geom_point(aes(color = as.integer(departed_date)))
+
+p4
 ```
 
