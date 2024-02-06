@@ -241,6 +241,7 @@ Arrests trend down nationwide; slight bump up during Trump admin; big bump of NC
 ```{r national_arrest_method, message=FALSE, warning=FALSE}
 
 p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>% 
   group_by(fy, arrest_method_short) %>%
   ggplot(aes(x = fy, fill=arrest_method_short)) +
   geom_bar(stat='count', position='stack')
@@ -625,6 +626,17 @@ arr %>%
   # mutate(apprehension_landmark = case_when(apprehension_landmark %in% head(sea_nca_landmarks$apprehension_landmark, 10) ~ apprehension_landmark,
   #                                          TRUE ~ "ALL OTHERS")) %>% 
   count(year_mth, apprehension_landmark)
+
+```
+
+```{r output_apprehension_landmarks}
+
+ldmrks <- arr %>% 
+  filter(aor == specific_aor) %>% 
+  mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark))) %>% 
+  distinct(apprehension_landmark)
+
+write_delim(ldmrks, here('us-fy12-23', 'analyze', 'output', paste0(specific_aor, "_landmarks.csv")), delim=',')
 
 ```
 
