@@ -1,6 +1,6 @@
 .creds
 .ipynb_checkpoints/
-.DS_Store
+*.DS_Store
 .here
 .Rhistory
 .Rproj.user
