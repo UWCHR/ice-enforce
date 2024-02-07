@@ -99,6 +99,13 @@ Below is an interactive chart of total ICE arrests per FY by AOR:
 
 ```{r annual, echo=FALSE, message=FALSE, include=TRUE}
 
+p0 <- arr_per_aor %>% 
+  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "Total ICE arrests per 100,000 residents per FY by AOR")
+
+ggplotly(p0)
+
 p1 <- arr_per_aor %>% 
   ggplot(aes(x = as.factor(fy), y=n_per_undocu, color=aor, group=aor)) +
   geom_line() +
@@ -211,19 +218,25 @@ method_pc_per_aor <- method_pc_per_aor %>%
   mutate(n_per_cap = (n / total_pop) * pc_scale,
          n_per_undocu = (n / undocu_pop) * pc_scale)
 
-p1 <- method_pc_per_aor %>%
-  filter(arrest_method_short == "CAP Local Incarceration") %>% 
-  ggplot(aes(x=as.factor(fy), y=n_per_undocu, color=aor, group=aor)) +
-  geom_line()
+specific_method <- "CAP Local Incarceration"
 
-ggplotly(p1)
+p1 <- method_pc_per_aor %>%
+  filter(arrest_method_short == specific_method) %>% 
+  ggplot(aes(x=as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  geom_line() +
+  labs(title=paste0(specific_method, "arrests per 100k residents"))
+
+# ggplotly(p1)
+p1
 
 p2 <- method_pc_per_aor %>%
-  filter(arrest_method_short == "Non-Custodial Arrest") %>% 
+  filter(arrest_method_short == specific_method) %>% 
   ggplot(aes(x=as.factor(fy), y=n_per_undocu, color=aor, group=aor)) +
-  geom_line()
+  geom_line() +
+  labs(title=paste0(specific_method, "arrests per 100k potentially undocu"))
 
-ggplotly(p2)
+# ggplotly(p2)
+p2
 
 ```
 
