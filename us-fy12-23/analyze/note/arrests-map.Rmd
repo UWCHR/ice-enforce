@@ -92,9 +92,7 @@ p1
 ```
 
 
-# Total arrests by AOR
-
-Below is an interactive chart of total ICE arrests per FY by AOR:
+# Basic AOR map
 
 ```{r annual, echo=FALSE, message=FALSE, include=TRUE}
   
@@ -102,6 +100,8 @@ states <- unique(county_aor$geoid_state)
 
 all_counties <- counties(state=states) %>% 
   shift_geometry() 
+
+# We can easily combine county-level geometries into an AOR shape!
 
 aor_geom <- left_join(all_counties, county_aor, by=c('GEOID' = "geoid")) %>% 
   group_by(aor) %>% 
