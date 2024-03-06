@@ -47,7 +47,7 @@ enc <- enc %>%
          processing_disposition = toupper(processing_disposition),
          citizenship_country = toupper(citizenship_country))
 
-skimr::skim(enc)
+# skimr::skim(enc)
 
 ```
 
@@ -168,6 +168,8 @@ p2 <- enc %>%
        subtitle = paste0(specific_aor, " AOR highlighted"))
 
 p2
+
+# Encounter rank
 
 ```
 

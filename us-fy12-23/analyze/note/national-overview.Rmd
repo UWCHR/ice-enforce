@@ -173,7 +173,8 @@ p1 <- dat %>%
   geom_line() +
   labs(title = "Total ICE enforcement events per FY") +
   xlab('') +
-  ylab("Value")
+  ylab("Value") +
+  ylim(0, NA)
 
 p1
 
@@ -236,6 +237,25 @@ p2
 
 ```
 
+```{r all_enforce_sea}
+
+p1 <- dat %>%
+  filter(aor == "SEA") %>% 
+  dplyr::select(-contains('diff')) %>% 
+  pivot_longer(cols=-c('fy', 'aor')) %>% 
+  ggplot(aes(x = as.factor(fy), y=value, color=name, group=name)) +
+  geom_line() +
+  # scale_y_log10() +
+  scale_x_discrete(breaks=seq(2013,2024,4)) +
+  labs(title = "Total ICE enforcement events per FY") +
+  facet_wrap(~aor) +
+  xlab('') +
+  ylab("Value")
+
+p1
+
+```
+
 # Basic AOR map
 
 ```{r maps_setup, echo=FALSE, message=FALSE, include=FALSE}
@@ -253,7 +273,7 @@ aor_geom <- left_join(all_counties, county_aor, by=c('GEOID' = "geoid")) %>%
 
 ```
 
-```{r arrests_per_capita}
+```{r enforcement_per_capita}
 
 dat_map <- dat %>%
   mutate(fy = as.numeric(as.character(fy))) %>% 
@@ -318,7 +338,7 @@ dat_map <- dat %>%
 dat_map$name <- factor(dat_map$name, levels=c('encounters_pc', 'arrests_pc', 'removals_pc'), ordered=TRUE)
 
 p3 <- dat_map %>%
-  filter(name == 'encounters_pc') %>% 
+  filter(name == 'arrests_pc') %>% 
   ggplot(aes(geometry=geometry, fill=value)) +
   geom_sf() +
   scale_fill_viridis_c() +

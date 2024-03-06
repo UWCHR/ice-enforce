@@ -1,0 +1,118 @@
+---
+title: "TRAC Alternatives to Detention Data"
+author: "UWCHR"
+date: "2024-03-05"
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+ 
+Source: https://trac.syr.edu/immigration/detentionstats/atd_pop_table.html
+Data copyright TRAC 2023
+ 
+> # Data Warning
+> 
+> ICE has informed TRAC that ATD data previously released by the agency on several occasions between August 2022 and December 2022, as well as data previously released for FY 2022, was inaccurate. TRAC has requested but not yet received underlying source documents from ICE. Thus, it has not yet been able to validate and correct ICE's previous ATD data shown here. As a result of this latest series of ICE's significant data mistakes, alongside ICE's longer series of significant data mistakes that TRAC previously highlighted here, TRAC advises the public to be extremely cautious when relying on these data. 
+>
+> * Dates before 11/15/2021 refer to the date ICE posted the data; dates after 11/15/2021 refer to the date the information was current as of.
+> ** Technology Types
+> GPS: location tracking via ankle bracelets
+> SmartLINK: smart phone application that uses facial recognition to confirm identity as well as location monitoring via GPS
+> VoiceID: telephonic reporting
+> TR: telephonic reporting
+
+```{r setup, echo=FALSE, message=FALSE, include=TRUE}
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
+
+atd <- read_delim(here('us-fy12-23', 'import', 'frozen', 'trac_atd_2024-02-24.csv'), delim=',') 
+
+atd$Date <- as.Date(atd$Date, format = "%m/%d/%Y")
+
+glimpse(atd)
+
+# skimr::skim(rem)
+
+```
+
+# Total ATD
+
+```{r total_atd}
+
+total_atd <- atd %>% 
+  filter(is.na(`ICE Area of Responsibility`))
+
+p1 <- total_atd %>% 
+  ggplot(aes(x = `Date`, y = `Number under ATD`)) +
+  geom_line() +
+  ylim(0, NA)
+
+p1
+
+p2 <- total_atd %>% 
+  ggplot(aes(x = `Date`, y = `Average Days in Program`)) +
+  geom_line() +
+  ylim(0, NA)
+
+p2
+
+```
+
+```{r aor_atd}
+
+aor_atd <- atd %>% 
+  filter(!is.na(`ICE Area of Responsibility`),
+         `ATD Technology` == "All")
+
+p1 <- aor_atd %>% 
+  ggplot(aes(x = `Date`, y = `Number under ATD`, color=`ICE Area of Responsibility`, group=`ICE Area of Responsibility`)) +
+  geom_line() +
+  ylim(0, NA)
+
+ggplotly(p1)
+
+p2 <- aor_atd %>% 
+  ggplot(aes(x = `Date`, y = `Average Days in Program`, color=`ICE Area of Responsibility`, group=`ICE Area of Responsibility`)) +
+  geom_line() +
+  ylim(0, NA)
+
+ggplotly(p2)
+
+```
+
+```{r aor_sea}
+
+aor_sea <- atd %>% 
+  filter(`ICE Area of Responsibility` == "Seattle")
+
+p0 <- aor_sea %>% 
+  filter(`ATD Technology` == "All") %>% 
+  ggplot(aes(x = `Date`, y = `Number under ATD`, color=`ATD Technology`, group=`ATD Technology`)) +
+  geom_line() +
+  ylim(0, NA)
+
+ggplotly(p0)
+
+p1 <- aor_sea %>% 
+  filter(`ATD Technology` != "All") %>% 
+  ggplot(aes(x = `Date`, y = `Number under ATD`, color=`ATD Technology`, group=`ATD Technology`)) +
+  geom_line() +
+  ylim(0, NA)
+
+ggplotly(p1)
+
+p2 <- aor_sea %>% 
+  filter(`ATD Technology` != "All") %>% 
+  ggplot(aes(x = `Date`, y = `Average Days in Program`, color=`ATD Technology`, group=`ATD Technology`)) +
+  geom_line() +
+  ylim(0, NA)
+
+ggplotly(p2)
+
+```
