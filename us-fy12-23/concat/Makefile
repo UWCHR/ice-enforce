@@ -8,13 +8,13 @@
 #
 
 all: \
-	output/arrests.csv.gz \
-	output/encounters.csv.gz \
-	output/removals.csv.gz
+	output/ice_arrests_fy12-23ytd.csv.gz \
+	output/ice_encounters_fy12-23ytd.csv.gz \
+	output/ice_removals_fy12-23yd.csv.gz
 	
 PHONY: all
 
-output/arrests.csv.gz: \
+output/ice_arrests_fy12-23ytd.csv.gz: \
 	src/concat.py \
 	input/ERO_Arrests_FY2012.csv.gz \
 	input/ERO_Arrests_FY2013.csv.gz \
@@ -43,7 +43,7 @@ output/arrests.csv.gz: \
 		--input_fy23=input/ERO_Arrests_FY2023YTD.csv.gz \
 		--output=$@
 
-output/encounters.csv.gz: \
+output/ice_encounters_fy12-23ytd.csv.gz: \
 	src/concat.py \
 	input/ERO_Encounters_FY2012.csv.gz \
 	input/ERO_Encounters_FY2013.csv.gz \
@@ -72,7 +72,7 @@ output/encounters.csv.gz: \
 		--input_fy23=input/ERO_Encounters_FY2023YTD.csv.gz \
 		--output=$@
 
-output/removals.csv.gz: \
+output/ice_removals_fy12-23yd.csv.gz: \
 	src/concat.py \
 	input/ICE_Removals_FY2012.csv.gz \
 	input/ICE_Removals_FY2013.csv.gz \
