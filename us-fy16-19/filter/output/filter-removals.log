@@ -1,7 +1,0 @@
-2022-09-30 17:33:41|Input file: input/removals.csv.gz
-2022-09-30 17:33:41|Rows in: 963972
-2022-09-30 17:33:43|Dropped records with missing `aor`: 0
-2022-09-30 17:33:45|Dropped records with `aor` == "HQ": 40
-2022-09-30 17:33:45|Output file: output/removals.csv.gz
-2022-09-30 17:33:45|Rows out: 963932
-2022-09-30 17:33:45|Total records dropped: 40

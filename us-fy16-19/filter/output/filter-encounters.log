@@ -1,7 +1,0 @@
-2022-09-30 17:33:26|Input file: input/encounters.csv.gz
-2022-09-30 17:33:26|Rows in: 1689378
-2022-09-30 17:33:29|Dropped records with missing `aor`: 80421
-2022-09-30 17:33:32|Dropped records with `aor` == "HQ": 12150
-2022-09-30 17:33:32|Output file: output/encounters.csv.gz
-2022-09-30 17:33:32|Rows out: 1596807
-2022-09-30 17:33:32|Total records dropped: 92571
