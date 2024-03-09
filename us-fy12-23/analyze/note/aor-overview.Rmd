@@ -1,0 +1,400 @@
+---
+title: "FY12-23YTD ICE ERO arrests descriptive analysis"
+author: "UWCHR"
+date: "2024-03-08"
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+
+# ICE ERO arrests: AOR-specific analysis
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder, viridis)
+
+# ENCOUNTERS DATA
+
+enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                   event_date = col_character(),
+                                   landmark = col_character(),
+                                   operation = col_factor(),
+                                   processing_disposition = col_factor(),
+                                   citizenship_country = col_factor(),
+                                   gender = col_factor(),
+                                   hashid = col_character(),
+                                   id = col_number()))
+
+# glimpse(enc)
+
+redacted <- c('encounter_threat_level', 'alien_file_number')
+
+enc <- enc %>% 
+  dplyr::select(-redacted)
+
+enc <- enc %>% 
+  mutate(event_date = as_date(event_date, format="%m/%d/%Y"),
+         year = year(event_date),
+         month = month(event_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(event_date),
+         fy = substr(quarter(event_date, fiscal_start=10, type="year.quarter"), 1,4),
+         gender = toupper(gender),
+         operation = toupper(operation),
+         processing_disposition = toupper(processing_disposition),
+         citizenship_country = toupper(citizenship_country))
+
+# ARRESTS DATA
+
+arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                  arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_landmark = col_factor(),
+                                  arrest_method = col_factor(),
+                                  operation = col_factor(),
+                                  processing_disposition = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  case_closed_date = col_date(format="%m/%d/%Y"),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
+
+arr <- arr %>% 
+  dplyr::select(-all_of(redacted))
+
+arr <- arr %>% 
+  mutate(arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+         year = year(arrest_date),
+         month = month(arrest_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(arrest_date),
+         fy = as.factor(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)),
+         citizenship_country = as.factor(toupper(citizenship_country)))
+
+# REMOVALS DATA
+
+pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
+
+rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_character(),
+                                   arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  case_close_date = col_date(format="%m/%d/%Y"),
+                                  removal_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_method_code = col_character(),
+                                  processing_disposition_code = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  final_charge_section = col_factor(),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+glimpse(rem)
+
+redacted <- c('removal_threat_level', 'alien_file_number')
+
+rem <- rem %>% 
+  dplyr::select(-redacted, -case_closed_date)
+
+rem <- rem %>% 
+  mutate(year = year(departed_date),
+         month = month(departed_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(departed_date),
+         processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
+         fy =substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4))
+
+rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
+
+# SUPPLEMENTAL DATA
+
+county_aor <- read_delim(here('share', 'hand', 'county_aor.csv'), delim = ',')
+
+demog <- read_delim(here('us-fy12-23', 'analyze', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
+  arrange(aor, year) %>% 
+  mutate(year = as.factor(year))
+
+pc_scale = 100000
+
+ggkey = Sys.getenv("GOOGLEGEOCODE_API_KEY")
+print(ggkey)
+register_google(key = ggkey)
+
+aor_field_office <- read_delim(here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
+
+# aor_field_office_lat_lon <- geo(aor_field_office$field_office_addr, method="google")
+# 
+# aor_field_office <- aor_field_office %>% 
+#   mutate(field_office_addr = str_squish(field_office_addr)) %>% 
+#   left_join(aor_field_office_lat_lon, by=c('field_office_addr' = 'address'))
+# 
+# write_delim(aor_field_office, here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
+
+aor_field_office_sf <- aor_field_office %>%
+  st_as_sf(coords = c("long", "lat"), crs=4326)
+
+specific_aor = "SEA"
+specific_area_of_responsibility = "Seattle Area of Responsibility"
+
+```
+
+# Total enforcement actions by FY
+
+```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
+
+enc_fy <- enc %>% 
+  filter(aor == specific_aor,
+    event_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_encounters = n())
+
+arr_fy <- arr %>% 
+  filter(aor == specific_aor,
+    arrest_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_arrests = n())
+
+rem_fy <- rem %>% 
+  filter(aor == specific_aor,
+    departed_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_removals = n())
+
+dat <- left_join(enc_fy, arr_fy, by='fy') %>% 
+  left_join(rem_fy, by='fy')
+
+dat_diff <- dat %>% 
+  mutate(diff_enc_arr = n_encounters - n_arrests,
+         diff_arr_rem = n_arrests - n_removals)
+
+p1 <- dat %>%
+  pivot_longer(cols=-c('fy')) %>% 
+  ggplot(aes(x = as.factor(fy), y=value, color=name, group=name)) +
+  geom_line() +
+  labs(title = "Total ICE enforcement events per FY",
+       subtitle = specific_area_of_responsibility) +
+  xlab('') +
+  ylab("Value") +
+  ylim(0, NA)
+
+p1
+
+```
+
+# Encounters
+
+```{r encounters_pc_rank, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+enc_per_aor <- enc %>% 
+  filter(!is.na(aor),
+         aor != "HQ",
+        event_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n())
+
+enc_pc_per_aor <- left_join(enc_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
+  group_by(aor) %>% 
+  fill(contains('pop')) %>% 
+  mutate(n_per_cap = (n / total_pop) * pc_scale,
+         n_per_undocu = (n / undocu_pop) * pc_scale) %>% 
+  arrange(fy, desc(n_per_cap)) %>% 
+  group_by(fy) %>% 
+  mutate(pc_rank = row_number())
+
+pc_encounter_rank_fy12 <- as.numeric(enc_pc_per_aor[enc_pc_per_aor$aor == specific_aor & enc_pc_per_aor$fy == 2012, 'pc_rank'])
+pc_encounter_rank_fy22 <- as.numeric(enc_pc_per_aor[enc_pc_per_aor$aor == specific_aor & enc_pc_per_aor$fy == 2022, 'pc_rank'])
+
+p1 <- enc_pc_per_aor %>% 
+  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  geom_line() +
+  gghighlight(aor == specific_aor) +
+  labs(title = "ICE encounters per 100,000 residents",
+       subtitle = paste0(specific_area_of_responsibility, " highlighted"))
+
+p1  
+
+```
+
+# Arrests
+
+```{r arrests_pc_rank, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+arr_per_aor <- arr %>% 
+  filter(!is.na(aor),
+         aor != "HQ",
+        arrest_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n())
+
+arr_pc_per_aor <- left_join(arr_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
+  group_by(aor) %>% 
+  fill(contains('pop')) %>% 
+  mutate(n_per_cap = (n / total_pop) * pc_scale,
+         n_per_undocu = (n / undocu_pop) * pc_scale) %>% 
+  arrange(fy, desc(n_per_cap)) %>% 
+  group_by(fy) %>% 
+  mutate(pc_rank = row_number())
+
+pc_arrest_rank_fy12 <- as.numeric(arr_pc_per_aor[arr_pc_per_aor$aor == specific_aor & arr_pc_per_aor$fy == 2012, 'pc_rank'])
+pc_arrest_rank_fy22 <- as.numeric(arr_pc_per_aor[arr_pc_per_aor$aor == specific_aor & arr_pc_per_aor$fy == 2022, 'pc_rank'])
+
+p1 <- arr_pc_per_aor %>% 
+  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  geom_line() +
+  gghighlight(aor == specific_aor) +
+  labs(title = "ICE arrests per 100,000 residents",
+       subtitle = paste0(specific_area_of_responsibility, " highlighted"))
+
+p1  
+
+```
+
+# Demographics
+ 
+```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- arr %>% 
+  filter(aor == specific_aor,
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>%
+  mutate(gender = toupper(gender)) %>% 
+  count(fy, gender) %>% 
+  ggplot(aes(x=fy, y=n, fill=gender)) +
+  geom_col(position='fill') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Total ICE arrests, % by gender",
+       subtitle=specific_area_of_responsibility)
+
+p1
+
+```
+
+```{r cit, echo=FALSE, message=FALSE, include=TRUE}
+
+cit <- arr %>%
+  filter(aor == specific_aor,
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>%
+  mutate(citizenship_country = toupper(citizenship_country)) %>% 
+  group_by(citizenship_country) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+cit_categories <- 10
+
+p1 <- arr %>% 
+  filter(aor == specific_aor,
+        arrest_date <= "2022-09-30") %>%
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, cit_categories) ~ citizenship_country,
+    TRUE ~ "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  geom_col() +
+  labs(title = paste0("Total ICE arrests by country of citizenship (top ", cit_categories, ")"),
+       subtitle = specific_area_of_responsibility)
+
+p1
+
+```
+
+
+```{r cit_rank, echo=FALSE, message=FALSE, include=TRUE}
+
+cit_rank <- arr %>% 
+  filter(aor == specific_aor,
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>%
+  count(fy, citizenship_country) %>% 
+  arrange(fy, desc(n), citizenship_country) %>% 
+  group_by(fy) %>% 
+  mutate(ranking = row_number())
+
+p1 <- cit_rank %>% 
+  filter(ranking <= 10) %>% 
+  ggplot(aes(x = fy, y = ranking, color = citizenship_country, group = citizenship_country)) +
+  geom_line(alpha = .7, size = 1) +
+  geom_point(alpha = .7, size = 2) +
+  scale_y_reverse() +
+  labs(title = "Ranked country of citizenship for ICE arrests",
+       subtitle = specific_area_of_responsibility)
+
+ggplotly(p1)
+
+```
+
+
+```{r method, echo=FALSE, message=FALSE, include=TRUE}
+
+methods <- arr %>% 
+  filter(aor == specific_aor,
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>%
+  count(arrest_method) %>% 
+  arrange(desc(n))
+
+top_methods <- methods %>%
+  filter(n > 100)
+
+arr <- arr %>% 
+  mutate(arrest_method_short = case_when(arrest_method %in% unlist(top_methods$arrest_method) ~ as.character(arrest_method), 
+                                         TRUE ~ "All others"))
+
+p1 <- arr %>% 
+  filter(aor == specific_aor,
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>%
+  group_by(fy, arrest_method_short) %>%
+  ggplot(aes(x = fy, fill=arrest_method_short)) +
+  geom_bar(stat='count', position='stack')
+
+ggplotly(p1)
+
+```
+
+
+
+# Removals
+
+```{r remvoals_pc_rank, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+rem_per_aor <- rem %>% 
+  filter(!is.na(aor),
+         aor != "HQ",
+         departed_date >= "2011-10-01",
+        departed_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n())
+
+rem_pc_per_aor <- left_join(rem_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
+  group_by(aor) %>% 
+  fill(contains('pop')) %>% 
+  mutate(n_per_cap = (n / total_pop) * pc_scale,
+         n_per_undocu = (n / undocu_pop) * pc_scale) %>% 
+  arrange(fy, desc(n_per_cap)) %>% 
+  group_by(fy) %>% 
+  mutate(pc_rank = row_number())
+
+pc_removals_rank_fy12 <- as.numeric(rem_pc_per_aor[rem_pc_per_aor$aor == specific_aor & rem_pc_per_aor$fy == 2012, 'pc_rank'])
+pc_removals_rank_fy22 <- as.numeric(rem_pc_per_aor[rem_pc_per_aor$aor == specific_aor & rem_pc_per_aor$fy == 2022, 'pc_rank'])
+
+p1 <- rem_pc_per_aor %>% 
+  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  geom_line() +
+  gghighlight(aor == specific_aor) +
+  labs(title = "ICE removals per 100,000 residents",
+       subtitle = paste0(specific_area_of_responsibility, " highlighted"))
+
+p1  
+
+```
