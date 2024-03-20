@@ -216,7 +216,7 @@ pc_encounter_rank_fy22 <- as.numeric(enc_pc_per_aor[enc_pc_per_aor$aor == specif
 p1 <- enc_pc_per_aor %>% 
   ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
   geom_line() +
-  gghighlight(aor == specific_aor) +
+  gghighlight(aor == specific_aor, use_direct_label = FALSE) +
   labs(title = "ICE encounters per 100,000 residents",
        subtitle = paste0(specific_area_of_responsibility, " highlighted"))
 
@@ -250,7 +250,7 @@ pc_arrest_rank_fy22 <- as.numeric(arr_pc_per_aor[arr_pc_per_aor$aor == specific_
 p1 <- arr_pc_per_aor %>% 
   ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
   geom_line() +
-  gghighlight(aor == specific_aor) +
+  gghighlight(aor == specific_aor, use_direct_label = FALSE) +
   labs(title = "ICE arrests per 100,000 residents",
        subtitle = paste0(specific_area_of_responsibility, " highlighted"))
 
@@ -358,7 +358,25 @@ p1 <- arr %>%
   ggplot(aes(x = fy, fill=arrest_method_short)) +
   geom_bar(stat='count', position='stack')
 
+p1
+
 ggplotly(p1)
+
+p1 <- arr %>% 
+  filter(aor == specific_aor,
+         arrest_method_short %in% c("CAP Local Incarceration",
+                                    "CAP State Incarceration",
+                                    "CAP Federal Incarceration"),
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>%
+  group_by(fy, arrest_method_short) %>%
+  ggplot(aes(x = fy, fill=arrest_method_short)) +
+  geom_bar(stat='count', position='stack') +
+  labs(title = "Total CAP arrests, FY12-22",
+       subtitle = specific_area_of_responsibility)
+
+p1
+
 
 ```
 

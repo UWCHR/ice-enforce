@@ -21,7 +21,7 @@ p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris
 
 # ENCOUNTERS DATA
 
-enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'encounters.csv.gz'), delim='|',
+enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                    event_date = col_character(),
                                    landmark = col_character(),
@@ -52,7 +52,7 @@ enc <- enc %>%
 
 # ARRESTS DATA
 
-arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|',
+arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                   arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
@@ -84,7 +84,7 @@ arr <- arr %>%
 
 pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
 
-rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'removals.csv.gz'), delim='|',
+rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_character(),
                                    arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
@@ -120,7 +120,8 @@ rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_
 county_aor <- read_delim(here('share', 'hand', 'county_aor.csv'), delim = ',')
 
 demog <- read_delim(here('us-fy12-23', 'analyze', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
-  arrange(aor, year)
+  arrange(aor, year) %>% 
+  mutate(year = as.factor(year))
 
 pc_scale = 100000
 
@@ -129,17 +130,6 @@ print(ggkey)
 register_google(key = ggkey)
 
 aor_field_office <- read_delim(here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
-
-# aor_field_office_lat_lon <- geo(aor_field_office$field_office_addr, method="google")
-# 
-# aor_field_office <- aor_field_office %>% 
-#   mutate(field_office_addr = str_squish(field_office_addr)) %>% 
-#   left_join(aor_field_office_lat_lon, by=c('field_office_addr' = 'address'))
-# 
-# write_delim(aor_field_office, here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
-
-aor_field_office_sf <- aor_field_office %>%
-  st_as_sf(coords = c("long", "lat"), crs=4326)
 
 ```
 
@@ -403,3 +393,51 @@ p2
 
 ```
 
+
+```{r national_method_change}
+
+methods <- arr %>% 
+  filter(arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>%
+  count(arrest_method) %>% 
+  arrange(desc(n))
+
+top_methods <- methods %>%
+  filter(n > 20000)
+
+arr <- arr %>% 
+  mutate(arrest_method_short = case_when(arrest_method %in% unlist(top_methods$arrest_method) ~ as.character(arrest_method), 
+                                         TRUE ~ "All others"))
+
+p1 <- arr %>% 
+  count(year_mth, arrest_method_short) %>% 
+  ggplot(aes(x=year_mth, y=n, color=arrest_method_short)) +
+  geom_line() +
+  labs(title = "ICE arrests by 'arrest_method', FY12-22",
+       subtitle = "All categories above >20k total arrests")
+
+p1
+
+p2 <- arr %>% 
+  count(year_mth, arrest_method) %>% 
+  filter(arrest_method %in% c("CAP Local Incarceration",
+                                    "CAP State Incarceration",
+                                    "CAP Federal Incarceration")) %>% 
+  ggplot(aes(x=year_mth, y=n, color=arrest_method)) +
+  geom_line() +
+  labs(title = "ICE arrests by 'arrest_method', FY12-22",
+       subtitle = "Criminal Alien Program (CAP)")
+
+p2
+
+p3 <- arr %>% 
+  count(year_mth, arrest_method) %>% 
+  filter(arrest_method == "Non-Custodial Arrest") %>% 
+  ggplot(aes(x=year_mth, y=n, color=arrest_method)) +
+  geom_line() +
+  labs(title = "ICE arrests by 'arrest_method', FY12-22",
+       subtitle = "Non-Custodial Arrests")
+
+p3
+
+```
