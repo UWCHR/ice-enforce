@@ -19,7 +19,7 @@ library(pacman)
 
 p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
 
-arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|',
+arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                   arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
@@ -217,7 +217,72 @@ p2
 
 # Could try superimposing line chart of total arrests as above
 
+specific_aor_pct_chg <- aor_pct_chg %>% 
+  filter(aor == "SEA") %>% 
+  rename(group = aor) %>% 
+  dplyr::select(fy, group, n, pct_change)
+
+natl_pct_chg$group = "Natl"
+
+natl_pct_chg <- natl_pct_chg %>% 
+  dplyr::select(fy, group, n, pct_change)
+
+dat <- rbind(natl_pct_chg, specific_aor_pct_chg)
+
+p3 <- dat %>% 
+  ggplot() +
+  geom_col(aes(x = fy, y = pct_change, fill=group, group=group), position='dodge')
+
+p3
+
 ```
+
+
+```{r arrests_pct_chg_method, message=FALSE, warning=FALSE}
+
+method_str <- "Non-Custodial Arrest"
+specific_aor <- "SEA"
+
+natl_pct_chg_method <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         str_detect(arrest_method, method_str)) %>% 
+  group_by(fy) %>%
+  summarize(n = n()) %>% 
+  mutate(pct_change = (n/lag(n) - 1),
+         group='Natl') %>% 
+  dplyr::select(fy, group, n, pct_change)
+
+aor_pct_chg_method <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         str_detect(arrest_method, method_str),
+         !is.na(aor)) %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1)) %>% 
+  rename(group = aor) %>% 
+  dplyr::select(fy, group, n, pct_change)
+
+
+# Could try superimposing line chart of total arrests as above
+
+specific_aor_pct_chg_method <- aor_pct_chg_method %>% 
+  filter(group == specific_aor)
+
+dat <- rbind(natl_pct_chg_method, specific_aor_pct_chg_method)
+
+p3 <- dat %>% 
+  ggplot() +
+  geom_col(aes(x = fy, y = pct_change, fill=group, group=group), position='dodge') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = paste0("Annual % change ", '"', method_str, '"', " arrests"),
+       subtitle = paste0(specific_aor, " vs. National"))
+
+p3
+
+```
+
 
 # Arrests by `arrest_method`
 
@@ -657,7 +722,7 @@ p1 <- sea_arr %>%
   labs(title="Apprehension landmark categories, SEA AOR",
        subtitle = "All arrest methods")
 
-# ggplotly(p1)
+ggplotly(p1)
 p1
 
 p2 <- sea_arr %>% 
