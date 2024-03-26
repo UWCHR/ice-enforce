@@ -18,7 +18,7 @@ library(pacman)
 
 p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
 
-enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'encounters.csv.gz'), delim='|',
+enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                    event_date = col_character(),
                                    landmark = col_character(),
