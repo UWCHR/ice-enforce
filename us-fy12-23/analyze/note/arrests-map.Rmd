@@ -17,9 +17,9 @@ output:
 
 library(pacman)
 
-p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder)
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder, scales)
 
-arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'arrests.csv.gz'), delim='|',
+arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                   arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
@@ -232,5 +232,85 @@ p2
 
 # Could try superimposing line chart of total arrests as above
 
+dat <- aor_pct_chg %>% 
+  left_join(aor_geom, by='aor')
+
+p1 <- dat %>%
+  filter(as.numeric(as.character(fy)) > 2012) %>% 
+  ggplot(aes(geometry=geometry, fill=pct_change)) +
+  geom_sf() +
+  theme_void() +
+  labs(title = "% change in total ICE arrests, FY2012-2022") +
+  facet_wrap(~fy)
+
+p1
+
 ```
 
+
+
+```{r cap_pct_chg_aor}
+
+aor_cap_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         !is.na(aor),
+         arrest_method == "CAP Local Incarceration") %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+dat <- aor_cap_pct_chg %>% 
+  left_join(aor_geom, by='aor')
+
+p1 <- dat %>%
+  filter(as.numeric(as.character(fy)) > 2012) %>% 
+  ggplot(aes(geometry=geometry, fill=pct_change)) +
+  geom_sf() +
+  scale_fill_viridis_c(labels=percent) +
+  theme_void() +
+  labs(title = "% change in total CAP Local Incarceration arrests, FY2012-2022") +
+  facet_wrap(~fy)
+
+p1
+
+```
+
+```{r nca_pct_chg_aor}
+
+aor_nca_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         !is.na(aor),
+         arrest_method == "Non-Custodial Arrest") %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+dat <- aor_nca_pct_chg %>% 
+  left_join(aor_geom, by='aor')
+
+p0 <- dat %>%
+  ggplot(aes(geometry=geometry, fill=n)) +
+  geom_sf() +
+  scale_fill_viridis_c() +
+  theme_void() +
+  labs(title = "Total Non-Custodial Arrests, FY2012-2022") +
+  facet_wrap(~fy)
+
+p0
+
+p1 <- dat %>%
+  filter(as.numeric(as.character(fy)) > 2012) %>% 
+  ggplot(aes(geometry=geometry, fill=pct_change)) +
+  geom_sf() +
+  scale_fill_viridis_c(labels=percent) +
+  theme_void() +
+  labs(title = "% change in total Non-Custodial Arrests, FY2012-2022") +
+  facet_wrap(~fy)
+
+p1
+
+```
