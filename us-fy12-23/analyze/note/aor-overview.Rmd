@@ -256,6 +256,16 @@ p1 <- arr_pc_per_aor %>%
 
 p1  
 
+p2 <- arr_pc_per_aor %>% 
+  ggplot(aes(x = as.factor(fy), y=pc_rank, color=aor, group=aor)) +
+  geom_line() +
+  gghighlight(aor == specific_aor, use_direct_label = FALSE) +
+  scale_y_reverse() +
+  labs(title = "ICE arrests per 100,000 residents, AOR rank",
+       subtitle = paste0(specific_area_of_responsibility, " highlighted"))
+
+p2
+
 ```
 
 # Demographics
