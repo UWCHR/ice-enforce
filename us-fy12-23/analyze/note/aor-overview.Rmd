@@ -266,6 +266,40 @@ p2 <- arr_pc_per_aor %>%
 
 p2
 
+p3 <- arr_pc_per_aor %>% 
+  filter(aor == specific_aor) %>% 
+  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  geom_line() +
+  ylim(0, NA) +
+  labs(title = "ICE arrests per 100,000 residents",
+       subtitle = paste0(specific_area_of_responsibility))
+
+p3  
+
+```
+
+```{r prop_enc_arr}
+
+dat <- full_join(enc_per_aor, arr_per_aor, by = c("fy", "aor"), suffix = c(".enc", ".arr"))
+
+dat <- dat %>% 
+  mutate(diff_enc_arr = n.enc - n.arr,
+         ratio_enc_arr = n.enc / n.arr)
+
+p1 <- dat %>% 
+  ggplot(aes(x = fy, y = diff_enc_arr, color = aor, group = aor)) +
+  geom_line() +
+  gghighlight(aor == "SEA")
+
+p1
+
+p2 <- dat %>% 
+  ggplot(aes(x = fy, y = ratio_enc_arr, color = aor, group = aor)) +
+  geom_line() +
+  gghighlight(aor == "SEA")
+
+p2
+
 ```
 
 # Demographics

@@ -120,8 +120,7 @@ rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_
 county_aor <- read_delim(here('share', 'hand', 'county_aor.csv'), delim = ',')
 
 demog <- read_delim(here('us-fy12-23', 'analyze', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
-  arrange(aor, year) %>% 
-  mutate(year = as.factor(year))
+  arrange(aor, year)
 
 pc_scale = 100000
 
@@ -177,17 +176,23 @@ p1
 enc_fy_aor <- enc %>% 
   filter(event_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
-  summarize(n_encounters = n())
+  summarize(n_encounters = n()) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  ungroup()
 
 arr_fy_aor <- arr %>% 
   filter(arrest_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
-  summarize(n_arrests = n())
+  summarize(n_arrests = n()) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  ungroup()
 
 rem_fy_aor <- rem %>% 
   filter(departed_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
-  summarize(n_removals = n())
+  summarize(n_removals = n()) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  ungroup()
 
 dat <- left_join(enc_fy_aor, arr_fy_aor, by=c('fy', 'aor')) %>% 
   left_join(rem_fy_aor, by=c('fy', 'aor'))
@@ -267,7 +272,7 @@ aor_geom <- left_join(all_counties, county_aor, by=c('GEOID' = "geoid")) %>%
 
 dat_map <- dat %>%
   mutate(fy = as.numeric(as.character(fy))) %>% 
-  full_join(demog, arr_per_aor, by=c('aor' = 'aor', 'fy' = 'year')) %>% 
+  full_join(demog, by=c('aor' = 'aor', 'fy' = 'year')) %>% 
   group_by(aor) %>% 
   fill(contains('pop')) %>% 
   left_join(aor_geom, by='aor') 
@@ -312,7 +317,7 @@ p2
 
 dat_map <- dat %>%
   mutate(fy = as.numeric(as.character(fy))) %>% 
-  full_join(demog, arr_per_aor, by=c('aor' = 'aor', 'fy' = 'year')) %>% 
+  full_join(demog, arr_fy_aor, by=c('aor' = 'aor', 'fy' = 'year')) %>% 
   group_by(aor) %>% 
   fill(contains('pop')) %>% 
   left_join(aor_geom, by='aor') %>% 
@@ -389,7 +394,6 @@ p2 <- aor_pct_chg %>%
 
 p2
 
-# Could try superimposing line chart of total arrests as above
 
 ```
 
