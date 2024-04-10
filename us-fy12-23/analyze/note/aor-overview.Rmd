@@ -17,7 +17,9 @@ output:
 
 library(pacman)
 
-p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder, viridis)
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder, viridis, scales)
+
+options(scipen = 1000000)
 
 # ENCOUNTERS DATA
 
@@ -169,14 +171,14 @@ rem_fy <- rem %>%
   group_by(fy) %>% 
   summarize(n_removals = n())
 
-dat <- left_join(enc_fy, arr_fy, by='fy') %>% 
+dat_aor <- left_join(enc_fy, arr_fy, by='fy') %>% 
   left_join(rem_fy, by='fy')
 
-dat_diff <- dat %>% 
+dat_diff <- dat_aor %>% 
   mutate(diff_enc_arr = n_encounters - n_arrests,
          diff_arr_rem = n_arrests - n_removals)
 
-p1 <- dat %>%
+p1 <- dat_aor %>%
   pivot_longer(cols=-c('fy')) %>% 
   ggplot(aes(x = as.factor(fy), y=value, color=name, group=name)) +
   geom_line() +
@@ -185,6 +187,55 @@ p1 <- dat %>%
   xlab('') +
   ylab("Value") +
   ylim(0, NA)
+
+p1
+
+```
+
+```{r aor_v_national}
+
+enc_fy_natl <- enc %>% 
+  filter(
+    event_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_encounters = n())
+
+arr_fy_natl <- arr %>% 
+  filter(
+    arrest_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_arrests = n())
+
+rem_fy_natl <- rem %>% 
+  filter(
+    departed_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_removals = n())
+
+dat_natl <- left_join(enc_fy_natl, arr_fy_natl, by='fy') %>% 
+  left_join(rem_fy_natl, by='fy')
+
+dat_aor$group <- specific_area_of_responsibility
+dat_natl$group <- "National total"
+
+dat <- rbind(dat_aor, dat_natl)
+
+p1 <- dat %>%
+  rename(encounters = n_encounters,
+         arrests = n_arrests,
+         removals = n_removals) %>% 
+  pivot_longer(cols=-c('fy', 'group')) %>% 
+  ggplot(aes(x = as.numeric(fy), y=value, color=name, group=name)) +
+  geom_line() +
+  labs(title = "Total ICE enforcement events, FY2012-22",
+       subtitle = paste0("National total compared to ", specific_area_of_responsibility)) +
+  xlab('Fiscal Year') +
+  scale_x_continuous(breaks=seq(2012,2024,4),
+                     minor_breaks=seq(2012, 2024, 1)) +
+  ylab("") +
+  ylim(0, NA) +
+  scale_color_discrete(name = "Enforcement type") +
+  facet_wrap(~group, scales = "free_y")
 
 p1
 
@@ -245,6 +296,7 @@ arr_pc_per_aor <- left_join(arr_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor
   mutate(pc_rank = row_number())
 
 pc_arrest_rank_fy12 <- as.numeric(arr_pc_per_aor[arr_pc_per_aor$aor == specific_aor & arr_pc_per_aor$fy == 2012, 'pc_rank'])
+pc_arrest_rank_fy19 <- as.numeric(arr_pc_per_aor[arr_pc_per_aor$aor == specific_aor & arr_pc_per_aor$fy == 2019, 'pc_rank'])
 pc_arrest_rank_fy22 <- as.numeric(arr_pc_per_aor[arr_pc_per_aor$aor == specific_aor & arr_pc_per_aor$fy == 2022, 'pc_rank'])
 
 p1 <- arr_pc_per_aor %>% 
@@ -406,20 +458,22 @@ p1
 
 ggplotly(p1)
 
-p1 <- arr %>% 
+dat <- arr %>% 
   filter(aor == specific_aor,
          arrest_method_short %in% c("CAP Local Incarceration",
                                     "CAP State Incarceration",
                                     "CAP Federal Incarceration"),
          arrest_date >= "2011-10-01",
          arrest_date <= "2022-09-30") %>%
-  group_by(fy, arrest_method_short) %>%
-  ggplot(aes(x = fy, fill=arrest_method_short)) +
-  geom_bar(stat='count', position='stack') +
+  count(arrest_method_short, fy)
+
+p2 <- dat %>% 
+  ggplot(aes(x = fy, y=n, fill=arrest_method_short)) +
+  geom_col(position='dodge') +
   labs(title = "Total CAP arrests, FY12-22",
        subtitle = specific_area_of_responsibility)
 
-p1
+p2
 
 
 ```

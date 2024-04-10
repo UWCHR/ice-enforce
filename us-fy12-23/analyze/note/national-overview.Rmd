@@ -445,3 +445,51 @@ p3 <- arr %>%
 p3
 
 ```
+
+```{r national_method_pct_change}
+
+natl_pct_chg <- arr %>%
+  filter(arrest_method %in% c("CAP Local Incarceration",
+                              "CAP State Incarceration",
+                              "CAP Federal Incarceration")) %>% 
+  filter(arrest_date <= "2022-09-30") %>% 
+  group_by(arrest_method, fy) %>%
+  summarize(n = n()) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- natl_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change, fill = arrest_method)) +
+  geom_col(position = "dodge") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="FY % change in CAP arrests")
+
+p1
+
+# These numbers seem different than calculated elsewhere
+
+aor_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         !is.na(aor)) %>% 
+  filter(arrest_method %in% c("CAP Local Incarceration",
+                              "CAP State Incarceration",
+                              "CAP Federal Incarceration")) %>% 
+  group_by(arrest_method, aor, fy) %>%
+  summarize(n = n()) %>% 
+  group_by(arrest_method, aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p2 <- aor_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change, fill = arrest_method)) +
+  geom_col(position="dodge") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor)  +
+  labs(title="FY % change in CAP arrests per AOR") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p2
+
+
+```
+

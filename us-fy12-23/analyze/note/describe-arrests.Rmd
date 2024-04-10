@@ -240,7 +240,7 @@ p3
 
 ```{r arrests_pct_chg_method, message=FALSE, warning=FALSE}
 
-method_str <- "CAP Federal Incarceration"
+method_str <- "CAP Local Incarceration"
 specific_aor <- "SEA"
 
 natl_pct_chg_method <- arr %>%
