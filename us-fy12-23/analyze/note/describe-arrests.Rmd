@@ -47,7 +47,7 @@ arr <- arr %>%
          fy = as.factor(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)),
          citizenship_country = as.factor(toupper(citizenship_country)))
 
-skimr::skim(arr)
+# skimr::skim(arr)
 
 ```
 
@@ -866,5 +866,74 @@ for (i in 1:length(methods$arrest_method_short)) {
 }
 
 dev.off()
+
+```
+
+```{r classify_landmarks}
+
+# can we easily classify most apprehension landmarks by type with string searches?
+
+app_ldmrk <- unique(toupper(arr$apprehension_landmark))
+
+landmarks <- data.frame(value=app_ldmrk)
+
+landmarks <- landmarks %>% 
+  mutate(landmark_type = case_when(
+    str_detect(value, "COUNTY JAIL") ~ "COUNTY JAIL/SHERIFF",
+    str_detect(value, "PARISH JAIL") ~ "COUNTY JAIL/SHERIFF",
+    str_detect(value, "CO\\.? JAIL") ~ "COUNTY JAIL/SHERIFF",
+    str_detect(value, "SHERIFF|SHERRIFF") ~ "COUNTY JAIL/SHERIFF",
+    str_detect(value, "COUNTY PRISON") ~ "COUNTY JAIL/SHERIFF",
+    str_detect(value, "CITY JAIL") ~ "CITY JAIL/POLICE",
+    str_detect(value, "POLICE") ~ "CITY JAIL/POLICE",
+    str_detect(value, "PD") ~ "CITY JAIL/POLICE",
+    str_detect(value, "STATE PRISON") ~ "STATE PRISON/JAIL",
+    str_detect(value, "STATE JAIL") ~ "STATE PRISON/JAIL",
+    str_detect(value, "DEPT\\.? OF CORRECTIONS") ~ "STATE PRISON/JAIL",
+    str_detect(value, "DEPARTMENT OF CORRECTIONS") ~ "STATE PRISON/JAIL",
+    str_detect(value, "DOC") ~ "STATE PRISON/JAIL",
+    str_detect(value, "FEDERAL") ~ "FEDERAL PRISON",
+    str_detect(value, "BOP") ~ "FEDERAL PRISON",
+    str_detect(value, "FCI") ~ "FEDERAL PRISON",
+    str_detect(value, "NON-DETAINED") ~ "ICE OPERATIONAL",
+    str_detect(value, "JUVENILE") ~ "JUVENILE DETENTION",
+    str_detect(value, "YOUTH") ~ "JUVENILE DETENTION",
+    str_detect(value, "JUV") ~ "JUVENILE DETENTION",
+    str_detect(value, "DETENTION CENTER") ~ "ICE DETENTION",
+    str_detect(value, "MARSHALS|MARSHALLS") ~ "USMS",
+    str_detect(value, "USMS") ~ "USMS",
+    str_detect(value, "GENERAL AREA, NON-SPECIFIC") ~ "ICE OPERATIONAL",
+    str_detect(value, "FUGITIVE OPERATIONS") ~ "ICE OPERATIONAL",
+    str_detect(value, "STREET ARREST") ~ "STREET ARREST",
+    str_detect(value, "COURTHOUSE|COURT") ~ "COURTHOUSE",
+    str_detect(value, "PORT OF ENTRY") ~ "PORT OF ENTRY",
+    str_detect(value, "INSPECTIONS") ~ "PORT OF ENTRY",
+    str_detect(value, "POE") ~ "PORT OF ENTRY",
+    str_detect(value, "PROBATION|PAROLE") ~ "PROBATION AND PAROLE",
+    
+    
+    
+    
+  ))
+
+na_landmarks <- landmarks %>% 
+  filter(is.na(type))
+
+landmarks %>% 
+  count(type)
+
+```
+
+```{r join_landmark_type}
+
+dat <- arr %>% 
+  left_join(landmarks, by=c('apprehension_landmark' = 'value'))
+
+p1 <- dat %>% 
+  count(fy, landmark_type) %>% 
+  ggplot(aes(x = fy, y = n, fill = landmark_type, color = landmark_type)) +
+  geom_col(position="fill")
+
+ggplotly(p1)
 
 ```

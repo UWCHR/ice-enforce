@@ -17,7 +17,7 @@ output:
 
 library(pacman)
 
-p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder, viridis, scales)
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder, viridis)
 
 options(scipen = 1000000)
 
@@ -514,3 +514,111 @@ p1 <- rem_pc_per_aor %>%
 p1  
 
 ```
+
+# Percent change
+
+Percent change in arrests per FY nationally and by AOR. Note comparison between groups may be misleading because smaller population AORs will be more volatile.
+
+```{r arrests_pct_chg, message=FALSE, warning=FALSE}
+
+natl_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30") %>% 
+  group_by(fy) %>%
+  summarize(n = n()) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- natl_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="FY % change in total ICE arrests")
+
+p1
+
+aor_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         !is.na(aor)) %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p2 <- aor_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor)  +
+  labs(title="FY % change in total ICE arrests per AOR") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p2
+
+# Could try superimposing line chart of total arrests as above
+
+specific_aor_pct_chg <- aor_pct_chg %>% 
+  filter(aor == "SEA") %>% 
+  rename(group = aor) %>% 
+  dplyr::select(fy, group, n, pct_change)
+
+natl_pct_chg$group = "Natl"
+
+natl_pct_chg <- natl_pct_chg %>% 
+  dplyr::select(fy, group, n, pct_change)
+
+dat <- rbind(natl_pct_chg, specific_aor_pct_chg)
+
+p3 <- dat %>% 
+  ggplot() +
+  geom_col(aes(x = fy, y = pct_change, fill=group, group=group), position='dodge')
+
+p3
+
+```
+
+
+```{r arrests_pct_chg_method, message=FALSE, warning=FALSE}
+
+method_str <- "CAP Local Incarceration"
+
+natl_pct_chg_method <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         str_detect(arrest_method, method_str)) %>% 
+  group_by(fy) %>%
+  summarize(n = n()) %>% 
+  mutate(pct_change = (n/lag(n) - 1),
+         group='Natl') %>% 
+  dplyr::select(fy, group, n, pct_change)
+
+aor_pct_chg_method <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         str_detect(arrest_method, method_str),
+         !is.na(aor)) %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1)) %>% 
+  rename(group = aor) %>% 
+  dplyr::select(fy, group, n, pct_change)
+
+
+# Could try superimposing line chart of total arrests as above
+
+specific_aor_pct_chg_method <- aor_pct_chg_method %>% 
+  filter(group == specific_aor)
+
+dat <- rbind(natl_pct_chg_method, specific_aor_pct_chg_method)
+
+p3 <- dat %>% 
+  ggplot() +
+  geom_col(aes(x = fy, y = pct_change, fill=group, group=group), position='dodge') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = paste0("Annual % change ", '"', method_str, '"', " arrests"),
+       subtitle = paste0(specific_aor, " vs. National"))
+
+p3
+
+```
+
