@@ -478,7 +478,40 @@ p2
 
 ```
 
+```{r natl_vs_aor_methods}
 
+dat1 <- arr %>% 
+  filter(arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>% 
+  count(fy, arrest_method_short) %>% 
+  mutate(group = "National")
+
+dat2 <- arr %>% 
+  filter(aor == specific_aor,
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>% 
+  count(fy, arrest_method_short) %>%
+  mutate(group = specific_area_of_responsibility)
+
+dat <- rbind(dat1, dat2)
+
+p1 <- dat %>% 
+  filter(group == "National") %>% 
+  ggplot(aes(x = fy, y = n, color = arrest_method_short, group=arrest_method_short)) +
+  geom_line() +
+  facet_wrap(~group, scales = "free_y")
+
+p1
+
+p2 <- dat %>% 
+  filter(group == specific_area_of_responsibility) %>% 
+  ggplot(aes(x = fy, y = n, color = arrest_method_short, group=arrest_method_short)) +
+  geom_line() +
+  facet_wrap(~group, scales = "free_y")
+
+p2
+
+```
 
 # Removals
 
