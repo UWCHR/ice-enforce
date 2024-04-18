@@ -911,7 +911,7 @@ landmarks <- landmarks %>%
       str_detect(value, "FEDERAL") ~ "FEDERAL PRISON",
       str_detect(value, "\\bBOP\\b") ~ "FEDERAL PRISON",
       str_detect(value, "FCI") ~ "FEDERAL PRISON",
-      str_detect(value, "NON-DETAINED") ~ "ICE OPERATIONAL",
+      str_detect(value, "DOCKET") ~ "ICE OPERATIONAL",
       str_detect(value, "JUVENILE") ~ "JUVENILE DETENTION",
       str_detect(value, "YOUTH") ~ "JUVENILE DETENTION",
       str_detect(value, "JUV") ~ "JUVENILE DETENTION",
@@ -926,9 +926,7 @@ landmarks <- landmarks %>%
       str_detect(value, "INSPECTIONS") ~ "PORT OF ENTRY",
       str_detect(value, "POE") ~ "PORT OF ENTRY",
       str_detect(value, "PROBATION|PAROLE") ~ "PROBATION AND PAROLE"),
-    nondetaineddocket = case_when(
-      str_detect(value, "NON-DETAINED DOCKET") ~ TRUE,
-                 TRUE ~ FALSE)
+      str_detect(value, "JAIL|PRISON|CORRECTIONS") ~ "UNCATEGORIZED JAIL/PRISON/CORRECTIONS",
     )
 
 na_landmarks <- landmarks %>% 
@@ -947,13 +945,6 @@ dat <- arr %>%
 p1 <- dat %>% 
   count(fy, landmark_type) %>% 
   ggplot(aes(x = fy, y = n, fill = landmark_type, color = landmark_type)) +
-  geom_col(position="fill")
-
-ggplotly(p1)
-
-p1 <- dat %>% 
-  count(fy, nondetaineddocket) %>% 
-  ggplot(aes(x = fy, y = n, fill = nondetaineddocket, color = nondetaineddocket)) +
   geom_col(position="fill")
 
 ggplotly(p1)
