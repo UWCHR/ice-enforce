@@ -465,8 +465,6 @@ p1 <- natl_pct_chg %>%
 
 p1
 
-# These numbers seem different than calculated elsewhere
-
 aor_pct_chg <- arr %>%
   filter(arrest_date <= "2022-09-30",
          !is.na(aor)) %>% 

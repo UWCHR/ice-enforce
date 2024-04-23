@@ -475,6 +475,22 @@ p2 <- dat %>%
 
 p2
 
+dat <- arr %>% 
+  filter(arrest_method_short %in% c("CAP Local Incarceration",
+                                    "CAP State Incarceration",
+                                    "CAP Federal Incarceration"),
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>%
+  count(arrest_method_short, fy)
+
+p3 <- dat %>% 
+  ggplot(aes(x = fy, y=n, fill=arrest_method_short)) +
+  geom_col(position='dodge') +
+  labs(title = "Total CAP arrests, FY12-22",
+       subtitle = "National")
+
+p3
+
 
 ```
 
