@@ -364,6 +364,14 @@ ggplotly(p1)
 
 ```{r enc_landmark, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
+ldmrks <- read_delim(here('us-fy12-23', 'analyze', 'hand', "SEA_landmarks.csv"), delim='|')
+
+sea_enc <- enc %>% 
+  filter(aor == "SEA") %>% 
+  mutate(landmark = str_squish(toupper(landmark))) %>% 
+  left_join(., ldmrks, by=c("landmark"="apprehension_landmark"))
+
+
 landmarks <- enc %>% 
   filter(event_date <= "2022-09-30",
          aor == "SEA") %>% 
@@ -400,6 +408,20 @@ p2 <- enc %>%
   labs(title = "Total ICE encounters by landmark (all)")
 
 ggplotly(p2)
+
+p3 <- sea_enc %>% 
+  filter(event_date <= "2022-09-30",
+         # event_date >= "2021-10-01",
+         !is.na(landmark)
+         ) %>%
+  group_by(fy, landmark_type) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = fy, y=n, fill=landmark_type, color = landmark_type)) +
+  geom_col() +
+  labs(title = "Total ICE encounters by landmark type",
+       subtitle = "Seattle Area of Resonsibility")
+
+p3
 
 ```
 

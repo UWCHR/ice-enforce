@@ -383,7 +383,7 @@ specific_aor = "SEA"
 p4 <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         arrest_date >= '2016-10-30') %>%
+         arrest_date >= '2016-10-01') %>%
   group_by(aor, year_mth, arrest_method_short) %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = year_mth, y = n, fill=arrest_method_short, group=arrest_method_short)) +
@@ -432,7 +432,7 @@ specific_method = "Non-Custodial Arrest"
 p4 <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         arrest_date >= '2016-10-30',
+         arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   group_by(aor, year_mth, arrest_method_short) %>%
   summarize(n = n()) %>% 
@@ -453,7 +453,7 @@ p4
 
 p1 <- arr %>% 
   filter(!is.na(aor),
-         arrest_date >= '2016-10-30',
+         arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   count(aor, year_mth, arrest_method_short) %>%
   ggplot(aes(x = year_mth, y = n, color=aor, group=aor)) +
@@ -473,7 +473,7 @@ Most people involved in non-custodial arrests served w/ warrant or NTA; decreasi
 p1 <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         arrest_date >= '2016-10-30',
+         arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   count(aor, year_mth, processing_disposition) %>%
   ggplot(aes(x = year_mth, y = n, fill=processing_disposition, group=processing_disposition)) +
@@ -491,7 +491,7 @@ Landmarks for "non-custodial arrests" often reflect operational nature of arrest
 sea_nca_landmarks <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         # arrest_date >= '2016-10-30',
+         # arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   count(aor, apprehension_landmark) %>% 
   arrange(desc(n))
@@ -541,7 +541,7 @@ Most NCA arrests missing `operation` data but for those that do recent arrests l
 sea_nca_operations <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         arrest_date >= '2016-10-30',
+         arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   count(aor, operation) %>% 
   arrange(desc(n))
@@ -549,7 +549,7 @@ sea_nca_operations <- arr %>%
 p3 <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         arrest_date >= '2016-10-30',
+         arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   mutate(operation = case_when(operation %in% head(sea_nca_operations$operation, 10) ~ operation,
                                            TRUE ~ "ALL OTHERS")) %>% 
@@ -592,7 +592,7 @@ p4
 
 p1 <- arr %>% 
   filter(!is.na(aor),
-         # arrest_date >= '2016-10-30',
+         # arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   count(aor, year_mth, arrest_method_short) %>%
   ggplot(aes(x = year_mth, y = n, color=aor, group=aor)) +
@@ -610,7 +610,7 @@ p1
 p1 <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         arrest_date >= '2016-10-30',
+         arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   count(aor, year_mth, processing_disposition) %>%
   ggplot(aes(x = year_mth, y = n, fill=processing_disposition, group=processing_disposition)) +
@@ -628,7 +628,7 @@ Landmarks reflect both operational nature of arrest and potential location, incl
 sea_cap_landmarks <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         # arrest_date >= '2016-10-30',
+         # arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   count(aor, apprehension_landmark) %>% 
   arrange(desc(n))
@@ -676,7 +676,7 @@ Vast majority of CLC arrests missing `operation` data:
 sea_cap_operations <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         arrest_date >= '2016-10-30',
+         arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   count(aor, operation) %>% 
   arrange(desc(n))
@@ -684,7 +684,7 @@ sea_cap_operations <- arr %>%
 p3 <- arr %>% 
   filter(!is.na(aor),
          aor == specific_aor,
-         arrest_date >= '2016-10-30',
+         arrest_date >= '2016-10-01',
          arrest_method_short == specific_method) %>%
   mutate(operation = case_when(operation %in% head(sea_nca_operations$operation, 10) ~ operation,
                                            TRUE ~ "ALL OTHERS")) %>% 
@@ -730,7 +730,7 @@ sea_arr <- arr %>%
   left_join(., ldmrks, by="apprehension_landmark")
 
 p1 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30') %>% 
+  filter(arrest_date >= '2016-10-01') %>% 
   count(year_mth, landmark_type) %>% 
   ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_line() +
@@ -741,10 +741,10 @@ ggplotly(p1)
 p1
 
 p2 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30',
+  filter(arrest_date >= '2016-10-01',
          arrest_method_short == "CAP Local Incarceration") %>% 
-  count(year_mth, arrest_method_short, landmark_type) %>% 
-  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  count(fy, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_col() +
   labs(title="Apprehension landmark categories, SEA AOR",
        subtitle = "CAP Local Incarceration")
@@ -752,7 +752,7 @@ p2 <- sea_arr %>%
 p2
 
 p3 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30',
+  filter(arrest_date >= '2016-10-01',
          arrest_method_short == "CAP State Incarceration") %>% 
   count(year_mth, arrest_method_short, landmark_type) %>% 
   ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
@@ -763,7 +763,7 @@ p3 <- sea_arr %>%
 p3
 
 p4 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30',
+  filter(arrest_date >= '2016-10-01',
          arrest_method_short == "CAP Federal Incarceration") %>% 
   count(year_mth, arrest_method_short, landmark_type) %>% 
   ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
@@ -774,7 +774,7 @@ p4 <- sea_arr %>%
 p4
 
 p5 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30',
+  filter(arrest_date >= '2016-10-01',
          arrest_method_short == "Located") %>% 
   count(year_mth, arrest_method_short, landmark_type) %>% 
   ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
@@ -785,7 +785,7 @@ p5 <- sea_arr %>%
 p5
 
 p6 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30',
+  filter(arrest_date >= '2016-10-01',
          arrest_method_short == "Non-Custodial Arrest") %>% 
   count(year_mth, arrest_method_short, landmark_type) %>% 
   ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
@@ -796,7 +796,7 @@ p6 <- sea_arr %>%
 p6
 
 p7 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30',
+  filter(arrest_date >= '2016-10-01',
          arrest_method_short == "ERO Reprocessed Arrest") %>% 
   count(year_mth, arrest_method_short, landmark_type) %>% 
   ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
@@ -811,7 +811,7 @@ p7
 ```{r sea_ldmrks_state}
 
 p1 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30') %>% 
+  filter(arrest_date >= '2016-10-01') %>% 
   count(year_mth, landmark_state) %>% 
   ggplot(aes(x=year_mth, y=n, color=landmark_state, fill=landmark_state, group=landmark_state)) +
   geom_col() +
@@ -821,23 +821,12 @@ p1
 
 ```
 
-```{r sea_ldmrks_state}
 
-p1 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30') %>% 
-  count(year_mth, landmark_state) %>% 
-  ggplot(aes(x=year_mth, y=n, color=landmark_state, fill=landmark_state, group=landmark_state)) +
-  geom_col() +
-  labs(title="Apprehension landmark state, SEA AOR")
-
-p1
-
-```
 
 ```{r sea_ldmrks_state_type}
 
 p1 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-30',
+  filter(arrest_date >= '2016-10-01',
          landmark_state %in% c('WA', 'OR')) %>% 
   count(year_mth, landmark_state, landmark_type) %>% 
   ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
@@ -846,6 +835,50 @@ p1 <- sea_arr %>%
   facet_wrap(~landmark_state)
 
 p1
+
+p2 <- sea_arr %>% 
+  filter(
+         landmark_state %in% c('WA', 'OR')) %>% 
+  count(fy, landmark_state, arrest_method_short) %>% 
+  ggplot(aes(x=fy, y=n, color=arrest_method_short, fill=arrest_method_short, group=arrest_method_short)) +
+  geom_col() +
+  labs(title="Apprehension landmark state, SEA AOR") +
+  facet_wrap(~landmark_state)
+
+p2
+
+p3 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_date <= '2022-09-30',
+         landmark_state %in% c('WA', 'OR'),
+         arrest_method_short == "CAP State Incarceration") %>% 
+  mutate(landmark_state = as.factor(landmark_state),
+         arrest_method_short = as.factor(arrest_method_short)) %>% 
+  count(fy, landmark_state, arrest_method_short, .drop=FALSE) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  filter(fy > 2016,
+         fy <= 2022) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_state, fill=landmark_state, group=landmark_state)) +
+  geom_col(position="dodge") +
+  labs(title="CAP State Incarceration Arrests",
+       subtitle="OR vs. WA, FY 2012-2022",
+       caption="State inferred from `apprehension_landmark` values")
+
+p3
+
+p4 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_date <= '2022-09-30',
+         landmark_state %in% c('WA', 'OR'),
+         arrest_method_short == "CAP Federal Incarceration") %>% 
+  count(year_mth, landmark_state, arrest_method_short) %>% 
+  ggplot(aes(x=year_mth, y=n, color=arrest_method_short, fill=arrest_method_short, group=arrest_method_short)) +
+  geom_col() +
+  scale_x_yearmon(format = "%Y", n = 4) +
+  labs(title="Apprehension landmark state, SEA AOR") +
+  facet_wrap(~landmark_state)
+
+p4
 
 ```
 
@@ -866,7 +899,7 @@ for (i in 1:length(methods$arrest_method_short)) {
 
   p1 <- arr %>% 
     filter(!is.na(aor),
-           arrest_date >= '2016-10-30',
+           arrest_date >= '2016-10-01',
            arrest_method_short == current_method) %>%
     count(aor, year_mth, arrest_method_short) %>%
     ggplot(aes(x = year_mth, y = n, color=aor, group=aor)) +
