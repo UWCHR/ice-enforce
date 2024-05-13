@@ -731,9 +731,10 @@ sea_arr <- arr %>%
 
 p1 <- sea_arr %>% 
   filter(arrest_date >= '2016-10-01') %>% 
+  # mutate(quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter"))) %>% 
   count(year_mth, landmark_type) %>% 
   ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
-  geom_line() +
+  geom_col() +
   labs(title="Apprehension landmark categories, SEA AOR",
        subtitle = "All arrest methods")
 
@@ -743,8 +744,8 @@ p1
 p2 <- sea_arr %>% 
   filter(arrest_date >= '2016-10-01',
          arrest_method_short == "CAP Local Incarceration") %>% 
-  count(fy, arrest_method_short, landmark_type) %>% 
-  ggplot(aes(x=fy, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  count(year_mth, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_col() +
   labs(title="Apprehension landmark categories, SEA AOR",
        subtitle = "CAP Local Incarceration")
@@ -871,12 +872,17 @@ p4 <- sea_arr %>%
          arrest_date <= '2022-09-30',
          landmark_state %in% c('WA', 'OR'),
          arrest_method_short == "CAP Federal Incarceration") %>% 
-  count(year_mth, landmark_state, arrest_method_short) %>% 
-  ggplot(aes(x=year_mth, y=n, color=arrest_method_short, fill=arrest_method_short, group=arrest_method_short)) +
-  geom_col() +
-  scale_x_yearmon(format = "%Y", n = 4) +
-  labs(title="Apprehension landmark state, SEA AOR") +
-  facet_wrap(~landmark_state)
+  mutate(landmark_state = as.factor(landmark_state),
+         arrest_method_short = as.factor(arrest_method_short)) %>% 
+  count(fy, landmark_state, arrest_method_short, .drop=FALSE) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  filter(fy > 2016,
+         fy <= 2022) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_state, fill=landmark_state, group=landmark_state)) +
+  geom_col(position="dodge") +
+  labs(title="CAP Federal Incarceration Arrests",
+       subtitle="OR vs. WA, FY 2012-2022",
+       caption="State inferred from `apprehension_landmark` values")
 
 p4
 
