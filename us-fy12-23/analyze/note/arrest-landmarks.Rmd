@@ -110,7 +110,7 @@ keyword_comparison <- function(keyword, aor_to_compare) {
   p2 <- dat %>% 
     ggplot(aes(x = fy, y = prop, color = dataset, fill = dataset, group = dataset)) +
     geom_line() +
-    labs(title = paste0("% of keyword '", keyword, "' in `apprehension_landmark` per FY"),
+    labs(title = paste0("% of keyword '", keyword, "' in `apprehension_landmark`"),
          subtitle = paste0(aor_to_compare, " versus National")) +
     scale_x_discrete(breaks=seq(2012, 2022, 4)) +
     ylim(0, NA) +
