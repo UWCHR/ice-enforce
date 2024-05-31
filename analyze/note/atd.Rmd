@@ -31,7 +31,7 @@ library(pacman)
 
 p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
 
-atd <- read_delim(here('us-fy12-23', 'import', 'frozen', 'trac_atd_2024-02-24.csv'), delim=',') 
+atd <- read_delim(here('import', 'frozen', 'trac_atd_2024-02-24.csv'), delim=',') 
 
 atd$Date <- as.Date(atd$Date, format = "%m/%d/%Y")
 
