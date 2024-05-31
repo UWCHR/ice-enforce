@@ -314,3 +314,44 @@ p1 <- dat %>%
 p1
 
 ```
+
+```{r test_facet_map}
+
+dat_map <- dat %>%
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  full_join(demog, arr_fy_aor, by=c('aor' = 'aor', 'fy' = 'year')) %>% 
+  group_by(aor) %>% 
+  fill(contains('pop')) %>% 
+  left_join(aor_geom, by='aor') %>% 
+  filter(
+         # fy == 2022,
+         aor != "HQ") %>% 
+  mutate(encounters_pc = n_encounters / total_pop * pc_scale,
+         arrests_pc = n_arrests / total_pop * pc_scale,
+         removals_pc = n_removals / total_pop * pc_scale) %>% 
+  dplyr::select(aor, fy, geometry, contains("_pc")) %>% 
+  pivot_longer(cols=-c('fy', 'aor', 'geometry'))
+
+dat_map$name <- factor(dat_map$name, levels=c('encounters_pc', 'arrests_pc', 'removals_pc'), ordered=TRUE)
+
+p3 <- dat_map %>%
+  filter(name == 'arrests_pc') %>% 
+  ggplot(aes(geometry=geometry, fill=value)) +
+  geom_sf() +
+  scale_fill_viridis_c() +
+  theme_void() +
+  facet_wrap(fy~name)
+
+p3
+
+p4 <- dat_map %>%
+  filter(fy == 2022) %>% 
+  ggplot(aes(geometry=geometry, fill=value)) +
+  geom_sf() +
+  scale_fill_viridis_c() +
+  theme_void() +
+  facet_wrap(fy~name)
+
+p4
+
+```
