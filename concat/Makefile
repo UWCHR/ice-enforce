@@ -3,7 +3,7 @@
 # :date: 2023-03-23
 # :license: GPL 2.0 or greater
 #
-# ice-ero-lesa/us-fy12-23/concat/src/Makefile
+# ice-ero-lesa/concat/src/Makefile
 #
 #
 
