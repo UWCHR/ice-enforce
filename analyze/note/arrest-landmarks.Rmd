@@ -368,3 +368,73 @@ p1 <- dat %>%
 ggplotly(p1)
 
 ```
+
+```{r apprehension_landmark}
+apprehension_landmark <- arr %>% group_by(apprehension_landmark) %>% summarize(total = n())
+# write.csv(apprehension_landmark, 'apprehension_landmark.csv')
+
+apprehension_landmark_aor <- arr %>% group_by(aor, apprehension_landmark) %>% summarize(total = n())
+# write.csv(apprehension_landmark_aor, 'apprehension_landmark_aor.csv')
+
+nonspecific_str <- unique(arr$apprehension_landmark[grep('NON-SPECIFIC', arr$apprehension_landmark)])
+nonspecific_str <- nonspecific_str[!grepl('COUNTY|CHICAGO|PLYMOUTH|FORT WORTH|SCOTLANDVILLE|SANTA ANA|NORTH DARTMOUTH', nonspecific_str)]
+
+select_nonspecific <- c("LICENSING UNIT/STATE POLICE", "287g", "at-large", "California Healthcare Facility", "CALIFORNIA HIGHWAY PATROL", "CAP ACI", "CIS REFERRAL", "FEDERAL DETENTION CENTER (FDC)", "FIELD ARREST", "FTC CI (Federal Transfer Center)", "FTM-JCART", "FTM-VCAS", "FUG - NON FUGITIVE", "FUGITIVE OPERATIONS", "FUGITIVE SOUTH TEAM ARRESTS", "FUGOP", "FUGOPS", "STREET ARREST", "STREET ARRESTS", "U.S. Marshalls Service", "U.S. Marshals", "U.S. Marshals Service", "U.S. MARSHALS SERVICE", "U.S. PROBATION OFFICE", "UNITED STATES MARSHALL SERVICE", "UNITED STATES PROBATION & PAROLE", "UNITED STATES PROBATION", "US 281 TO FM 493 EXP 83 NORTH TO FM 490", "US DISTRICT COURT", "US MARSHALLS", "US Marshals TF", "USCIS ARREST", "USCIS REFERRALS")
+
+arr <- arr %>% mutate(apprehension_landmark2 = 
+                                case_when(apprehension_landmark %in% nonspecific_str ~ "Non-specific",
+                                          # 'NON-SPECIFIC|ARREST AT|ATD|BUREAU OF PRISONS-|FEDCAP-', apprehension_landmark) ~ "Non-specific",
+                                          # apprehension_landmark %in% select_nonspecific ~ "Non-specific",
+                                          apprehension_landmark == 'DO NOT USE'  ~ "DO NOT USE",
+                                          apprehension_landmark == ''  ~ NA_character_,
+                                          is.na(apprehension_landmark) ~ "Missing",
+                                          TRUE ~ "Specific"))
+
+#test <- arr %>% select(apprehension_landmark, apprehension_landmark2)
+
+specificity <- arr %>% 
+  group_by(aor, apprehension_landmark2) %>%
+  summarize(total = n()) %>%
+  pivot_wider(names_from = apprehension_landmark2, values_from = total)
+
+specificity[is.na(specificity)] <- 0
+
+# specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')
+
+specificity2 <- specificity %>% 
+  replace(is.na(.), 0) %>%
+  rowwise() %>%
+  mutate("Non-specific" = sum(c_across(c('Non-specific', 'DO NOT USE', 'Missing')))) %>%
+  select("Non-specific", "Specific", "Missing") %>%
+  rowwise() %>%
+  mutate("Total" =  sum(c_across(c("Non-specific", "Specific", 'Missing')))) %>%
+  rowwise() %>% mutate("% specific" = round((Specific/Total), 2))
+
+specificity2 %>% kable(caption = 'Apprehension landmark specificity % by AOR FY2012-2023')
+```
+
+```{r}
+
+specificity <- arr %>% 
+  group_by(arrest_method, apprehension_landmark2) %>%
+  summarize(total = n()) %>%
+  pivot_wider(names_from = apprehension_landmark2, values_from = total)
+
+specificity[is.na(specificity)] <- 0
+
+# specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')
+
+specificity2 <- specificity %>% 
+  replace(is.na(.), 0) %>%
+  rowwise() %>%
+  mutate("Non-specific" = sum(c_across(c('Non-specific', 'DO NOT USE', 'Missing')))) %>%
+  select("Non-specific", "Specific", "Missing") %>%
+  rowwise() %>%
+  mutate("Total" =  sum(c_across(c("Non-specific", "Specific", 'Missing')))) %>%
+  rowwise() %>% mutate("% specific" = round((Specific/Total), 2)) %>% 
+  arrange(desc(Total))
+
+specificity2 %>% kable(caption = 'Apprehension landmark specificity % by arrest method FY2012-2023')
+
+```
+
