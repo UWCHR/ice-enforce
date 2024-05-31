@@ -1,8 +1,0 @@
-id: int64
-aor: category
-event_date: str
-landmark: category
-operation: category
-processing_disposition: category
-citizenship: category
-gender: category
