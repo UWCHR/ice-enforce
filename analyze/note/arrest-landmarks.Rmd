@@ -1,5 +1,5 @@
 ---
-title: "FY12-23YTD ICE ERO arrests descriptive analysis"
+title: "FY12-23YTD ICE ERO arrests apprehension landmark analysis"
 author: "UWCHR"
 date: "2023-03-27"
 output:
@@ -19,7 +19,7 @@ library(pacman)
 
 p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
 
-arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
+arr <- read_delim(here('analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                   arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
@@ -130,13 +130,13 @@ sea_landmarks <- arr %>%
   mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark))) %>% 
   distinct(apprehension_landmark)
 
-# write_delim(sea_landmarks, here('us-fy12-23', 'analyze', 'output', paste0(specific_aor, "_landmarks.csv")), delim=',')
+# write_delim(sea_landmarks, here('analyze', 'output', paste0(specific_aor, "_landmarks.csv")), delim=',')
 
 ```
 
 ```{r analyze_sea_sea_landmarks}
 
-sea_landmarks <- read_delim(here('us-fy12-23', 'analyze', 'hand', "SEA_landmarks.csv"), delim='|')
+sea_landmarks <- read_delim(here('analyze', 'hand', "SEA_landmarks.csv"), delim='|')
 
 sea_arr <- arr %>% 
   filter(aor == "SEA") %>% 
@@ -369,6 +369,10 @@ ggplotly(p1)
 
 ```
 
+## Analysis of landmark "specificity"
+
+This section should be re-done
+
 ```{r apprehension_landmark}
 apprehension_landmark <- arr %>% group_by(apprehension_landmark) %>% summarize(total = n())
 # write.csv(apprehension_landmark, 'apprehension_landmark.csv')
@@ -393,6 +397,7 @@ arr <- arr %>% mutate(apprehension_landmark2 =
 #test <- arr %>% select(apprehension_landmark, apprehension_landmark2)
 
 specificity <- arr %>% 
+  filter(!is.na(aor)) %>% 
   group_by(aor, apprehension_landmark2) %>%
   summarize(total = n()) %>%
   pivot_wider(names_from = apprehension_landmark2, values_from = total)
@@ -410,12 +415,13 @@ specificity2 <- specificity %>%
   mutate("Total" =  sum(c_across(c("Non-specific", "Specific", 'Missing')))) %>%
   rowwise() %>% mutate("% specific" = round((Specific/Total), 2))
 
-specificity2 %>% kable(caption = 'Apprehension landmark specificity % by AOR FY2012-2023')
+specificity2 %>% knitr::kable(caption = 'Apprehension landmark specificity % by AOR FY2012-2023')
 ```
 
 ```{r}
 
 specificity <- arr %>% 
+  filter(!is.na(aor)) %>% 
   group_by(arrest_method, apprehension_landmark2) %>%
   summarize(total = n()) %>%
   pivot_wider(names_from = apprehension_landmark2, values_from = total)
@@ -434,7 +440,7 @@ specificity2 <- specificity %>%
   rowwise() %>% mutate("% specific" = round((Specific/Total), 2)) %>% 
   arrange(desc(Total))
 
-specificity2 %>% kable(caption = 'Apprehension landmark specificity % by arrest method FY2012-2023')
+specificity2 %>% knitr::kable(caption = 'Apprehension landmark specificity % by arrest method FY2012-2023')
 
 ```
 
