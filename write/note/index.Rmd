@@ -23,9 +23,15 @@ p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris
 
 # ICE ERO-LESA enforcement actions: Data overview
 
-This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data regarding nationwide encounters, arrests, and removals obtained by the University of Washington pursuant to FOIA request 2022-ICFO-09023.
+This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data regarding nationwide encounters, arrests, and removals obtained by the University of Washington Center for Human Rights pursuant to FOIA request 2022-ICFO-09023.
 
-## Encounters
+## Datasets
+
+Datasets have been minimally cleaned and standardized; in the following sections we load each dataset and perform some basic additional standardization and creation of convenience variables for various units of time, etc. For additional detail, see respective descriptive notebooks for each enforcement dataset.
+
+### Encounters
+
+An encounter occurs when an individual is subjected to revision of admissibility/removability by ICE, and may or may not lead to an arrest. 
 
 ```{r load_encounters, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -54,19 +60,26 @@ enc <- enc %>%
          year = year(event_date),
          month = month(event_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(event_date),
-         fy = substr(quarter(event_date, fiscal_start=10, type="year.quarter"), 1,4),
+         fy_quarter = quarter(event_date, fiscal_start=10, type="year.quarter"),
+         fy = substr(fy_quarter, 1,4),
          gender = toupper(gender),
          operation = toupper(operation),
          processing_disposition = toupper(processing_disposition),
          citizenship_country = toupper(citizenship_country))
 
-# glimpse(enc)
+```
+
+The encounters dataset (`enc`) includes `r nrow(enc)` observations of `r length(enc)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
+
+```{r glimpse_encounters, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+glimpse(enc)
 
 ```
 
-An encounter occurs when an individual is subjected to revision of admissibility/removability by ICE, and may or may not lead to an arrest. The encounters dataset (`enc`) includes `r nrow(enc)` observations of `r length(enc)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
+### Arrests
 
-## Arrests
+An arrest occurs when an individual is taken into custody by ICE and removal proceedings initiated against them. 
 
 ```{r load_arrests, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -98,14 +111,23 @@ arr <- arr %>%
          year = year(arrest_date),
          month = month(arrest_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(arrest_date),
-         fy = as.factor(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)),
+         fy_quarter = quarter(arrest_date, fiscal_start=10, type="year.quarter"),
+         fy = substr(fy_quarter, 1,4),
          citizenship_country = as.factor(toupper(citizenship_country)))
 
 ```
 
-An arrest occurs when an individual is taken into custody by ICE and removal proceedings initiated against them. The arrests dataset (`arr`) includes `r nrow(arr)` observations of `r length(arr)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
+The arrests dataset (`arr`) includes `r nrow(arr)` observations of `r length(arr)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
 
-## Removals
+```{r glimpse_arrests, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+glimpse(arr)
+
+```
+
+### Removals
+
+A removal occurs when an individual is issued a final order of removal.
 
 ```{r load_removals, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -141,13 +163,20 @@ rem <- rem %>%
          month = month(departed_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(departed_date),
          processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
-         fy =substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4))
+         fy_quarter = quarter(departed_date, fiscal_start=10, type="year.quarter"),
+         fy = substr(fy_quarter, 1,4))
 
 rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
 
 ```
 
-A removal occurs when an individual is issued a final order of removal. The removals dataset (`rem`) includes `r nrow(rem)` observations of `r length(rem)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
+The removals dataset (`rem`) includes `r nrow(rem)` observations of `r length(rem)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
+
+```{r glimpse_removals, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+glimpse(rem)
+
+```
 
 ```{r load_supplemental, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -158,6 +187,8 @@ county_aor <- read_delim(here('share', 'hand', 'county_aor.csv'), delim = ',')
 aor_field_office <- read_delim(here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
 
 # Select AOR-level demographics obtained via `tidycensus`
+# We currently lack demographics for years following 2019, so we use 2019 values for subsequent years
+# TO DO: Update demographics for more recent years
 demog <- read_delim(here('analyze', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
   arrange(aor, year)
 
@@ -172,7 +203,11 @@ pc_scale = 100000
 
 # Basic comparative analysis
 
+The following sections provide a basic comparative overview of the three enforcement datasets.
+
 ## Total enforcement actions per FY
+
+All three enforcement metrics peak in FY 2012; we lack data for prior years. Note total arrests exceed total removals for first time in FY 2021; significant increase in rate of encounters to arrests in FY 2022.
 
 ```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
 
@@ -209,6 +244,8 @@ ggplotly(p1)
 
 ## Enforcement by AOR
 
+Each enforcement dataset categorizes enforcement actions at the level of ICE Areas of Responsibility (AORs). Here we provide an overview of total enforcement actions per Fiscal Year across all AORs. Note wide distribution in rates of enforcement actions among AORs and over time.
+
 ```{r enforce_by_aor, echo=FALSE, message=FALSE, include=TRUE}
 
 enc_fy_aor <- enc %>% 
@@ -236,8 +273,11 @@ dat <- left_join(enc_fy_aor, arr_fy_aor, by=c('fy', 'aor')) %>%
   left_join(rem_fy_aor, by=c('fy', 'aor'))
 
 dat <- dat %>% 
+  filter(!is.na(aor)) %>% 
+  mutate(across(everything(), ~replace_na(., 0))) %>% 
   mutate(diff_enc_arr = n_encounters - n_arrests,
-         diff_arr_rem = n_arrests - n_removals)
+         diff_rem_arr = n_removals - n_arrests)
+  
 
 p1 <- dat %>%
   filter(!is.na(aor)) %>% 
@@ -249,10 +289,17 @@ p1 <- dat %>%
   scale_x_discrete(breaks=seq(2013,2024,4)) +
   labs(title = "Total ICE enforcement events per FY") +
   facet_wrap(~aor) +
+  # facet_wrap(~aor, scales='free_y') +
   xlab('') +
   ylab("Value")
 
 p1
+
+```
+
+Two simple comparative measures are the annual differences between total encounters and arrests; and between total removals and arrests per AOR.
+
+```{r enforce_diff}
 
 p2 <- dat %>%
   filter(!is.na(aor)) %>% 
@@ -268,11 +315,20 @@ p2 <- dat %>%
 
 p2
 
+# b1 <- dat %>%
+#   filter(!is.na(aor)) %>% 
+#   dplyr::select(fy, aor, contains('diff')) %>% 
+#   pivot_longer(cols=-c('fy', 'aor')) %>% 
+#   ggplot(aes(x = as.factor(name), y=value, color=name, group=name)) +
+#   geom_boxplot()
+# 
+# b1
+
 ```
 
 # Basic mapping by ICE AOR
 
-ICE ERO divides the country into 24 Areas of Responsibility (AORs) and Field Offices, mapped below. Most AORs correspond to one or more U.S. states and territories; the states of CA, NY, and TX are divided between two or more AORs. (An additional "HQ" AOR does not have an associated territorial jurisdiction; some ICE datasets also refer to an "HAL" AOR for the south Texas region centering on Harlingen, TX.)
+ICE ERO divides the country into 24 Areas of Responsibility (AORs) and Field Offices, mapped below. Most AORs correspond to one or more U.S. states and territories; the states of CA, NY, and TX are divided between two or more AORs. (An additional "HQ" AOR does not have an associated territorial jurisdiction. Some ICE datasets also refer to a "HAL" AOR for the south Texas region centering on Harlingen, TX; this AOR overlaps with the HOU and SNA regions as displayed below.)
 
 ```{r maps_setup, echo=FALSE, message=FALSE, include=FALSE}
   
@@ -281,7 +337,7 @@ states <- unique(county_aor$geoid_state)
 all_counties <- counties(state=states) %>%
   shift_geometry()
 
-# We can easily combine county-level geometries into an AOR shape!
+# Combine county-level geometries into an AOR geometry
 
 aor_geom <- left_join(all_counties, county_aor, by=c('GEOID' = "geoid")) %>%
   group_by(aor) %>%
@@ -303,6 +359,8 @@ p1 <- aor_geom %>%
   ggrepel::geom_label_repel(
     data = aor_field_office_sf,
     aes(label = aor, geometry = geometry),
+    fill = alpha(c("white"),0.5),
+    color = "black",
     stat = "sf_coordinates",
     min.segment.length = 0,
     force=2,
@@ -315,8 +373,11 @@ p1
 
 ```
 
+We can easily map enforcement variables at the AOR level as below:
+
 ```{r enforcement_per_capita}
 
+# Note here we use 2019 demographic data for subsequent
 dat_map <- dat %>%
   mutate(fy = as.numeric(as.character(fy))) %>%
   full_join(demog, by=c('aor' = 'aor', 'fy' = 'year')) %>%
@@ -332,7 +393,8 @@ p0 <- dat_map %>%
   geom_sf() +
   scale_fill_viridis_c() +
   theme_void() +
-  labs(title = "ICE encounters per 100,000 pop., 2022")
+  labs(title = "ICE encounters per capita, FY 2022",
+       caption = "Per est. 100,000 pop., 2019 (tidycensus)")
 
 p1 <- dat_map %>%
   filter(fy == 2022,
@@ -342,7 +404,8 @@ p1 <- dat_map %>%
   geom_sf() +
   scale_fill_viridis_c() +
   theme_void() +
-  labs(title = "ICE arrests per 100,000 pop., 2022")
+  labs(title = "ICE arrests per capita, FY 2022",
+       caption = "Per est. 100,000 pop., 2019 (tidycensus)")
 
 p2 <- dat_map %>%
   filter(fy == 2022,
@@ -352,7 +415,8 @@ p2 <- dat_map %>%
   geom_sf() +
   scale_fill_viridis_c() +
   theme_void() +
-  labs(title = "ICE removals per 100,000 pop., 2022")
+  labs(title = "ICE removals per capita, FY 2022",
+       caption = "Per est. 100,000 pop., 2019 (tidycensus)")
 
 p0
 p1
