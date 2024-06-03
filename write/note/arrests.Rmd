@@ -1,0 +1,305 @@
+---
+title: "FY12-23YTD ICE ERO arrests descriptive analysis"
+author: "UWCHR"
+date: "2023-06-01"
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+
+# Data overview
+
+This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data regarding nationwide ICE arrests obtained by the University of Washington Center for Human Rights pursuant to FOIA request 2022-ICFO-09023.
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+options(scipen = 1000000)
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
+
+arr <- read_delim(here('analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                  arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_landmark = col_factor(),
+                                  arrest_method = col_factor(),
+                                  operation = col_factor(),
+                                  processing_disposition = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  case_closed_date = col_date(format="%m/%d/%Y"),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
+redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
+
+arr <- arr %>% 
+  dplyr::select(-all_of(redacted))
+
+arr <- arr %>% 
+  mutate(arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+         year = year(arrest_date),
+         month = month(arrest_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(arrest_date),
+         fy = as.factor(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)),
+         citizenship_country = as.factor(toupper(citizenship_country)))
+
+```
+
+An arrest occurs when an individual is taken into custody by ICE and removal proceedings initiated against them. 
+
+The arrests dataset (`arr`) includes `r nrow(arr)` observations of `r length(arr)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
+
+The following provides an summary of dataset characteristics via `skimr::skim(arr)`:
+
+```{r skim, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+skimr::skim(arr)
+
+```
+
+# Total arrests by FY
+
+```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
+
+p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n)) +
+  geom_col() +
+  labs(title = "Total ICE arrests per FY")
+
+p1
+
+```
+
+# Basic demographics
+
+## Gender
+
+Increasing proportion of females arrested since FY 2021:
+ 
+```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+# arr %>%
+#   mutate(gender = toupper(gender)) %>% 
+#   group_by(gender) %>% 
+#   summarize(n = n())
+
+p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>%
+  count(fy, gender) %>% 
+  ggplot(aes(x=fy, y=n, fill=gender)) +
+  geom_col(position='fill') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Total ICE arrests, % by gender")
+
+p1
+
+```
+
+## Country of citizenship
+
+Changing composition of arrest nationality: Mexico, Guatemala, El Salvador decrease as proportion; absolute increase in Venezeula, Colombia, Nicaragua.
+
+```{r cit, echo=FALSE, message=FALSE, include=TRUE}
+
+cit <- arr %>%
+  filter(arrest_date <= "2022-09-30") %>% 
+  mutate(citizenship_country = toupper(citizenship_country)) %>% 
+  group_by(citizenship_country) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>%
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
+    TRUE ~ "all others"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  geom_col() +
+  labs(title = "Total ICE arrests by country of citizenship (top 15)")
+
+p1
+
+```
+
+```{r cit_rank, echo=FALSE, message=FALSE, include=TRUE}
+
+cit_rank <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>% 
+  count(fy, citizenship_country) %>% 
+  arrange(fy, desc(n), citizenship_country) %>% 
+  group_by(fy) %>% 
+  mutate(ranking = row_number())
+
+p1 <- cit_rank %>% 
+  filter(ranking <= 10) %>% 
+  ggplot(aes(x = fy, y = ranking, group = citizenship_country)) +
+  geom_line(aes(color = citizenship_country, alpha = 1), size = 1) +
+  geom_point(aes(color = citizenship_country, alpha = 1), size = 2) +
+  scale_y_reverse() +
+  labs(title = "Ranked country of citizenship for ICE arrests")
+
+ggplotly(p1)
+
+```
+
+# Total arrests by AOR
+
+Below is an interactive chart of total ICE arrests per FY by AOR:
+
+```{r annual, echo=FALSE, message=FALSE, include=TRUE}
+
+p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "Total ICE arrests per FY by AOR")
+
+ggplotly(p1)
+
+```
+
+## Percent change
+
+Percent change in arrests per FY nationally and by AOR. Note comparison between groups may be misleading because smaller population AORs will be more volatile.
+
+```{r arrests_pct_chg, message=FALSE, warning=FALSE}
+
+natl_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30") %>% 
+  group_by(fy) %>%
+  summarize(n = n()) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- natl_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="FY % change in total ICE arrests")
+
+p1
+
+aor_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         !is.na(aor)) %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p2 <- aor_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor)  +
+  labs(title="FY % change in total ICE arrests per AOR") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p2
+
+```
+
+# Arrests by `arrest_method`
+
+```{r method_setup, echo=FALSE, message=FALSE, include=TRUE}
+
+methods <- arr %>% 
+  count(arrest_method) %>% 
+  arrange(desc(n))
+
+top_methods <- methods %>% 
+  filter(n > 5000)
+
+arr <- arr %>% 
+  mutate(arrest_method_short = case_when(arrest_method %in% unlist(top_methods$arrest_method) ~ as.character(arrest_method), 
+                                         TRUE ~ "All others"))
+
+```
+
+Arrests trend down nationwide; slight bump up during Trump admin; big bump of NCA in 2022 (as ICE processed people initially encountered at southern border by BP?). Global decline CLC; NCA now >50% of arrests--but are these at-large community arrests or self-report? Look at trends in `processing_disposition`, `operation`, `apprehension_landmark`.
+
+```{r national_arrest_method, message=FALSE, warning=FALSE}
+
+p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>% 
+  group_by(fy, arrest_method_short) %>%
+  ggplot(aes(x = fy, fill=arrest_method_short)) +
+  geom_bar(stat='count', position='stack')
+
+ggplotly(p1)
+
+```
+
+```{r arr_method_pct_chg, message=FALSE, warning=FALSE}
+
+method_pct_chg <- arr %>%
+  filter(arrest_date <= "2022-09-30",
+         !is.na(aor)) %>% 
+  group_by(fy, arrest_method_short) %>%
+  summarize(n = n()) %>% 
+  group_by(arrest_method_short) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- method_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~arrest_method_short, scales='free_y')  +
+  labs(title="FY % change in total ICE arrests by arrest method") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+p1
+
+```
+
+```{r method_per_aor, message=FALSE, warning=FALSE}
+
+p2 <- arr %>% 
+  filter(!is.na(aor),
+         aor != "HQ") %>% 
+  group_by(aor, fy, arrest_method_short) %>%
+  ggplot(aes(x = fy, fill=arrest_method_short)) +
+  geom_bar(stat='count') +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor) +
+  labs(title="Total ICE arrests by arrest method per AOR") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust=1))
+
+ggplotly(p2)
+
+
+```
+
+```{r arrest_method_sex}
+
+p1 <- arr %>% 
+  filter(arrest_date <= "2022-09-30") %>%
+  count(fy, gender, arrest_method_short) %>% 
+  ggplot(aes(x=fy, y=n, fill=gender)) +
+  geom_col(position='fill') +
+  facet_wrap(~arrest_method_short) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Total ICE arrests, % by gender")
+
+p1
+
+```

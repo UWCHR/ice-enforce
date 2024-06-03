@@ -21,13 +21,21 @@ p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris
 
 ```
 
-# ICE ERO-LESA enforcement actions: Data overview
+# Data overview
 
 This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data regarding nationwide encounters, arrests, and removals obtained by the University of Washington Center for Human Rights pursuant to FOIA request 2022-ICFO-09023.
 
 ## Datasets
 
-Datasets have been minimally cleaned and standardized; in the following sections we load each dataset and perform some basic additional standardization and creation of convenience variables for various units of time, etc. For additional detail, see respective descriptive notebooks for each enforcement dataset.
+In each dataset, a record relates to an enforcement event, not an individual. Individuals may be involved in multiple enforcement events of each category. Original datasets do not include unique individual identifiers; it is not possible to link a given encounter to an associated arrest, or an arrest to an associated removal.[^1]
+
+Datasets have been minimally cleaned and standardized; in the following sections we load each dataset and perform some basic additional standardization and creation of convenience variables for various units of time, etc.
+
+For additional detail, see respective descriptive notebooks for each enforcement dataset:
+
+- [Encounters](encounters.html)
+- [Arrests](arrests.html)
+- [Removals](removals.html)
 
 ### Encounters
 
@@ -423,3 +431,5 @@ p1
 p2
 
 ```
+
+[^1]: Unique values have been assigned for each record: `id` values denote the sequence of records in the original concatenated datasets; `hashid` values are unique identifiers for each record and are included for validation purposes (e.g. validating join operations, checking whether data has been transformed following assignment of `hashid` values, etc.).]
