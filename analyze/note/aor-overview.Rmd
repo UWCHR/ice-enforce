@@ -17,13 +17,13 @@ output:
 
 library(pacman)
 
-p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder, viridis)
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, viridis)
 
 options(scipen = 1000000)
 
 # ENCOUNTERS DATA
 
-enc <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
+enc <- read_delim(here('analyze', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                    event_date = col_character(),
                                    landmark = col_character(),
@@ -54,7 +54,7 @@ enc <- enc %>%
 
 # ARRESTS DATA
 
-arr <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
+arr <- read_delim(here('analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                   arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
@@ -86,7 +86,7 @@ arr <- arr %>%
 
 pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
 
-rem <- read_delim(here('us-fy12-23', 'analyze', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
+rem <- read_delim(here('analyze', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_character(),
                                    arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
@@ -119,33 +119,17 @@ rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_
 
 # SUPPLEMENTAL DATA
 
-county_aor <- read_delim(here('share', 'hand', 'county_aor.csv'), delim = ',')
-
-demog <- read_delim(here('us-fy12-23', 'analyze', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
+demog <- read_delim(here('analyze', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
   arrange(aor, year) %>% 
   mutate(year = as.factor(year))
 
 pc_scale = 100000
 
-ggkey = Sys.getenv("GOOGLEGEOCODE_API_KEY")
-print(ggkey)
-register_google(key = ggkey)
-
-aor_field_office <- read_delim(here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
-
-# aor_field_office_lat_lon <- geo(aor_field_office$field_office_addr, method="google")
-# 
-# aor_field_office <- aor_field_office %>% 
-#   mutate(field_office_addr = str_squish(field_office_addr)) %>% 
-#   left_join(aor_field_office_lat_lon, by=c('field_office_addr' = 'address'))
-# 
-# write_delim(aor_field_office, here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
-
-aor_field_office_sf <- aor_field_office %>%
-  st_as_sf(coords = c("long", "lat"), crs=4326)
-
-specific_aor = "SEA"
-specific_area_of_responsibility = "Seattle Area of Responsibility"
+specific_aor <- "BOS"
+specific_area_of_responsibility <- arr %>%
+  filter(aor == specific_aor) %>%
+  distinct(area_of_responsibility) %>% 
+  as.character()
 
 ```
 
@@ -341,14 +325,14 @@ dat <- dat %>%
 p1 <- dat %>% 
   ggplot(aes(x = fy, y = diff_enc_arr, color = aor, group = aor)) +
   geom_line() +
-  gghighlight(aor == "SEA")
+  gghighlight(aor ==specific_aor)
 
 p1
 
 p2 <- dat %>% 
   ggplot(aes(x = fy, y = ratio_enc_arr, color = aor, group = aor)) +
   geom_line() +
-  gghighlight(aor == "SEA")
+  gghighlight(aor ==specific_aor)
 
 p2
 
@@ -607,7 +591,7 @@ p2
 # Could try superimposing line chart of total arrests as above
 
 specific_aor_pct_chg <- aor_pct_chg %>% 
-  filter(aor == "SEA") %>% 
+  filter(aor ==specific_aor) %>% 
   rename(group = aor) %>% 
   dplyr::select(fy, group, n, pct_change)
 
