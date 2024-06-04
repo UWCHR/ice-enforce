@@ -10,7 +10,7 @@
 all: \
 	output/ice_arrests_fy12-23ytd.csv.gz \
 	output/ice_encounters_fy12-23ytd.csv.gz \
-	output/ice_removals_fy12-23yd.csv.gz
+	output/ice_removals_fy12-23ytd.csv.gz
 	
 PHONY: all
 
@@ -38,15 +38,15 @@ output/ice_encounters_fy12-23ytd.csv.gz: \
 		--log=output/clean-encounters.log \
 		--output=$@
 
-output/ice_removals_fy12-23yd.csv.gz: \
+output/ice_removals_fy12-23ytd.csv.gz: \
 	src/clean.py \
 	hand/clean_rules.yaml \
 	hand/removal_dtypes.yaml \
-	input/ice_removals_fy12-23yd.csv.gz
+	input/ice_removals_fy12-23ytd.csv.gz
 	python $< \
 		--dtypes=hand/removal_dtypes.yaml \
 		--cleanrules=hand/clean_rules.yaml \
-		--input=input/ice_removals_fy12-23yd.csv.gz \
+		--input=input/ice_removals_fy12-23ytd.csv.gz \
 		--log=output/clean-removals.log \
 		--output=$@
 

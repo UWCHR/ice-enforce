@@ -54,6 +54,7 @@ if __name__ == "__main__":
 
     df = df.rename({'area_of_responsibility': 'aor'}, axis=1)
     df = df.rename({'event_area_of_responsibility': 'aor'}, axis=1)
+    df['area_of_responsibility'] = df['aor']
     df['aor'] = df['aor'].str.replace('Area of Responsibility', '')
 
     for k in cleanrules.keys():
