@@ -1,5 +1,5 @@
 ---
-title: "FY12-23YTD ICE ERO removals descriptive analysis"
+title: "ICE ERO-LESA nationwide removals data, FY12-22"
 author: "UWCHR"
 date: "2023-06-01"
 output:
@@ -57,7 +57,7 @@ rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_
 
 ```
 
-A removal occurs when an individual is issued a final order of removal.
+A removal occurs when an individual is issued a final order of removal and departs the United States via deportation or voluntary return.[^1]
 
 The removals dataset (`rem`) includes `r nrow(rem)` observations of `r length(rem)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
 
@@ -338,3 +338,4 @@ p4 <- rem %>%
 p4
 ```
 
+[^1]: For discussion of ICE's definition of "removals", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018

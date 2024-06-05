@@ -1,5 +1,5 @@
 ---
-title: "FY12-23YTD ICE ERO arrests descriptive analysis"
+title: "ICE ERO-LESA nationwide arrests data, FY12-22"
 author: "UWCHR"
 date: "2023-06-01"
 output:
@@ -54,7 +54,7 @@ arr <- arr %>%
 
 ```
 
-An arrest occurs when an individual is taken into custody by ICE and removal proceedings initiated against them. 
+An arrest occurs when an individual is taken into custody by ICE and removal proceedings initiated against them.[^1]
 
 The arrests dataset (`arr`) includes `r nrow(arr)` observations of `r length(arr)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
 
@@ -303,3 +303,5 @@ p1 <- arr %>%
 p1
 
 ```
+
+[^1]: For discussion of ICE's definition of "arrests", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018
