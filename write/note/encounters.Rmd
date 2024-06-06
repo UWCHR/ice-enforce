@@ -15,13 +15,13 @@ output:
 
 This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data regarding nationwide ICE encounters obtained by the University of Washington Center for Human Rights pursuant to FOIA request 2022-ICFO-09023.
 
-```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r setup, message=FALSE, warning=FALSE, include=TRUE}
 
 options(scipen = 1000000)
 
 library(pacman)
 
-p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, viridis)
 
 enc <- read_delim(here('write', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
@@ -43,7 +43,6 @@ enc <- enc %>%
   dplyr::select(-redacted)
 
 cy_months <- c("Jan","Feb","Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-
 fy_months <- c("Oct", "Nov", "Dec", "Jan","Feb","Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")
 
 enc <- enc %>% 
@@ -66,7 +65,7 @@ An encounter occurs when an individual is subjected to revision of admissibility
 
 The following provides an summary of dataset characteristics via `skimr::skim(enc)`:
 
-```{r skim, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r skim, message=FALSE, warning=FALSE, include=TRUE}
 
 # This is slow
 
@@ -76,7 +75,7 @@ skimr::skim(enc)
 
 # Total encounters
 
-```{r fy_total, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r fy_total, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   group_by(fy) %>% 
@@ -104,6 +103,7 @@ p1
 #   ggplot(aes(x = month, y = n, color = fy, group = fy)) +
 #   geom_line() +
 #   ylim(0, NA) +
+#   scale_color_viridis_d() +
 #   labs(title = "Total nationwide ICE encounters per month")
 # 
 # p3
@@ -116,7 +116,7 @@ p1
 
 Note increasing proportion of encounters involving females:
 
-```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r gender, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>%
   count(fy, gender) %>% 
@@ -133,7 +133,7 @@ p1
 
 Total ICE encounters by country of citizenship:
 
-```{r cit, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r cit, message=FALSE, warning=FALSE, include=TRUE}
 
 cit <- enc %>%
   
@@ -160,7 +160,7 @@ ggplotly(p1)
 
 Decreasing proportion of ICE encounters of U.S. citizens/and "unknown" nationality. These categories are suggestive of encounters involving people not amenable for removal by ICE.
 
-```{r cit_us_unk, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r cit_us_unk, message=FALSE, warning=FALSE, include=TRUE}
 
 p2 <- enc %>%
   mutate(citizenship_country = case_when(
@@ -178,9 +178,9 @@ p2
 
 # Total encounters per AOR
 
-Below is an interactive chart of total ICE encounters per FY by AOR. Note significant quantity of encounters with missing ("NA") AOR, trend of missing values does not parallel overall trends.
+Below is an interactive chart of total ICE encounters per FY by AOR. Note significant quantity of encounters with missing ("NA") AOR; trend of missing values does not parallel overall trends.
 
-```{r annual, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r annual, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   
@@ -208,7 +208,7 @@ ggplotly(p1)
 
 Percent change in encounters per FY nationally and by AOR. Note comparison between groups may be misleading because smaller population AORs will be more volatile.
 
-```{r arrests_pct_chg, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r arrests_pct_chg, message=FALSE, warning=FALSE, include=TRUE}
 
 natl_pct_chg <- enc %>%
   
@@ -251,7 +251,7 @@ p2
 
 Note high proportion of records missing `operation` data.
 
-```{r enc_op}
+```{r enc_op_setup, message=FALSE, warning=FALSE, include=TRUE}
 
 ops <- enc %>% 
   count(operation) %>% 
@@ -266,7 +266,7 @@ enc <- enc %>%
 
 ```
 
-```{r enc_op_fy, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r enc_op_fy, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   filter(
@@ -280,15 +280,21 @@ p1 <- enc %>%
 
 ggplotly(p1)
 
+```
+
+Some patterns are more visible at month-to-month level. Note large encounter totals for "Operation Horizon" during November 2021, February-March 2022; note also increasing proportion of encounters related to southwest border.
+
+```{r enc_op_mth, message=FALSE, warning=FALSE, include=TRUE}
+
 p2 <- enc %>% 
-  filter(event_date >= "2020-10-01"
+  filter(event_date >= "2019-10-01"
          # !is.na(operation)
          ) %>% 
   group_by(year_mth, operation_short) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = year_mth, y=n, fill=operation_short)) +
   geom_col() +
-  labs(title = "Total ICE encounters per month by operation, Biden admin.")
+  labs(title = "Total ICE encounters per month by operation, FY20-22")
 
 ggplotly(p2)
 
@@ -296,7 +302,7 @@ ggplotly(p2)
 
 # Processing disposition
 
-```{r enc_disp, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r enc_disp, message=FALSE, warning=FALSE, include=TRUE}
 
 disps <- enc %>% 
   count(processing_disposition) %>% 
@@ -311,7 +317,7 @@ enc <- enc %>%
 
 ```
 
-```{r enc_disp_fy, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r enc_disp_fy, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- enc %>% 
   filter(
@@ -331,7 +337,7 @@ ggplotly(p1)
 
 Here we calculate the proportion of encounters with `processing_disposition` of "NOT AMENABLE TO REMOVAL" OR "FOREIGN BORN USC" (U.S. citizen). Higher proportion of these categories is suggestive of un-targeted enforcement practices.
 
-```{r enc_disp_fy_pct_not_amenable, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r enc_disp_fy_pct_not_amenable, message=FALSE, warning=FALSE, include=TRUE}
 
 not_amenable = c("NOT AMENABLE TO REMOVAL", "FOREIGN BORN USC")
 
@@ -383,7 +389,7 @@ p2
 
 Overview of most common encounter `landmark` values gives a sense of the diversity of this category; note inclusion of general values likely denoting the ICE sub-office or divison responsible for the encounter rather than a precise location. Note also high proportion of records missing `landmark` values.
 
-```{r enc_landmark, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r enc_landmark, message=FALSE, warning=FALSE, include=TRUE}
 
 landmarks <- enc %>% 
   count(landmark) %>% 

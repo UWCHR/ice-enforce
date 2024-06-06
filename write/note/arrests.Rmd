@@ -21,7 +21,7 @@ options(scipen = 1000000)
 
 library(pacman)
 
-p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, viridis)
 
 arr <- read_delim(here('analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
@@ -44,13 +44,22 @@ redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
 arr <- arr %>% 
   dplyr::select(-all_of(redacted))
 
+cy_months <- c("Jan","Feb","Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+fy_months <- c("Oct", "Nov", "Dec", "Jan","Feb","Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")
+
 arr <- arr %>% 
-  mutate(arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+  mutate(aor = factor(aor, levels = sort(levels(arr$aor))),
+         arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
          year = year(arrest_date),
-         month = month(arrest_date, label=TRUE, abbr=TRUE),
+         month = factor(month(arrest_date, label=TRUE, abbr=TRUE), levels = fy_months),
          year_mth = zoo::as.yearmon(arrest_date),
          fy = as.factor(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)),
-         citizenship_country = as.factor(toupper(citizenship_country)))
+         gender = toupper(gender),
+         operation = toupper(operation),
+         processing_disposition = toupper(processing_disposition),
+         citizenship_country = factor(toupper(citizenship_country))) %>% 
+  filter(arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30")
 
 ```
 
@@ -66,7 +75,7 @@ skimr::skim(arr)
 
 ```
 
-# Total arrests by FY
+# Total arrests
 
 ```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
 
@@ -79,6 +88,27 @@ p1 <- arr %>%
   labs(title = "Total ICE arrests per FY")
 
 p1
+
+p2 <- arr %>%
+  group_by(year_mth) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_mth, y = n)) +
+  geom_line(aes(group=1)) +
+  ylim(0, NA) +
+  labs(title = "Total nationwide ICE arrests per month")
+
+p2
+
+p3 <- arr %>%
+  group_by(fy, month) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = month, y = n, color = fy, group = fy)) +
+  geom_line() +
+  ylim(0, NA) +
+  scale_color_viridis_d() +
+  labs(title = "Total nationwide ICE arrests per month")
+
+p3
 
 ```
 
@@ -96,7 +126,6 @@ Increasing proportion of females arrested since FY 2021:
 #   summarize(n = n())
 
 p1 <- arr %>% 
-  filter(arrest_date <= "2022-09-30") %>%
   count(fy, gender) %>% 
   ggplot(aes(x=fy, y=n, fill=gender)) +
   geom_col(position='fill') +
@@ -109,7 +138,7 @@ p1
 
 ## Country of citizenship
 
-Changing composition of arrest nationality: Mexico, Guatemala, El Salvador decrease as proportion; absolute increase in Venezeula, Colombia, Nicaragua.
+Changing composition of arrest nationality: Mexico, Guatemala, El Salvador decrease; increase in Venezeula, Colombia, Nicaragua.
 
 ```{r cit, echo=FALSE, message=FALSE, include=TRUE}
 
@@ -121,17 +150,16 @@ cit <- arr %>%
   arrange(desc(n))
 
 p1 <- arr %>% 
-  filter(arrest_date <= "2022-09-30") %>%
   mutate(citizenship_country = case_when(
     citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
-    TRUE ~ "all others"
+    TRUE ~ "ALL OTHERS"
   )) %>% 
   count(fy, citizenship_country) %>% 
-  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
   geom_col() +
   labs(title = "Total ICE arrests by country of citizenship (top 15)")
 
-p1
+ggplotly(p1)
 
 ```
 
@@ -147,12 +175,14 @@ cit_rank <- arr %>%
 p1 <- cit_rank %>% 
   filter(ranking <= 10) %>% 
   ggplot(aes(x = fy, y = ranking, group = citizenship_country)) +
-  geom_line(aes(color = citizenship_country, alpha = 1), size = 1) +
-  geom_point(aes(color = citizenship_country, alpha = 1), size = 2) +
-  scale_y_reverse() +
+  geom_line(aes(color = citizenship_country), size = 1) +
+  geom_point(aes(color = citizenship_country), size = 2) +
+  scale_y_reverse(breaks = seq(1,10)) +
   labs(title = "Ranked country of citizenship for ICE arrests")
 
 ggplotly(p1)
+
+# How to illustrate proportional increase of small groups, e.g. ANGOLA? Percent change by citizenship group?
 
 ```
 
@@ -233,8 +263,6 @@ arr <- arr %>%
 
 ```
 
-Arrests trend down nationwide; slight bump up during Trump admin; big bump of NCA in 2022 (as ICE processed people initially encountered at southern border by BP?). Global decline CLC; NCA now >50% of arrests--but are these at-large community arrests or self-report? Look at trends in `processing_disposition`, `operation`, `apprehension_landmark`.
-
 ```{r national_arrest_method, message=FALSE, warning=FALSE}
 
 p1 <- arr %>% 
@@ -301,6 +329,66 @@ p1 <- arr %>%
   labs(title="Total ICE arrests, % by gender")
 
 p1
+
+```
+
+# Processing disposition
+
+```{r arr_disp, message=FALSE, warning=FALSE, include=TRUE}
+
+disps <- arr %>% 
+  count(processing_disposition) %>% 
+  arrange(desc(n))
+
+top_disps <- disps %>% 
+  filter(n > 10000)
+
+arr <- arr %>% 
+  mutate(disp_short = case_when(processing_disposition %in% unlist(top_disps$processing_disposition) ~ as.character(processing_disposition), 
+                                         TRUE ~ "ALL OTHERS"))
+
+```
+
+```{r enc_disp_fy, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- arr %>%
+  group_by(fy, disp_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
+  geom_col() +
+  labs(title = "Total ICE arrests per FY by processing disposition")
+
+ggplotly(p1)
+
+```
+
+
+# Apprehension Landmark
+
+Overview of most common arrest `apprehension_landmark` values gives a sense of the diversity of this category; note inclusion of general values likely denoting the ICE sub-office or divison responsible for the arrest rather than a precise location. Closer inspection is recommended at the AOR level.
+
+`r length(unique(arr$apprehension_landmark))`
+
+```{r arr_landmark, message=FALSE, warning=FALSE, include=TRUE}
+
+landmarks_per_aor <- arr %>%
+  group_by(aor) %>%
+  summarize(n = n_distinct(apprehension_landmark))
+
+landmarks <- arr %>% 
+  count(apprehension_landmark) %>% 
+  arrange(desc(n))
+
+p1 <- arr %>% 
+  mutate(apprehension_landmark = case_when(apprehension_landmark %in% head(landmarks$apprehension_landmark, 15) ~ as.character(apprehension_landmark), 
+                                         TRUE ~ "ALL OTHERS")) %>% 
+  group_by(fy, apprehension_landmark) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=apprehension_landmark)) +
+  geom_col() +
+  labs(title = "Total ICE arrests per FY by `apprehension_landmark` (top 15)")
+
+ggplotly(p1)
 
 ```
 
