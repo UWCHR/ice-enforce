@@ -26,7 +26,7 @@ p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
 pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
 
 rem <- read_delim(here('write', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
-                  col_types = cols(aor = col_character(),
+                  col_types = cols(aor = col_factor(),
                                    arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
                                   case_close_date = col_date(format="%m/%d/%Y"),
@@ -46,12 +46,21 @@ redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
 rem <- rem %>% 
   dplyr::select(-redacted, -case_closed_date)
 
+cy_months <- c("Jan","Feb","Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+fy_months <- c("Oct", "Nov", "Dec", "Jan","Feb","Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")
+
 rem <- rem %>% 
-  mutate(year = year(departed_date),
-         month = month(departed_date, label=TRUE, abbr=TRUE),
+  mutate(aor = factor(aor, levels = sort(levels(rem$aor))),
+         year = year(departed_date),
+         month = factor(month(departed_date, label=TRUE, abbr=TRUE), levels = fy_months),
          year_mth = zoo::as.yearmon(departed_date),
          processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
-         fy =substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4))
+         fy =substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4),
+         gender = toupper(gender),
+         processing_disposition = toupper(processing_disposition),
+         citizenship_country = factor(toupper(citizenship_country))) %>% 
+   filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30")
 
 rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
 
@@ -69,16 +78,13 @@ skimr::skim(rem)
 
 ```
 
-# Total removals per FY
+# Total removals
 
 Major decrease in removals by ICE, but note CBP Title 42 expulsions at Southern border since 2020 are not counted here.
 
 ```{r fy_total, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- rem %>% 
-  filter(departed_date >= "2011-10-01",
-         departed_date <= "2022-09-30"
-         ) %>% 
   group_by(fy) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n)) +
@@ -86,6 +92,27 @@ p1 <- rem %>%
   labs(title = "Total removals per FY")
 
 p1
+
+p2 <- rem %>%
+  group_by(year_mth) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_mth, y = n)) +
+  geom_line(aes(group=1)) +
+  ylim(0, NA) +
+  labs(title = "Total nationwide ICE removals per month")
+
+p2
+
+p3 <- rem %>%
+  group_by(fy, month) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = month, y = n, color = fy, group = fy)) +
+  geom_line() +
+  ylim(0, NA) +
+  scale_color_viridis_d() +
+  labs(title = "Total nationwide ICE removals per month")
+
+p3
 
 ```
 
@@ -118,22 +145,18 @@ p1
 ```{r cit, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 cit <- rem %>%
-  filter(departed_date >= "2011-10-01",
-       departed_date <= "2022-09-30") %>% 
   mutate(citizenship_country = toupper(citizenship_country)) %>% 
   group_by(citizenship_country) %>% 
   summarize(n = n()) %>% 
   arrange(desc(n))
 
 p1 <- rem %>% 
-  filter(departed_date >= "2011-10-01",
-       departed_date <= "2022-09-30") %>% 
   mutate(citizenship_country = case_when(
     citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
-    TRUE ~ "all others"
+    TRUE ~ "ALL OTHERS"
   )) %>% 
   count(fy, citizenship_country) %>% 
-  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
   geom_col() +
   labs(title = "Total ICE removals by country of citizenship (top 15)")
 
@@ -144,9 +167,7 @@ ggplotly(p1)
 
 ```{r removals_per_aor_fy, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
-p1 <- rem %>% 
-  filter(departed_date >= "2011-10-01",
-         departed_date <= "2022-09-30") %>% 
+p1 <- rem %>%  
   group_by(fy, aor) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +

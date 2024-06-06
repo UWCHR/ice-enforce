@@ -23,7 +23,7 @@ p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris
 
 # Data overview
 
-This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data regarding nationwide encounters, arrests, and removals obtained by the University of Washington Center for Human Rights (UWCHR) pursuant to FOIA request 2022-ICFO-09023.
+This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data regarding nationwide encounters, arrests, and removals for U.S. Government Fiscal Years 2012 through 2022, obtained by the University of Washington Center for Human Rights (UWCHR) pursuant to FOIA request 2022-ICFO-09023.
 
 ## Datasets
 
@@ -72,7 +72,9 @@ enc <- enc %>%
          gender = toupper(gender),
          operation = toupper(operation),
          processing_disposition = toupper(processing_disposition),
-         citizenship_country = toupper(citizenship_country))
+         citizenship_country = toupper(citizenship_country)) %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30")
 
 ```
 
@@ -121,7 +123,9 @@ arr <- arr %>%
          year_mth = zoo::as.yearmon(arrest_date),
          fy_quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter")),
          fy = as.factor(substr(fy_quarter, 1,4)),
-         citizenship_country = as.factor(toupper(citizenship_country)))
+         citizenship_country = as.factor(toupper(citizenship_country))) %>% 
+  filter(arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30")
 
 ```
 
@@ -144,7 +148,7 @@ glimpse(arr)
 pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
 
 rem <- read_delim(here('analyze', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
-                  col_types = cols(aor = col_character(),
+                  col_types = cols(aor = col_factor(),
                                    arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
                                   case_close_date = col_date(format="%m/%d/%Y"),
@@ -173,7 +177,9 @@ rem <- rem %>%
          year_mth = zoo::as.yearmon(departed_date),
          processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
          fy_quarter = as.factor(quarter(departed_date, fiscal_start=10, type="year.quarter")),
-         fy = as.factor(substr(fy_quarter, 1,4)))
+         fy = as.factor(substr(fy_quarter, 1,4))) %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30")
 
 rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
 
@@ -469,7 +475,7 @@ rem_pc_per_aor <- left_join(rem_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor
   mutate(pc_rank = row_number())
 
 p1 <- rem_pc_per_aor %>% 
-  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  ggplot(aes(x = fy, y=n_per_cap, color=aor, group=aor)) +
   geom_line() +
   labs(title = "ICE removals per 100,000 residents")
 
