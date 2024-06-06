@@ -1,7 +1,7 @@
 ---
-title: "FY12-23YTD ICE ERO descriptive analysis"
+title: "ICE ERO-LESA enforcement actions data per AOR, FY12-22"
 author: "UWCHR"
-date: "2024-03-08"
+date: "2024-06-06"
 params:
   aor: SEA
 output:
@@ -50,15 +50,19 @@ enc <- enc %>%
   dplyr::select(-redacted)
 
 enc <- enc %>% 
-  mutate(event_date = as_date(event_date, format="%m/%d/%Y"),
+  mutate(aor = factor(aor, levels = sort(levels(enc$aor))),
+         event_date = as_date(event_date, format="%m/%d/%Y"),
          year = year(event_date),
          month = month(event_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(event_date),
-         fy = substr(quarter(event_date, fiscal_start=10, type="year.quarter"), 1,4),
+         fy_quarter = as.factor(quarter(event_date, fiscal_start=10, type="year.quarter")),
+         fy = as.factor(substr(fy_quarter, 1,4)),
          gender = toupper(gender),
          operation = toupper(operation),
          processing_disposition = toupper(processing_disposition),
-         citizenship_country = toupper(citizenship_country))
+         citizenship_country = toupper(citizenship_country)) %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30")
 
 # ARRESTS DATA
 
@@ -83,19 +87,23 @@ arr <- arr %>%
   dplyr::select(-all_of(redacted))
 
 arr <- arr %>% 
-  mutate(arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+  mutate(aor = factor(aor, levels = sort(levels(arr$aor))),
+         arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
          year = year(arrest_date),
          month = month(arrest_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(arrest_date),
-         fy = as.factor(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)),
-         citizenship_country = as.factor(toupper(citizenship_country)))
+         fy_quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter")),
+         fy = as.factor(substr(fy_quarter, 1,4)),
+         citizenship_country = as.factor(toupper(citizenship_country))) %>% 
+  filter(arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30")
 
 # REMOVALS DATA
 
 pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
 
 rem <- read_delim(here('analyze', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
-                  col_types = cols(aor = col_character(),
+                  col_types = cols(aor = col_factor(),
                                    arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
                                   case_close_date = col_date(format="%m/%d/%Y"),
@@ -115,21 +123,17 @@ rem <- rem %>%
   dplyr::select(-redacted, -case_closed_date)
 
 rem <- rem %>% 
-  mutate(year = year(departed_date),
+  mutate(aor = factor(aor, levels = sort(levels(rem$aor))),
+         year = year(departed_date),
          month = month(departed_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(departed_date),
          processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
-         fy =substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4))
+         fy_quarter = as.factor(quarter(departed_date, fiscal_start=10, type="year.quarter")),
+         fy = as.factor(substr(fy_quarter, 1,4))) %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30")
 
 rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
-
-```
-
-Encounters: `r nrow(enc %>% filter(aor == specific_aor))`
-Arrests: `r nrow(arr %>% filter(aor == specific_aor))`
-Removals: `r nrow(rem %>% filter(aor == specific_aor))`
-
-```{r load_supplemental_data, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 # SUPPLEMENTAL DATA
 
@@ -139,6 +143,7 @@ demog <- read_delim(here('analyze', 'input', 'aor_demog_indicators.csv.gz'), del
 
 pc_scale = 100000
 
+# Should get this from an external constants file along with other AOR characteristics
 specific_area_of_responsibility <- arr %>%
   filter(aor == specific_aor) %>%
   distinct(area_of_responsibility) %>% 
@@ -151,20 +156,17 @@ specific_area_of_responsibility <- arr %>%
 ```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
 
 enc_fy <- enc %>% 
-  filter(aor == specific_aor,
-    event_date <= "2022-09-30") %>% 
+  filter(aor == specific_aor) %>% 
   group_by(fy) %>% 
   summarize(n_encounters = n())
 
 arr_fy <- arr %>% 
-  filter(aor == specific_aor,
-    arrest_date <= "2022-09-30") %>% 
+  filter(aor == specific_aor) %>% 
   group_by(fy) %>% 
   summarize(n_arrests = n())
 
 rem_fy <- rem %>% 
-  filter(aor == specific_aor,
-    departed_date <= "2022-09-30") %>% 
+  filter(aor == specific_aor) %>% 
   group_by(fy) %>% 
   summarize(n_removals = n())
 
@@ -176,8 +178,6 @@ dat_diff <- dat_aor %>%
          diff_arr_rem = n_arrests - n_removals)
 
 ```
-
-
 
 ```{r fy_total_plot, echo=FALSE, message=FALSE, include=TRUE}
 
@@ -192,6 +192,14 @@ p1 <- dat_aor %>%
   ylim(0, NA)
 
 p1
+
+p2 <- dat_diff %>% 
+  pivot_longer(cols=-c('fy')) %>% 
+  filter(name %in% c("diff_enc_arr", "diff_arr_rem")) %>% 
+  ggplot(aes(x = as.factor(fy), y=value, color=name, group=name)) +
+  geom_line()
+
+p2
 
 ```
 
@@ -256,13 +264,12 @@ dat_pct <- dat %>%
   mutate(across(starts_with('n_'), ~ (.x/lag(.x) - 1))) %>% 
   pivot_longer(cols = c(-fy, -group))
 
-
-
 p3 <- dat_pct %>% 
   filter(!is.na(value)) %>% 
   ggplot() +
   geom_col(aes(x = fy, y = value, fill=name, group=name), position='dodge') +
   scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2013,2024,4)) +
   facet_wrap(~group) +
   labs(title = "Annual % change total ICE arrests, FY12-22",
        subtitle = paste0(specific_area_of_responsibility, " versus national"))

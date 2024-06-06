@@ -15,7 +15,7 @@ output:
 
 This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data regarding nationwide ICE removals obtained by the University of Washington Center for Human Rights pursuant to FOIA request 2022-ICFO-09023. 
 
-```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r setup, message=FALSE, warning=FALSE, include=TRUE}
 
 options(scipen = 1000000)
 
@@ -72,7 +72,7 @@ The removals dataset (`rem`) includes `r nrow(rem)` observations of `r length(re
 
 The following provides an summary of dataset characteristics via `skimr::skim(rem)`:
 
-```{r skim, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r skim, message=FALSE, warning=FALSE, include=TRUE}
 
 skimr::skim(rem)
 
@@ -82,7 +82,7 @@ skimr::skim(rem)
 
 Major decrease in removals by ICE, but note CBP Title 42 expulsions at Southern border since 2020 are not counted here.
 
-```{r fy_total, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r fy_total, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- rem %>% 
   group_by(fy) %>% 
@@ -120,7 +120,7 @@ p3
 
 ## Gender
 
-```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r gender, message=FALSE, warning=FALSE, include=TRUE}
 
 # rem %>%
 #   mutate(gender = tolower(gender)) %>% 
@@ -142,7 +142,7 @@ p1
 
 ## Country of citizenship
 
-```{r cit, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r cit, message=FALSE, warning=FALSE, include=TRUE}
 
 cit <- rem %>%
   mutate(citizenship_country = toupper(citizenship_country)) %>% 
@@ -161,11 +161,14 @@ p1 <- rem %>%
   labs(title = "Total ICE removals by country of citizenship (top 15)")
 
 ggplotly(p1)
+
+# % change in removal by group?
+
 ```
 
 # ICE removals per AOR
 
-```{r removals_per_aor_fy, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r removals_per_aor_fy, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- rem %>%  
   group_by(fy, aor) %>% 
@@ -179,7 +182,7 @@ ggplotly(p1)
 ```
 
 
-```{r removals_pct_chg, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r removals_pct_chg, message=FALSE, warning=FALSE, include=TRUE}
 
 natl_pct_chg <- rem %>%
   filter(departed_date >= "2011-10-01",
@@ -218,13 +221,11 @@ p2 <- aor_pct_chg %>%
 
 p2
 
-# Could try superimposing line chart of total arrests as above
-
 ```
 
-# Removals by processing disposition
+# Processing disposition
 
-```{r disp, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r disp, message=FALSE, warning=FALSE, include=TRUE}
 
 disps <- rem %>% 
   filter(departed_date >= "2012-10-01",
@@ -243,9 +244,7 @@ rem <- rem %>%
 
 ```
 
-Fewer reinstatements of removal.
-
-```{r rem_disp_fy, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r rem_disp_fy, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- rem %>% 
   filter(departed_date >= "2012-10-01",
@@ -254,48 +253,19 @@ p1 <- rem %>%
   group_by(fy, disp_short) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
-  geom_col() +
+  geom_col(position="fill") +
   labs(title = "Total removals per FY by processing disposition")
 
 ggplotly(p1)
 
 ```
 
-Decline of expedited removal.
-
-```{r expedited_removal, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
-
-er <- c('er', 'ex')
-
-rem <- rem %>% 
-  mutate(processing_disp = tolower(processing_disp),
-         ex_rem = case_when(processing_disp %in% er ~ 'expedited removal',
-                            str_detect(processing_disp, 'expedited removal') ~ 'expedited removal',
-                            is.na(processing_disp) ~ 'all others',
-                            TRUE ~ 'all others'))
-
-p1 <- rem %>% 
-  group_by(year, ex_rem) %>%
-  ggplot(aes(x = year, fill=ex_rem)) +
-  geom_bar(stat='count')
-
-p1
-
-p1 <- rem %>% 
-  group_by(year, aor, ex_rem) %>%
-  ggplot(aes(x = year, fill=ex_rem)) +
-  geom_bar(stat='count') +
-  facet_wrap(~aor, scales="free_y")
-
-p1
-
-```
-
 # Dates
 
-Removals data includes four separate date fields. `departed_date` is most complete, with no missing values.
+Removals data includes four separate date fields: `departed_date`, `case_close_date`, `arrest_date`, and `removal_date`. Of these, `departed_date` is most complete, with no missing values; therefore we use this date as the primary field for date values in this notebook.
 
-```{r date_compare, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r date_compare, message=FALSE, warning=FALSE, include=TRUE}
+
 rem %>% 
   dplyr::select(contains('date')) %>% 
 skimr::skim()
@@ -307,56 +277,45 @@ hist(rem$case_close_date, breaks='years', col='lightgreen')
 
 ```
 
-We can calculate lag between different dates for example between departed date and removal date; unclear if this is particularly meaningful.
+The earliest dataset analyzed here, for FY 2012, includes only the `departed_date` and `case_close_date` fields; the FY 2013 dataset introduces an additional `arrest_date` value alongside these; and the FY 2014 and subsequent datasets include a fourth value for `removal_date`.
 
-```{r dep_diff_rem, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+The fields `departed_date` and `removal_date` are complete for all records in datasets where these date fields appear. Only the most recent records for FY 2022 are missing `case_close_date` values, logically suggests that these cases remained open at the time of production of this dataset; a small proportion of records are missing `arrest_date` during all years since FY 2013, it is not clear what this indicates about the cases in question.
 
-rem$dep_diff_rem <- difftime(rem$departed_date, rem$removal_date, units='days')
+```{r date_compare_fy, message=FALSE, warning=FALSE, include=TRUE}
 
-skimr::skim(rem, dep_diff_rem)
-
-```
-
-```{r plot_dep_diff_rem, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
-
-h1 <- hist(as.numeric(rem$dep_diff_rem))
-
-p1 <- plot(as.numeric(rem$dep_diff_rem))
+rem %>% 
+  group_by(fy) %>% 
+  summarize(missing_dep_date = sum(is.na(departed_date)),
+            missing_rem_date = sum(is.na(removal_date)),
+            missing_arr_date = sum(is.na(arrest_date)),
+            missing_cc_date = sum(is.na(case_close_date)),
+            )
 
 ```
 
-```{r arr_diff_rem, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+We can calculate lag between different dates, between arrest date and departure date, which reveals an increase in average time between arrest and departure since FY 2014; and significant difference between cases by `processing_disposition`:
 
-rem$arr_diff_rem <- difftime(rem$arrest_date, rem$removal_date, units='days')
+```{r dep_diff_arr, message=FALSE, warning=FALSE, include=TRUE}
 
-skimr::skim(rem, arr_diff_rem)
+rem$dep_diff_arr <- difftime(rem$departed_date, rem$arrest_date, units='days')
 
+rem %>% 
+  filter(fy >= 2014) %>% 
+  group_by(fy) %>% 
+  summarize(mean_dep_diff_arr = mean(dep_diff_arr, na.rm = TRUE)) %>% 
+  ggplot(aes(x = fy, y = mean_dep_diff_arr)) +
+  geom_line(group=1) +
+  ylim(0, NA)
+
+rem %>% 
+  mutate(disp_short = case_when(processing_disposition_clean %in% unlist(top_disp$processing_disposition_clean) ~ as.character(processing_disposition_clean), 
+                                         TRUE ~ "ALL OTHERS")) %>% 
+  filter(fy >= 2014) %>% 
+  group_by(disp_short) %>% 
+  summarize(mean_dep_diff_arr = mean(dep_diff_arr, na.rm = TRUE),
+            med_dep_diff_arr = median(dep_diff_arr, na.rm = TRUE))
 
 ```
 
-```{r plot_arr_diff_rem, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
-
-h1 <- hist(as.numeric(rem$arr_diff_rem))
-
-p1 <- plot(as.numeric(rem$arr_diff_rem))
-
-```
-
-We can also plot the relationship between different date values, again, unclear if this is meaningful:
-
-```{r plot_dates, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
-
-p1 <- plot(rem$id, rem$departed_date)
-
-p2 <- plot(rem$id, rem$removal_date)
-
-p3 <- plot(rem$removal_date, rem$departed_date)
-
-p4 <- rem %>% 
-  ggplot(aes(x = removal_date, y = departed_date)) +
-  geom_point(aes(color = as.integer(departed_date)))
-
-p4
-```
 
 [^1]: For discussion of ICE's definition of "removals", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018
