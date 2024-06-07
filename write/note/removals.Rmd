@@ -253,7 +253,7 @@ p1 <- rem %>%
   group_by(fy, disp_short) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
-  geom_col(position="fill") +
+  geom_col() +
   labs(title = "Total removals per FY by processing disposition")
 
 ggplotly(p1)

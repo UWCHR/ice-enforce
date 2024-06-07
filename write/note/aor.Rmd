@@ -13,7 +13,7 @@ output:
         code_folding: hide
 ---
 
-```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r setup, message=FALSE, warning=FALSE, include=TRUE}
 
 library(pacman)
 
@@ -27,7 +27,7 @@ specific_aor <- params$aor
 
 # ICE ERO enforcement data: `r specific_aor` AOR
 
-```{r load_data, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r load_data, message=FALSE, warning=FALSE, include=TRUE}
 
 # ENCOUNTERS DATA
 
@@ -60,7 +60,8 @@ enc <- enc %>%
          gender = toupper(gender),
          operation = toupper(operation),
          processing_disposition = toupper(processing_disposition),
-         citizenship_country = toupper(citizenship_country)) %>% 
+         citizenship_country = toupper(citizenship_country),
+         landmark = toupper(str_squish(landmark))) %>% 
   filter(event_date >= "2011-10-01",
          event_date <= "2022-09-30")
 
@@ -94,7 +95,8 @@ arr <- arr %>%
          year_mth = zoo::as.yearmon(arrest_date),
          fy_quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter")),
          fy = as.factor(substr(fy_quarter, 1,4)),
-         citizenship_country = as.factor(toupper(citizenship_country))) %>% 
+         citizenship_country = as.factor(toupper(citizenship_country)),
+         apprehension_landmark = toupper(str_squish(apprehension_landmark))) %>% 
   filter(arrest_date >= "2011-10-01",
          arrest_date <= "2022-09-30")
 
@@ -155,7 +157,7 @@ This notebook provides a basic descriptive overview of ICE ERO-LESA enforcement 
 
 # Total enforcement actions by FY
 
-```{r fy_total, echo=FALSE, message=FALSE, include=TRUE}
+```{r fy_total, message=FALSE, include=TRUE}
 
 enc_fy <- enc %>% 
   filter(aor == specific_aor) %>% 
@@ -177,7 +179,7 @@ dat_aor <- left_join(enc_fy, arr_fy, by='fy') %>%
 
 p1 <- dat_aor %>%
   pivot_longer(cols=-c('fy')) %>% 
-  ggplot(aes(x = as.factor(fy), y=value, color=name, group=name)) +
+  ggplot(aes(x = fy, y=value, color=name, group=name)) +
   geom_line() +
   labs(title = "Total ICE enforcement events per FY",
        subtitle = specific_area_of_responsibility) +
@@ -191,7 +193,7 @@ ggplotly(p1)
 
 The following chart displays basic comparative measures for the `r specific_area_of_responsibility`: difference between total encounters and total arrests (`diff_enc_arr`); and difference between total arrests and total removals (`diff_arr_rem`).
 
-```{r aor_diff, echo=FALSE, message=FALSE, include=TRUE}
+```{r aor_diff, message=FALSE, include=TRUE}
 dat_diff <- dat_aor %>% 
   mutate(diff_enc_arr = n_encounters - n_arrests,
          diff_rem_arr = n_removals - n_arrests)
@@ -261,10 +263,9 @@ p1
 
 ```
 
-
 ## Percent change
 
-Percent change in enforcement actions per FY compared to national.
+Annual percent change in enforcement actions per FY, `r specific_area_of_responsibility` compared to national.
 
 ```{r arrests_pct_chg, message=FALSE, warning=FALSE}
 
@@ -290,7 +291,7 @@ p3
 
 # Encounters
 
-```{r encounters_pc_rank, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r encounters_pc_rank, message=FALSE, warning=FALSE, include=TRUE}
 
 enc_per_aor <- enc %>% 
   filter(!is.na(aor),
@@ -345,7 +346,7 @@ p1
 
 ## Encounters by `citizenship_country`
 
-```{r cit, message=FALSE, warning=FALSE, include=TRUE}
+```{r enc_cit, message=FALSE, warning=FALSE, include=TRUE}
 
 cit <- enc %>%
   filter(aor == specific_aor) %>%
@@ -369,6 +370,34 @@ ggplotly(p1)
 
 ```
 
+## Arrest `landmark`
+
+```{r enc_landmark, message=FALSE, warning=FALSE, include=TRUE}
+
+landmarks <- enc %>% 
+  filter(aor == specific_aor) %>% 
+  count(landmark) %>% 
+  arrange(desc(n))
+
+p1 <- enc %>% 
+  filter(aor == specific_aor) %>% 
+  mutate(landmark = case_when(landmark %in% head(landmarks$landmark, 15) ~ as.character(landmark), 
+                                         TRUE ~ "ALL OTHERS"),
+         landmark_abbrv = str_trunc(landmark, 20)) %>% 
+  group_by(fy, landmark_abbrv, landmark) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = fy, y=n,
+             fill=landmark_abbrv,
+             color=landmark_abbrv,
+             text = landmark)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per FY by `landmark` (top 15)",
+       subtitle = specific_area_of_responsibility)
+
+ggplotly(p1, tooltip=c('x', 'y', 'text'))
+
+```
+
 ## Encounters by `operation`
 
 ```{r enc_op_fy, message=FALSE, warning=FALSE, include=TRUE}
@@ -384,7 +413,7 @@ p1 <- enc %>%
                                          TRUE ~ "ALL OTHERS")) %>% 
   group_by(fy, operation_short) %>% 
   summarize(n = n()) %>% 
-  ggplot(aes(x = as.factor(fy), y=n, fill=operation_short)) +
+  ggplot(aes(x = fy, y=n, fill=operation_short)) +
   geom_col() +
   labs(title = "Total ICE encounters per FY by operation")
 
@@ -402,6 +431,7 @@ aor_disps <- enc %>%
   arrange(desc(n))
 
 p1 <- enc %>% 
+  filter(aor == specific_aor) %>%
   mutate(disp_short = case_when(processing_disposition %in% head(aor_disps$processing_disposition, 10) ~ as.character(processing_disposition), 
                                          TRUE ~ "ALL OTHERS")) %>% 
   group_by(fy, disp_short) %>% 
@@ -416,7 +446,7 @@ ggplotly(p1, dynamicTicks = TRUE)
 
 # Arrests
 
-```{r arrests_pc_rank, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r arrests_pc_rank, message=FALSE, warning=FALSE, include=TRUE}
 
 arr_per_aor <- arr %>% 
   filter(!is.na(aor),
@@ -434,12 +464,8 @@ arr_pc_per_aor <- left_join(arr_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor
   group_by(fy) %>% 
   mutate(pc_rank = row_number())
 
-pc_arrest_rank_fy12 <- as.numeric(arr_pc_per_aor[arr_pc_per_aor$aor == specific_aor & arr_pc_per_aor$fy == 2012, 'pc_rank'])
-pc_arrest_rank_fy19 <- as.numeric(arr_pc_per_aor[arr_pc_per_aor$aor == specific_aor & arr_pc_per_aor$fy == 2019, 'pc_rank'])
-pc_arrest_rank_fy22 <- as.numeric(arr_pc_per_aor[arr_pc_per_aor$aor == specific_aor & arr_pc_per_aor$fy == 2022, 'pc_rank'])
-
 p1 <- arr_pc_per_aor %>% 
-  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  ggplot(aes(x = fy, y=n_per_cap, color=aor, group=aor)) +
   geom_line() +
   gghighlight(aor == specific_aor, use_direct_label = FALSE) +
   labs(title = "ICE arrests per 100,000 residents",
@@ -447,19 +473,19 @@ p1 <- arr_pc_per_aor %>%
 
 p1  
 
-p2 <- arr_pc_per_aor %>% 
-  ggplot(aes(x = as.factor(fy), y=pc_rank, color=aor, group=aor)) +
-  geom_line() +
-  gghighlight(aor == specific_aor, use_direct_label = FALSE) +
-  scale_y_reverse() +
-  labs(title = "ICE arrests per 100,000 residents, AOR rank",
-       subtitle = paste0(specific_area_of_responsibility, " highlighted"))
-
-p2
+# p2 <- arr_pc_per_aor %>% 
+#   ggplot(aes(x = fy, y=pc_rank, color=aor, group=aor)) +
+#   geom_line() +
+#   gghighlight(aor == specific_aor, use_direct_label = FALSE) +
+#   scale_y_reverse() +
+#   labs(title = "ICE arrests per 100,000 residents, AOR rank",
+#        subtitle = paste0(specific_area_of_responsibility, " highlighted"))
+# 
+# p2
 
 p3 <- arr_pc_per_aor %>% 
   filter(aor == specific_aor) %>% 
-  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  ggplot(aes(x = fy, y=n_per_cap, color=aor, group=aor)) +
   geom_line() +
   ylim(0, NA) +
   labs(title = "ICE arrests per 100,000 residents",
@@ -493,9 +519,9 @@ p2
 
 ```
 
-## Demographics
+## Arrest demographics
  
-```{r gender, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r arr_gender, message=FALSE, warning=FALSE, include=TRUE}
 
 p1 <- arr %>% 
   filter(aor == specific_aor,
@@ -513,7 +539,7 @@ p1
 
 ```
 
-```{r cit, echo=FALSE, message=FALSE, include=TRUE}
+```{r arr_cit, message=FALSE, include=TRUE}
 
 cit <- arr %>%
   filter(aor == specific_aor,
@@ -544,7 +570,7 @@ p1
 ```
 
 
-```{r cit_rank, echo=FALSE, message=FALSE, include=TRUE}
+```{r cit_rank, message=FALSE, include=TRUE}
 
 cit_rank <- arr %>% 
   filter(aor == specific_aor,
@@ -568,8 +594,9 @@ ggplotly(p1)
 
 ```
 
+## Arrest method
 
-```{r method, echo=FALSE, message=FALSE, include=TRUE}
+```{r method, message=FALSE, include=TRUE}
 
 methods <- arr %>% 
   filter(aor == specific_aor,
@@ -594,6 +621,10 @@ p1 <- arr %>%
   geom_bar(stat='count', position='stack')
 
 ggplotly(p1)
+
+```
+
+```{r cap_arrests}
 
 dat <- arr %>% 
   filter(aor == specific_aor,
@@ -666,9 +697,62 @@ p2
 
 ```
 
+## Arrests: Processing disposition
+
+```{r arr_disp, message=FALSE, warning=FALSE, include=TRUE}
+
+disps <- arr %>% 
+  filter(aor == specific_aor) %>% 
+  count(processing_disposition) %>% 
+  arrange(desc(n))
+
+arr <- arr %>% 
+  mutate(disp_short = case_when(processing_disposition %in% head(disps$processing_disposition, 10) ~ as.character(processing_disposition), 
+                                         TRUE ~ "ALL OTHERS"))
+
+p1 <- arr %>%
+  filter(aor == specific_aor) %>% 
+  group_by(fy, disp_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = fy, y=n, fill=disp_short)) +
+  geom_col() +
+  labs(title = "Total ICE arrests per FY by processing disposition")
+
+ggplotly(p1)
+
+```
+
+## Arrest `apprehension_landmark`
+
+```{r arr_landmark, message=FALSE, warning=FALSE, include=TRUE}
+
+landmarks <- arr %>% 
+  filter(aor == specific_aor) %>% 
+  count(apprehension_landmark) %>% 
+  arrange(desc(n))
+
+p1 <- arr %>% 
+  filter(aor == specific_aor) %>% 
+  mutate(apprehension_landmark = case_when(apprehension_landmark %in% head(landmarks$apprehension_landmark, 15) ~ as.character(apprehension_landmark), 
+                                         TRUE ~ "ALL OTHERS"),
+         apprehension_landmark_abbrv = str_trunc(apprehension_landmark, 20)) %>% 
+  group_by(fy, apprehension_landmark_abbrv, apprehension_landmark) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = fy, y=n,
+             fill= apprehension_landmark_abbrv,
+             color= apprehension_landmark_abbrv,
+             text = apprehension_landmark)) +
+  geom_col() +
+  labs(title = "Total ICE arrests per FY by `apprehension_landmark` (top 15)",
+       subtitle = specific_area_of_responsibility)
+
+ggplotly(p1, tooltip=c('x', 'y', 'text'))
+
+```
+
 # Removals
 
-```{r remvoals_pc_rank, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+```{r remvoals_pc_rank, message=FALSE, warning=FALSE, include=TRUE}
 
 rem_per_aor <- rem %>% 
   filter(!is.na(aor),
@@ -691,12 +775,84 @@ pc_removals_rank_fy12 <- as.numeric(rem_pc_per_aor[rem_pc_per_aor$aor == specifi
 pc_removals_rank_fy22 <- as.numeric(rem_pc_per_aor[rem_pc_per_aor$aor == specific_aor & rem_pc_per_aor$fy == 2022, 'pc_rank'])
 
 p1 <- rem_pc_per_aor %>% 
-  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  ggplot(aes(x = fy, y=n_per_cap, color=aor, group=aor)) +
   geom_line() +
   gghighlight(aor == specific_aor) +
   labs(title = "ICE removals per 100,000 residents",
        subtitle = paste0(specific_area_of_responsibility, " highlighted"))
 
 p1  
+
+```
+
+## Removals: `gender`
+
+```{r gender, message=FALSE, warning=FALSE, include=TRUE}
+
+# rem %>%
+#   mutate(gender = tolower(gender)) %>% 
+#   group_by(gender) %>% 
+#   summarize(n = n())
+
+p1 <- rem %>% 
+  filter(aor == specific_aor) %>% 
+  count(fy, gender) %>% 
+  ggplot(aes(x=fy, y=n, fill=gender)) +
+  geom_col(position='fill') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Total ICE removals, % by gender")
+
+p1
+
+```
+
+## Removals: `citizenship_country`
+
+```{r rem_cit, message=FALSE, warning=FALSE, include=TRUE}
+
+cit <- rem %>%
+  filter(aor == specific_aor) %>% 
+  mutate(citizenship_country = toupper(citizenship_country)) %>% 
+  group_by(citizenship_country) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+p1 <- rem %>% 
+  filter(aor == specific_aor) %>% 
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
+    TRUE ~ "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
+  geom_col() +
+  labs(title = "Total ICE removals by country of citizenship (top 15)")
+
+ggplotly(p1)
+
+# % change in removal by group?
+
+```
+
+# Processing disposition
+
+```{r disp, message=FALSE, warning=FALSE, include=TRUE}
+
+disps <- rem %>% 
+  filter(aor == specific_aor) %>% 
+  count(processing_disposition_clean) %>% 
+  arrange(desc(n))
+
+p1 <- rem %>% 
+  filter(aor == specific_aor) %>% 
+   mutate(disp_short = case_when(processing_disposition_clean %in% head(disps$processing_disposition_clean, 10) ~ as.character(processing_disposition_clean), 
+                                         TRUE ~ "ALL OTHERS")) %>% 
+  group_by(fy, disp_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
+  geom_col() +
+  labs(title = "Total removals per FY by processing disposition")
+
+ggplotly(p1)
 
 ```
