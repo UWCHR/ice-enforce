@@ -307,6 +307,19 @@ p2 <- arr %>%
 
 ggplotly(p2)
 
+p3 <- arr %>% 
+  filter(!is.na(aor),
+         aor != "HQ",
+         arrest_method_short == "ERO Reprocessed Arrest") %>% 
+  group_by(aor, fy, arrest_method_short) %>%
+  ggplot(aes(x = fy, fill=arrest_method_short)) +
+  geom_bar(stat='count') +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor) +
+  labs(title="Total ICE arrests by arrest method per AOR") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0, hjust=1))
+
+p3
 
 ```
 
