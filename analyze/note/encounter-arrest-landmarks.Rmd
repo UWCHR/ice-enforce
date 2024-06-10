@@ -1,0 +1,540 @@
+---
+title: "FY12-23YTD ICE ERO arrests apprehension landmark analysis"
+author: "UWCHR"
+date: "2023-03-27"
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+
+# ICE ERO arrests: Data overview
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
+
+arr <- read_delim(here('analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                  arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_landmark = col_factor(),
+                                  arrest_method = col_factor(),
+                                  operation = col_factor(),
+                                  processing_disposition = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  case_closed_date = col_date(format="%m/%d/%Y"),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
+
+arr <- arr %>% 
+  dplyr::select(-all_of(redacted))
+
+arr <- arr %>% 
+  mutate(arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+         year = year(arrest_date),
+         month = month(arrest_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(arrest_date),
+         fy = as.factor(substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4)),
+         citizenship_country = as.factor(toupper(citizenship_country)),
+         apprehension_landmark = toupper(str_squish(apprehension_landmark)))
+
+enc <- read_delim(here('analyze', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                   event_date = col_character(),
+                                   landmark = col_character(),
+                                   operation = col_factor(),
+                                   processing_disposition = col_factor(),
+                                   citizenship_country = col_factor(),
+                                   gender = col_factor(),
+                                   hashid = col_character(),
+                                   id = col_number()))
+
+# glimpse(enc)
+
+redacted <- c('encounter_threat_level', 'alien_file_number')
+
+enc <- enc %>% 
+  dplyr::select(-redacted)
+
+enc <- enc %>% 
+  mutate(event_date = as_date(event_date, format="%m/%d/%Y"),
+         year = year(event_date),
+         month = month(event_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(event_date),
+         fy = substr(quarter(event_date, fiscal_start=10, type="year.quarter"), 1,4),
+         gender = toupper(gender),
+         operation = toupper(operation),
+         processing_disposition = toupper(processing_disposition),
+         citizenship_country = toupper(citizenship_country),
+         landmark = toupper(str_squish(landmark)))
+
+```
+
+```{r method_setup, echo=FALSE, message=FALSE, include=TRUE}
+
+methods <- arr %>% 
+  count(arrest_method) %>% 
+  arrange(desc(n))
+
+top_methods <- methods %>% 
+  filter(n > 5000)
+
+arr <- arr %>% 
+  mutate(arrest_method_short = case_when(arrest_method %in% unlist(top_methods$arrest_method) ~ as.character(arrest_method), 
+                                         TRUE ~ "All others"))
+
+```
+
+```{r join_enc_arr}
+
+sea_arr <- arr %>% 
+  filter(aor == "SEA") %>% 
+  count(year_mth, apprehension_landmark) %>% 
+  rename(landmark = apprehension_landmark) %>% 
+  mutate(type = "arrest")
+
+sea_enc <- enc %>% 
+  filter(aor == "SEA") %>% 
+  count(year_mth, landmark) %>% 
+  mutate(type = "encounter")
+
+dat <- rbind(sea_arr, sea_enc)
+
+p1 <- dat %>% 
+  filter(landmark == "CLARK COUNTY JAIL") %>% 
+  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  labs(title = "CLARK COUNTY JAIL")
+
+p1
+
+p2 <- dat %>% 
+  filter(landmark == "GRANT CO. JAIL, WA") %>% 
+  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  labs(title = "GRANT CO. JAIL, WA")
+
+p2
+
+p3 <- dat %>% 
+  filter(landmark == "ADAMS CO. JAIL") %>% 
+  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  labs(title = "ADAMS CO. JAIL")
+
+p3
+
+p4 <- dat %>% 
+  filter(str_detect(landmark, "BENTON CO. JAIL")) %>% 
+  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  labs(title = "BENTON CO. JAIL")
+
+p4
+
+p5 <- dat %>% 
+  filter(str_detect(landmark, "KING COUNTY JAIL")) %>% 
+  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  labs(title = "KING COUNTY JAIL")
+
+p5
+
+p6 <- dat %>% 
+  filter(str_detect(landmark, "WHATCOM COUNTY JAIL")) %>% 
+  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  labs(title = "WHATCOM COUNTY JAIL")
+
+p6
+```
+
+
+```{r keyword_compare}
+
+specific_aor <- "SEA"
+
+keyword_comparison <- function(keyword, aor_to_compare) {
+  
+  natl_fy_total <- arr %>% 
+    count(fy) %>% 
+    rename(fy_total = n)
+  
+  aor_fy_total <- arr %>% 
+    filter(aor == aor_to_compare) %>% 
+    count(fy) %>% 
+    rename(fy_total = n)
+  
+  natl_dat <- arr %>%
+    filter(str_detect(toupper(apprehension_landmark), toupper(keyword))) %>% 
+    count(fy) %>% 
+    left_join(natl_fy_total, by = 'fy') %>% 
+    mutate(dataset = "National",
+           prop = n / fy_total)
+
+  aor_dat <- arr %>%
+    filter(aor == aor_to_compare,
+      str_detect(toupper(apprehension_landmark), toupper(keyword))) %>% 
+    count(fy) %>% 
+    left_join(aor_fy_total, by = 'fy') %>% 
+    mutate(dataset = aor_to_compare,
+           prop = n / fy_total)
+  
+  dat <- rbind(natl_dat, aor_dat)
+  
+  p1 <- dat %>% 
+    ggplot(aes(x = fy, y = n, color = dataset, fill = dataset, group = dataset)) +
+    geom_line() +
+    labs(title = paste0("Count of keyword '", keyword, "' in `apprehension_landmark` per FY"),
+         subtitle = paste0(aor_to_compare, " versus National")) +
+    scale_x_discrete(breaks=seq(2012, 2022, 4)) +
+    ylim(0, NA) +
+    facet_wrap(~dataset, scales="free_y")
+  
+  p2 <- dat %>% 
+    ggplot(aes(x = fy, y = prop, color = dataset, fill = dataset, group = dataset)) +
+    geom_line() +
+    labs(title = paste0("% of keyword '", keyword, "' in `apprehension_landmark`"),
+         subtitle = paste0(aor_to_compare, " versus National")) +
+    scale_x_discrete(breaks=seq(2012, 2022, 4)) +
+    ylim(0, NA) +
+    facet_wrap(~dataset) +
+    scale_y_continuous(labels = scales::percent)
+    
+  list(p1, p2)
+}
+
+```
+
+```{r output_apprehension_landmarks}
+
+
+sea_landmarks <- arr %>% 
+  filter(aor == specific_aor) %>% 
+  mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark))) %>% 
+  distinct(apprehension_landmark)
+
+# write_delim(sea_landmarks, here('analyze', 'output', paste0(specific_aor, "_landmarks.csv")), delim=',')
+
+```
+
+```{r analyze_sea_sea_landmarks}
+
+sea_landmarks <- read_delim(here('analyze', 'hand', "SEA_landmarks.csv"), delim='|')
+
+sea_arr <- arr %>% 
+  filter(aor == "SEA") %>% 
+  mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark))) %>% 
+  left_join(., sea_landmarks, by="apprehension_landmark")
+
+p1 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01') %>% 
+  # mutate(quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter"))) %>% 
+  count(year_mth, landmark_type) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  geom_col() +
+  labs(title="Apprehension landmark categories, SEA AOR",
+       subtitle = "All arrest methods")
+
+ggplotly(p1)
+p1
+
+p2 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_method_short == "CAP Local Incarceration") %>% 
+  count(year_mth, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  geom_col() +
+  labs(title="Apprehension landmark categories, SEA AOR",
+       subtitle = "CAP Local Incarceration")
+
+p2
+
+p3 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_method_short == "CAP State Incarceration") %>% 
+  count(year_mth, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  geom_line() +
+  labs(title="Apprehension landmark categories, SEA AOR",
+       subtitle = "CAP State Incarceration")
+
+p3
+
+p4 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_method_short == "CAP Federal Incarceration") %>% 
+  count(year_mth, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  geom_line() +
+  labs(title="Apprehension landmark categories, SEA AOR",
+       subtitle = "CAP Federal Incarceration")
+
+p4
+
+p5 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_method_short == "Located") %>% 
+  count(year_mth, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  geom_line() +
+  labs(title="Apprehension landmark categories, SEA AOR",
+       subtitle = "Located")
+
+p5
+
+p6 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_method_short == "Non-Custodial Arrest") %>% 
+  count(year_mth, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  geom_col() +
+  labs(title="Apprehension landmark categories, SEA AOR",
+       subtitle = "Non-Custodial Arrest")
+
+p6
+
+p7 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_method_short == "ERO Reprocessed Arrest") %>% 
+  count(year_mth, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  geom_col() +
+  labs(title="Apprehension landmark categories, SEA AOR",
+       subtitle = "ERO Reprocessed Arrest")
+
+p7
+
+```
+
+```{r sea_sea_landmarks_state}
+
+p1 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01') %>% 
+  count(year_mth, landmark_state) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_state, fill=landmark_state, group=landmark_state)) +
+  geom_col() +
+  labs(title="Apprehension landmark state, SEA AOR")
+
+p1
+
+```
+
+
+
+```{r sea_sea_landmarks_state_type}
+
+p1 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         landmark_state %in% c('WA', 'OR')) %>% 
+  count(year_mth, landmark_state, landmark_type) %>% 
+  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  geom_col() +
+  labs(title="Apprehension landmark state, SEA AOR") +
+  facet_wrap(~landmark_state)
+
+p1
+
+p2 <- sea_arr %>% 
+  filter(
+         landmark_state %in% c('WA', 'OR')) %>% 
+  count(fy, landmark_state, arrest_method_short) %>% 
+  ggplot(aes(x=fy, y=n, color=arrest_method_short, fill=arrest_method_short, group=arrest_method_short)) +
+  geom_col() +
+  labs(title="Apprehension landmark state, SEA AOR") +
+  facet_wrap(~landmark_state)
+
+p2
+
+p3 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_date <= '2022-09-30',
+         landmark_state %in% c('WA', 'OR'),
+         arrest_method_short == "CAP State Incarceration") %>% 
+  mutate(landmark_state = as.factor(landmark_state),
+         arrest_method_short = as.factor(arrest_method_short)) %>% 
+  count(fy, landmark_state, arrest_method_short, .drop=FALSE) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  filter(fy > 2016,
+         fy <= 2022) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_state, fill=landmark_state, group=landmark_state)) +
+  geom_col(position="dodge") +
+  labs(title="CAP State Incarceration Arrests",
+       subtitle="OR vs. WA, FY 2012-2022",
+       caption="State inferred from `apprehension_landmark` values")
+
+p3
+
+p4 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_date <= '2022-09-30',
+         landmark_state %in% c('WA', 'OR'),
+         arrest_method_short == "CAP Federal Incarceration") %>% 
+  mutate(landmark_state = as.factor(landmark_state),
+         arrest_method_short = as.factor(arrest_method_short)) %>% 
+  count(fy, landmark_state, arrest_method_short, .drop=FALSE) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  filter(fy > 2016,
+         fy <= 2022) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_state, fill=landmark_state, group=landmark_state)) +
+  geom_col(position="dodge") +
+  labs(title="CAP Federal Incarceration Arrests",
+       subtitle="OR vs. WA, FY 2012-2022",
+       caption="State inferred from `apprehension_landmark` values")
+
+p4
+
+```
+
+```{r classify_landmarks}
+
+# can we easily classify most apprehension landmarks by type with string searches?
+
+app_ldmrk <- unique(toupper(arr$apprehension_landmark))
+
+landmarks <- data.frame(value=app_ldmrk)
+
+landmarks <- landmarks %>% 
+  mutate(
+    landmark_type = case_when(
+      str_detect(value, "COUNTY JAIL") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(value, "PARISH JAIL") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(value, "CO\\.? JAIL") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(value, "SHERIFF|SHERRIFF") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(value, "COUNTY PRISON") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(value, "CITY JAIL") ~ "CITY JAIL/POLICE",
+      str_detect(value, "POLICE") ~ "CITY JAIL/POLICE",
+      str_detect(value, "PD") ~ "CITY JAIL/POLICE",
+      str_detect(value, "STATE PRISON") ~ "STATE PRISON/JAIL",
+      str_detect(value, "STATE JAIL") ~ "STATE PRISON/JAIL",
+      str_detect(value, "DEPT\\.? OF CORRECTIONS") ~ "STATE PRISON/JAIL",
+      str_detect(value, "DEPARTMENT OF CORRECTIONS") ~ "STATE PRISON/JAIL",
+      str_detect(value, "\\bDOC\\b") ~ "STATE PRISON/JAIL",
+      str_detect(value, "FEDERAL") ~ "FEDERAL PRISON",
+      str_detect(value, "\\bBOP\\b") ~ "FEDERAL PRISON",
+      str_detect(value, "FCI") ~ "FEDERAL PRISON",
+      str_detect(value, "DOCKET") ~ "ICE OPERATIONAL",
+      str_detect(value, "JUVENILE") ~ "JUVENILE DETENTION",
+      str_detect(value, "YOUTH") ~ "JUVENILE DETENTION",
+      str_detect(value, "JUV") ~ "JUVENILE DETENTION",
+      str_detect(value, "DETENTION CENTER") ~ "ICE DETENTION",
+      str_detect(value, "MARSHALS|MARSHALLS") ~ "USMS",
+      str_detect(value, "USMS") ~ "USMS",
+      str_detect(value, "GENERAL AREA, NON-SPECIFIC") ~ "ICE OPERATIONAL",
+      str_detect(value, "FUGITIVE OPERATIONS") ~ "ICE OPERATIONAL",
+      str_detect(value, "STREET ARREST") ~ "STREET ARREST",
+      str_detect(value, "COURTHOUSE|COURT") ~ "COURTHOUSE",
+      str_detect(value, "PORT OF ENTRY") ~ "PORT OF ENTRY",
+      str_detect(value, "INSPECTIONS") ~ "PORT OF ENTRY",
+      str_detect(value, "POE") ~ "PORT OF ENTRY",
+      str_detect(value, "PROBATION|PAROLE") ~ "PROBATION AND PAROLE",
+      str_detect(value, "JAIL|PRISON|CORRECTIONS") ~ "UNCATEGORIZED JAIL/PRISON/CORRECTIONS")
+    )
+
+na_landmarks <- landmarks %>% 
+  filter(is.na(landmark_type))
+
+landmarks %>% 
+  count(landmark_type)
+
+```
+
+```{r join_landmark_type}
+
+dat <- arr %>% 
+  left_join(landmarks, by=c('apprehension_landmark' = 'value'))
+
+p1 <- dat %>% 
+  count(fy, landmark_type) %>% 
+  ggplot(aes(x = fy, y = n, fill = landmark_type, color = landmark_type)) +
+  geom_col(position="fill")
+
+ggplotly(p1)
+
+```
+
+## Analysis of landmark "specificity"
+
+This section should be re-done
+
+```{r apprehension_landmark}
+apprehension_landmark <- arr %>% group_by(apprehension_landmark) %>% summarize(total = n())
+# write.csv(apprehension_landmark, 'apprehension_landmark.csv')
+
+apprehension_landmark_aor <- arr %>% group_by(aor, apprehension_landmark) %>% summarize(total = n())
+# write.csv(apprehension_landmark_aor, 'apprehension_landmark_aor.csv')
+
+nonspecific_str <- unique(arr$apprehension_landmark[grep('NON-SPECIFIC', arr$apprehension_landmark)])
+nonspecific_str <- nonspecific_str[!grepl('COUNTY|CHICAGO|PLYMOUTH|FORT WORTH|SCOTLANDVILLE|SANTA ANA|NORTH DARTMOUTH', nonspecific_str)]
+
+select_nonspecific <- c("LICENSING UNIT/STATE POLICE", "287g", "at-large", "California Healthcare Facility", "CALIFORNIA HIGHWAY PATROL", "CAP ACI", "CIS REFERRAL", "FEDERAL DETENTION CENTER (FDC)", "FIELD ARREST", "FTC CI (Federal Transfer Center)", "FTM-JCART", "FTM-VCAS", "FUG - NON FUGITIVE", "FUGITIVE OPERATIONS", "FUGITIVE SOUTH TEAM ARRESTS", "FUGOP", "FUGOPS", "STREET ARREST", "STREET ARRESTS", "U.S. Marshalls Service", "U.S. Marshals", "U.S. Marshals Service", "U.S. MARSHALS SERVICE", "U.S. PROBATION OFFICE", "UNITED STATES MARSHALL SERVICE", "UNITED STATES PROBATION & PAROLE", "UNITED STATES PROBATION", "US 281 TO FM 493 EXP 83 NORTH TO FM 490", "US DISTRICT COURT", "US MARSHALLS", "US Marshals TF", "USCIS ARREST", "USCIS REFERRALS")
+
+arr <- arr %>% mutate(apprehension_landmark2 = 
+                                case_when(apprehension_landmark %in% nonspecific_str ~ "Non-specific",
+                                          # 'NON-SPECIFIC|ARREST AT|ATD|BUREAU OF PRISONS-|FEDCAP-', apprehension_landmark) ~ "Non-specific",
+                                          # apprehension_landmark %in% select_nonspecific ~ "Non-specific",
+                                          apprehension_landmark == 'DO NOT USE'  ~ "DO NOT USE",
+                                          apprehension_landmark == ''  ~ NA_character_,
+                                          is.na(apprehension_landmark) ~ "Missing",
+                                          TRUE ~ "Specific"))
+
+#test <- arr %>% select(apprehension_landmark, apprehension_landmark2)
+
+specificity <- arr %>% 
+  filter(!is.na(aor)) %>% 
+  group_by(aor, apprehension_landmark2) %>%
+  summarize(total = n()) %>%
+  pivot_wider(names_from = apprehension_landmark2, values_from = total)
+
+specificity[is.na(specificity)] <- 0
+
+# specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')
+
+specificity2 <- specificity %>% 
+  replace(is.na(.), 0) %>%
+  rowwise() %>%
+  mutate("Non-specific" = sum(c_across(c('Non-specific', 'DO NOT USE', 'Missing')))) %>%
+  select("Non-specific", "Specific", "Missing") %>%
+  rowwise() %>%
+  mutate("Total" =  sum(c_across(c("Non-specific", "Specific", 'Missing')))) %>%
+  rowwise() %>% mutate("% specific" = round((Specific/Total), 2))
+
+specificity2 %>% knitr::kable(caption = 'Apprehension landmark specificity % by AOR FY2012-2023')
+```
+
+```{r}
+
+specificity <- arr %>% 
+  filter(!is.na(aor)) %>% 
+  group_by(arrest_method, apprehension_landmark2) %>%
+  summarize(total = n()) %>%
+  pivot_wider(names_from = apprehension_landmark2, values_from = total)
+
+specificity[is.na(specificity)] <- 0
+
+# specificity %>% kable(caption = 'Apprehension landmark specificity by AOR FY2016-2019')
+
+specificity2 <- specificity %>% 
+  replace(is.na(.), 0) %>%
+  rowwise() %>%
+  mutate("Non-specific" = sum(c_across(c('Non-specific', 'DO NOT USE', 'Missing')))) %>%
+  select("Non-specific", "Specific", "Missing") %>%
+  rowwise() %>%
+  mutate("Total" =  sum(c_across(c("Non-specific", "Specific", 'Missing')))) %>%
+  rowwise() %>% mutate("% specific" = round((Specific/Total), 2)) %>% 
+  arrange(desc(Total))
+
+specificity2 %>% knitr::kable(caption = 'Apprehension landmark specificity % by arrest method FY2012-2023')
+
+```
+
