@@ -3,7 +3,7 @@ title: "ICE ERO-LESA enforcement actions data per AOR, FY12-22"
 author: "UWCHR"
 date: "2024-06-06"
 params:
-  aor: SEA
+  aor: LOS
 output:
     html_document:
         html_preview: true
@@ -370,7 +370,7 @@ ggplotly(p1)
 
 ```
 
-## Arrest `landmark`
+## Encounter `landmark`
 
 ```{r enc_landmark, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -495,30 +495,6 @@ p3
 
 ```
 
-```{r prop_enc_arr}
-
-dat <- full_join(enc_per_aor, arr_per_aor, by = c("fy", "aor"), suffix = c(".enc", ".arr"))
-
-dat <- dat %>% 
-  mutate(diff_enc_arr = n.enc - n.arr,
-         ratio_enc_arr = n.enc / n.arr)
-
-p1 <- dat %>% 
-  ggplot(aes(x = fy, y = diff_enc_arr, color = aor, group = aor)) +
-  geom_line() +
-  gghighlight(aor ==specific_aor)
-
-p1
-
-p2 <- dat %>% 
-  ggplot(aes(x = fy, y = ratio_enc_arr, color = aor, group = aor)) +
-  geom_line() +
-  gghighlight(aor ==specific_aor)
-
-p2
-
-```
-
 ## Arrest demographics
  
 ```{r arr_gender, message=FALSE, warning=FALSE, include=TRUE}
@@ -539,7 +515,7 @@ p1
 
 ```
 
-```{r arr_cit, message=FALSE, include=TRUE}
+```{r arr_cit, message=FALSE, warning=FALSE, include=TRUE}
 
 cit <- arr %>%
   filter(aor == specific_aor,
@@ -570,7 +546,7 @@ p1
 ```
 
 
-```{r cit_rank, message=FALSE, include=TRUE}
+```{r cit_rank, message=FALSE, warning=FALSE, include=TRUE}
 
 cit_rank <- arr %>% 
   filter(aor == specific_aor,
@@ -596,7 +572,7 @@ ggplotly(p1)
 
 ## Arrest method
 
-```{r method, message=FALSE, include=TRUE}
+```{r method, message=FALSE, warning=FALSE, include=TRUE}
 
 methods <- arr %>% 
   filter(aor == specific_aor,
@@ -624,7 +600,7 @@ ggplotly(p1)
 
 ```
 
-```{r cap_arrests}
+```{r cap_arrests, message=FALSE, warning=FALSE, include=TRUE}
 
 dat <- arr %>% 
   filter(aor == specific_aor,
@@ -662,7 +638,7 @@ p3
 
 ```
 
-```{r natl_vs_aor_methods}
+```{r natl_vs_aor_methods, message=FALSE, warning=FALSE, include=TRUE}
 
 dat1 <- arr %>% 
   filter(arrest_date >= "2011-10-01",
@@ -730,6 +706,9 @@ landmarks <- arr %>%
   filter(aor == specific_aor) %>% 
   count(apprehension_landmark) %>% 
   arrange(desc(n))
+
+# Abbreviating values in data can collapse some categories inadvertently.
+# Need to figure out how to shorten labels only, preferably in a way that works with plotly
 
 p1 <- arr %>% 
   filter(aor == specific_aor) %>% 

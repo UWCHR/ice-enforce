@@ -5,8 +5,8 @@
 # ============================================
 # ice-ero-lesa/write/Makefile
 
-# AORS = ATL BAL BOS BUF CHI DAL DEN DET ELP HOU LOS MIA NEW NOL NYC PHI PHO SEA SFR SLC SNA SND SPM WAS
-AORS = BOS SEA
+AORS = ATL BAL BOS BUF CHI DAL DEN DET ELP HOU LOS MIA NEW NOL NYC PHI PHO SEA SFR SLC SNA SND SPM WAS
+# AORS = BOS SEA
 
 
 .PHONY: all clean
