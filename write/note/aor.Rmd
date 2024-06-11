@@ -23,6 +23,16 @@ options(scipen = 1000000)
 
 specific_aor <- params$aor
 
+static_theme <- function() {
+  theme()
+}
+
+interactive_theme <- function() {
+  theme(plot.title = element_text(size=10),
+        legend.title = element_text(size=10)
+  )
+  }
+
 ```
 
 # ICE ERO enforcement data: `r specific_aor` AOR
@@ -57,7 +67,7 @@ enc <- enc %>%
          year_mth = zoo::as.yearmon(event_date),
          fy_quarter = as.factor(quarter(event_date, fiscal_start=10, type="year.quarter")),
          fy = as.factor(substr(fy_quarter, 1,4)),
-         gender = toupper(gender),
+         gender = as.factor(toupper(gender)),
          operation = toupper(operation),
          processing_disposition = toupper(processing_disposition),
          citizenship_country = toupper(citizenship_country),
@@ -95,7 +105,7 @@ arr <- arr %>%
          year_mth = zoo::as.yearmon(arrest_date),
          fy_quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter")),
          fy = as.factor(substr(fy_quarter, 1,4)),
-         gender = toupper(gender),
+         gender = as.factor(toupper(gender)),
          citizenship_country = as.factor(toupper(citizenship_country)),
          apprehension_landmark = toupper(str_squish(apprehension_landmark))) %>% 
   filter(arrest_date >= "2011-10-01",
@@ -133,7 +143,7 @@ rem <- rem %>%
          processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
          fy_quarter = as.factor(quarter(departed_date, fiscal_start=10, type="year.quarter")),
          fy = as.factor(substr(fy_quarter, 1,4)),
-         gender = toupper(gender),
+         gender = as.factor(toupper(gender)),
          citizenship_country = toupper(citizenship_country)) %>% 
   filter(departed_date >= "2011-10-01",
          departed_date <= "2022-09-30")
@@ -178,28 +188,28 @@ rem_fy <- rem %>%
   summarize(n_removals = n())
 
 dat_aor <- left_join(enc_fy, arr_fy, by='fy') %>% 
-  left_join(rem_fy, by='fy') %>% 
-  rename(Arrests = n_arrests,
-         Encounters = n_encounters,
-         Removals = n_removals)
+  left_join(rem_fy, by='fy')
 
 p1 <- dat_aor %>%
   pivot_longer(cols=-c('fy')) %>% 
   ggplot(aes(x = fy, y=value, color=name, group=name)) +
   geom_line() +
   ylim(0, NA) +
-  labs(title = paste0("Total ICE enforcement events per FY, \n", specific_area_of_responsibility),
+  labs(title = paste0("Total ICE enforcement events per FY",
+                      '<br>',
+                      '<sup>',
+                      specific_area_of_responsibility,
+                      '</sup>'),
+       caption = "Figure: Univ. of Wash. Center for Human Rights, Data: ICE ERO-LESA",
        x = "Fiscal Year",
-       y = "Value") +
-  guides(color = guide_legend("Enforcement type")) +
-  theme(plot.title = element_text(size=10),
-        legend.title = element_text(size=10))
+       y = "") +
+  guides(color = guide_legend("Enforcement type"))
 
 ggplotly(p1)
 
 ```
 
-The following chart displays basic comparative measures for the `r specific_area_of_responsibility`: difference between total encounters and total arrests (`diff_enc_arr`); and difference between total arrests and total removals (`diff_arr_rem`).
+The following chart displays basic comparative measures for the `r specific_area_of_responsibility`: difference between total encounters and total arrests (`diff_enc_arr`); and difference between total arrests and total removals (`diff_arr_rem`). Values greater than zero 
 
 ```{r aor_diff, message=FALSE, include=TRUE}
 dat_diff <- dat_aor %>% 
@@ -211,10 +221,17 @@ p2 <- dat_diff %>%
   filter(name %in% c("diff_enc_arr", "diff_rem_arr")) %>% 
   ggplot(aes(x = fy, y=value, color=name, group=name)) +
   geom_line() +
-  # geom_hline(aes(yintercept=0)) +
+  geom_hline(aes(yintercept=0),
+             linetype="dashed",
+             linewidth=.25) +
   # annotate("text", x = 2, y = 0, label = "Fewer arrests\nMore arrests") +
-  labs(title = "Difference between enforcement varibles",
-       subtitle = specific_area_of_responsibility)
+  labs(title = paste0("Difference of enforcement event totals per FY",
+                      '<br>',
+                      '<sup>',
+                      specific_area_of_responsibility,
+                      '</sup>'),
+       x = "Fiscal Year",
+       y = "")
 
 ggplotly(p2)
 
@@ -255,19 +272,17 @@ p1 <- dat %>%
          arrests = n_arrests,
          removals = n_removals) %>% 
   pivot_longer(cols=-c('fy', 'group')) %>% 
-  ggplot(aes(x = as.numeric(as.character(fy)), y=value, color=name, group=name)) +
+  ggplot(aes(x = fy, y=value, color=name, group=name, text=group)) +
   geom_line() +
-  labs(title = "Total ICE enforcement events, FY2012-22",
-       subtitle = paste0("National total compared to ", specific_area_of_responsibility)) +
+  labs(title = "Total ICE enforcement events, FY2012-22") +
   xlab('Fiscal Year') +
-  scale_x_continuous(breaks=seq(2012,2024,4),
-                     minor_breaks=seq(2012, 2024, 1)) +
+  scale_x_discrete(breaks=as.character(seq(2013,2024,4))) +
   ylab("") +
   ylim(0, NA) +
   scale_color_discrete(name = "Enforcement type") +
   facet_wrap(~group, scales = "free_y")
 
-p1
+ggplotly(p1, tooltip = c("x", "y", "color", "text"))
 
 ```
 
@@ -284,20 +299,22 @@ dat_pct <- dat %>%
 
 p3 <- dat_pct %>% 
   filter(!is.na(value)) %>% 
-  ggplot() +
-  geom_col(aes(x = fy, y = value, fill=name, group=name), position='dodge') +
+  ggplot(aes(x = fy, y = value, fill=name, group=name)) +
+  geom_col(position='dodge') +
   scale_y_continuous(labels = scales::percent) +
   scale_x_discrete(breaks=seq(2013,2024,4)) +
   facet_wrap(~group) +
-  labs(title = "Annual % change total ICE arrests, FY12-22",
-       subtitle = paste0(specific_area_of_responsibility, " versus national"))
+  labs(title = "Annual % change total ICE enforcement actions, FY12-22")
 
-p3
+ggplotly(p3)
+
 
 ```
 
 
 # Encounters
+
+## Encounters per capita
 
 ```{r encounters_pc_rank, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -372,7 +389,11 @@ p1 <- enc %>%
   count(fy, citizenship_country) %>% 
   ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
   geom_col() +
-  labs(title = paste0(specific_aor, " ICE encounters by country of citizenship (top 15)"))
+  labs(title = paste0("ICE encounters by country of citizenship (top 15)",
+                      '<br>',
+                      '<sup>',
+                      specific_area_of_responsibility,
+                      '</sup>'))
 
 ggplotly(p1)
 
@@ -399,8 +420,11 @@ p1 <- enc %>%
              color=landmark_abbrv,
              text = landmark)) +
   geom_col() +
-  labs(title = "Total ICE encounters per FY by `landmark` (top 15)",
-       subtitle = specific_area_of_responsibility)
+  labs(title = paste0("Total ICE encounters per FY by `landmark` (top 15)",
+                      '<br>',
+                      '<sup>',
+                      specific_area_of_responsibility,
+                      '</sup>'))
 
 ggplotly(p1, tooltip=c('x', 'y', 'text'))
 
@@ -446,13 +470,19 @@ p1 <- enc %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = fy, y=n, fill=disp_short, color=disp_short)) +
   geom_col() +
-  labs(title = "Total ICE encounters per FY by processing disposition")
+  labs(title = paste0("Total ICE encounters per FY by `processing disposition` (top 15)",
+                      '<br>',
+                      '<sup>',
+                      specific_area_of_responsibility,
+                      '</sup>'))
 
 ggplotly(p1, dynamicTicks = TRUE)
 
 ```
 
 # Arrests
+
+## Arrests per capita
 
 ```{r arrests_pc_rank, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -503,7 +533,7 @@ p3
 
 ```
 
-## Arrest demographics
+## Arrests by `gender`
  
 ```{r arr_gender, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -511,7 +541,7 @@ p1 <- arr %>%
   filter(aor == specific_aor,
          arrest_date >= "2011-10-01",
          arrest_date <= "2022-09-30") %>%
-  mutate(gender = toupper(gender)) %>% 
+  mutate(gender = as.factor(toupper(gender))) %>% 
   count(fy, gender) %>% 
   ggplot(aes(x=fy, y=n, fill=gender)) +
   geom_col(position='fill') +
@@ -522,6 +552,8 @@ p1 <- arr %>%
 p1
 
 ```
+
+## Arrests by `citizenship_country`
 
 ```{r arr_cit, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -578,7 +610,7 @@ ggplotly(p1)
 
 ```
 
-## Arrest method
+## Arrests by `arrest_method`
 
 ```{r method, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -681,7 +713,7 @@ p2
 
 ```
 
-## Arrests: Processing disposition
+## Arrests by `processing_disposition`
 
 ```{r arr_disp, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -706,7 +738,7 @@ ggplotly(p1)
 
 ```
 
-## Arrest `apprehension_landmark`
+## Arrests by `apprehension_landmark`
 
 ```{r arr_landmark, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -738,6 +770,8 @@ ggplotly(p1, tooltip=c('x', 'y', 'text'))
 ```
 
 # Removals
+
+## Removals per capita
 
 ```{r remvoals_pc_rank, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -772,7 +806,7 @@ p1
 
 ```
 
-## Removals: `gender`
+## Removals by `gender`
 
 ```{r gender, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -793,7 +827,7 @@ p1
 
 ```
 
-## Removals: `citizenship_country`
+## Removals by `citizenship_country`
 
 ```{r rem_cit, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -821,7 +855,7 @@ ggplotly(p1)
 
 ```
 
-# Processing disposition
+## Removals by `processing_disposition`
 
 ```{r disp, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -838,10 +872,10 @@ p1 <- rem %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = fy, y=n, fill=disp_short)) +
   geom_col() +
-  xlab = "Fiscal year" +
-  ylan = "Count" +
   labs(title = "Total removals per FY by processing disposition",
-       subtitle = specific_area_of_responsibility)
+       subtitle = specific_area_of_responsibility,
+       x = "Fiscal year",
+       y = "Count")
 
 ggplotly(p1)
 
