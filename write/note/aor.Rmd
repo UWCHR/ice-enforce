@@ -95,6 +95,7 @@ arr <- arr %>%
          year_mth = zoo::as.yearmon(arrest_date),
          fy_quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter")),
          fy = as.factor(substr(fy_quarter, 1,4)),
+         gender = toupper(gender),
          citizenship_country = as.factor(toupper(citizenship_country)),
          apprehension_landmark = toupper(str_squish(apprehension_landmark))) %>% 
   filter(arrest_date >= "2011-10-01",
@@ -131,7 +132,9 @@ rem <- rem %>%
          year_mth = zoo::as.yearmon(departed_date),
          processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
          fy_quarter = as.factor(quarter(departed_date, fiscal_start=10, type="year.quarter")),
-         fy = as.factor(substr(fy_quarter, 1,4))) %>% 
+         fy = as.factor(substr(fy_quarter, 1,4)),
+         gender = toupper(gender),
+         citizenship_country = toupper(citizenship_country)) %>% 
   filter(departed_date >= "2011-10-01",
          departed_date <= "2022-09-30")
 
@@ -153,7 +156,7 @@ specific_area_of_responsibility <- arr %>%
 
 ```
 
-This notebook provides a basic descriptive overview of ICE ERO-LESA enforcement data for the `r print(paste0(specific_area_of_responsibility, " (",  specific_aor, ")"))`.
+This notebook provides a basic descriptive overview of ICE ERO-LESA enforcement data for the `r paste0(specific_area_of_responsibility, " (",  specific_aor, ")")`.
 
 # Total enforcement actions by FY
 
@@ -175,17 +178,22 @@ rem_fy <- rem %>%
   summarize(n_removals = n())
 
 dat_aor <- left_join(enc_fy, arr_fy, by='fy') %>% 
-  left_join(rem_fy, by='fy')
+  left_join(rem_fy, by='fy') %>% 
+  rename(Arrests = n_arrests,
+         Encounters = n_encounters,
+         Removals = n_removals)
 
 p1 <- dat_aor %>%
   pivot_longer(cols=-c('fy')) %>% 
   ggplot(aes(x = fy, y=value, color=name, group=name)) +
   geom_line() +
-  labs(title = "Total ICE enforcement events per FY",
-       subtitle = specific_area_of_responsibility) +
-  xlab('') +
-  ylab("Value") +
-  ylim(0, NA)
+  ylim(0, NA) +
+  labs(title = paste0("Total ICE enforcement events per FY, \n", specific_area_of_responsibility),
+       x = "Fiscal Year",
+       y = "Value") +
+  guides(color = guide_legend("Enforcement type")) +
+  theme(plot.title = element_text(size=10),
+        legend.title = element_text(size=10))
 
 ggplotly(p1)
 
@@ -828,9 +836,12 @@ p1 <- rem %>%
                                          TRUE ~ "ALL OTHERS")) %>% 
   group_by(fy, disp_short) %>% 
   summarize(n = n()) %>% 
-  ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
+  ggplot(aes(x = fy, y=n, fill=disp_short)) +
   geom_col() +
-  labs(title = "Total removals per FY by processing disposition")
+  xlab = "Fiscal year" +
+  ylan = "Count" +
+  labs(title = "Total removals per FY by processing disposition",
+       subtitle = specific_area_of_responsibility)
 
 ggplotly(p1)
 
