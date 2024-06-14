@@ -27,7 +27,7 @@ This notebook presents a national overview of U.S. Immigration and Customs Enfor
 
 ## Datasets
 
-In each dataset, a record relates to an enforcement event, not an individual. Individuals may be involved in multiple enforcement events of each category. Original datasets do not include unique individual identifiers; it is not possible to link events related to a specific individual, nor is it possible to link a given encounter to an associated arrest, or an arrest to a subsequent removal.[^1]
+In each dataset, a record relates to an enforcement event, not an individual. Individuals may be involved in multiple enforcement events of each category. Unique individual identifiers (A-numbers, `alien_file_number`) are redacted in the original datasets as released by ICE; it is not possible to link events related to a specific individual, nor is it possible to link a given encounter to an associated arrest, or an arrest to a subsequent removal.[^1]
 
 Datasets were released without any data dictionary or field descriptions; in cases where this information is not self-explanatory, we have attempted to provide citations of relevant sources providing context.
 
