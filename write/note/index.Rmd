@@ -1,5 +1,5 @@
 ---
-title: "ICE ERO-LESA enforcement actions data, FY12-22"
+title: "ICE ERO-LESA enforcement events data, FY12-22"
 author: "UWCHR"
 date: "2024-05-31"
 output:
@@ -27,7 +27,9 @@ This notebook presents a national overview of U.S. Immigration and Customs Enfor
 
 ## Datasets
 
-In each dataset, a record relates to an enforcement event, not an individual. Individuals may be involved in multiple enforcement events of each category. Original datasets do not include unique individual identifiers; it is not possible to link a given encounter to an associated arrest, or an arrest to an associated removal.[^1]
+In each dataset, a record relates to an enforcement event, not an individual. Individuals may be involved in multiple enforcement events of each category. Original datasets do not include unique individual identifiers; it is not possible to link events related to a specific individual, nor is it possible to link a given encounter to an associated arrest, or an arrest to a subsequent removal.[^1]
+
+Datasets were released without any data dictionary or field descriptions; in cases where this information is not self-explanatory, we have attempted to provide citations of relevant sources providing context.
 
 Datasets have been minimally cleaned and standardized; in the following sections we load each dataset and perform some basic additional standardization and creation of convenience variables for various units of time, etc.
 
@@ -203,7 +205,7 @@ glimpse(rem)
 county_aor <- read_delim(here('share', 'hand', 'county_aor.csv'), delim = ',')
 aor_field_office <- read_delim(here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
 
-# Select AOR-level demographics obtained via `tidycensus`
+# Select demographics obtained via `tidycensus` and aggregated to AOR in a separate repository
 # We currently lack demographics for years following 2019, so we use 2019 values for subsequent years
 # TO DO: Update demographics for more recent years
 demog <- read_delim(here('analyze', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
@@ -225,7 +227,7 @@ The following sections provide a basic descriptive overview of the three enforce
 
 ## Total enforcement actions per FY
 
-All three enforcement metrics peaked nationwide in FY 2012; we lack data for prior years. Note total arrests exceed total removals for first time in FY 2021; significant increase in rate of encounters to arrests in FY 2022.
+All three enforcement metrics peaked nationwide in FY 2012; we lack data for prior years. Note total arrests exceed total removals for first time in FY 2021; significant increase in rate of encounters compared to arrests in FY 2022.
 
 ```{r fy_total, message=FALSE, include=TRUE}
 
@@ -399,6 +401,8 @@ p2
 
 ## Rates of enforcement per capita
 
+We can calculate rates of enforcement per capita at the AOR level using ACS 1-year population estimates obtained via `tidycensus`.
+
 ```{r encounters_pc, message=FALSE, warning=FALSE, include=TRUE}
 
 enc_per_aor <- enc %>% 
@@ -540,4 +544,4 @@ p2
 
 [^2]: For discussion of ICE's definitions of "encounters", "arrests", and "removals", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018
 
-[^3]: An additional "HQ" AOR does not have an associated territorial jurisdiction. Some ICE datasets also refer to a "HAL" AOR for the south Texas region centering on Harlingen, TX; this AOR overlaps with the HOU and SNA regions as displayed in this notebook.
+[^3]: An additional "HQ" AOR does not have an associated territorial jurisdiction. Some ICE publications and datasets also refer to a "HAL" AOR for the south Texas region centering on Harlingen, TX, which overlaps with the HOU and SNA regions as displayed in this notebook.

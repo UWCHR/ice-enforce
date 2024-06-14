@@ -78,6 +78,32 @@ skimr::skim(rem)
 
 ```
 
+## Field definitions
+
+#### Original dataset fields
+- `aor`: ICE Area of Responsibility associated with removal
+- `arrest_date`: Date of arrest
+- `departed_date`: Date of departure
+- `removal_date`: Date of order of removal
+- `case_closed_date`: Date of closure of case
+- `apprehension_method_code`: Abbreviated code for apprehension method associated with removal
+- `processing_disposition_code`: Abbreviated code for processing disposition associated with removal
+- `final_charge_section`: Federal code under which individual ordered removed
+- `citizenship_country`: Country of citizenship of removed individual
+- `gender`: Gender of removed individual
+- `apprehension_threat_level`: Fully redacted in original dataset
+- `removal`_threat_level`: Fully redacted in original dataset
+- `alien_file_number`: Unique individual identifier for arrested individual, fully redacted in original dataset
+
+#### Additional fields created by UWCHR
+- `id`: Sequential record identifier (not individual identifier)
+- `hashid`: Unique record hash (not individual identifier)
+- `processing_disposition_clean`: Inferred full text value of `processing_disposition_code`
+- `year`: Calendar year derived from `arrest_date`
+- `month`: Abbreviated month derived from `arrest_date`
+- `year_mth`: Calendar year and month derived from `arrest_date`
+- `fy`: U.S. government fiscal year (Oct.-Sept.) derived from `arrest_date`
+
 # Total removals
 
 Major decrease in removals by ICE, but note CBP Title 42 expulsions at Southern border since 2020 are not counted here.
@@ -118,7 +144,7 @@ p3
 
 # Basic demographics
 
-## Gender
+## Removals by `gender`
 
 ```{r gender, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -140,7 +166,9 @@ p1
 
 ```
 
-## Country of citizenship
+## Removals by `citizenship_country`
+
+Note `citizenship_country` may not correspond with an individual's deportation destination; deportation destination is not represented in this dataset.
 
 ```{r cit, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -180,7 +208,6 @@ p1 <- rem %>%
 ggplotly(p1)
 
 ```
-
 
 ```{r removals_pct_chg, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -223,7 +250,9 @@ p2
 
 ```
 
-# Processing disposition
+# Removals by processing disposition
+
+Unlike datasets for [encounters](encounters.html) and [arrests](arrests.html), removals data represents case processing disposition as an abbreviated `processing_disposition_code`. Where possible, we have inferred correspondence between full text `processing_disposition` values in encounters and arrests datasets and `processing_disposition_code` values in this dataset; cleaned values are represented in the `processing_disposition_clean` field.
 
 ```{r disp, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -255,6 +284,46 @@ p1 <- rem %>%
   ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
   geom_col() +
   labs(title = "Total removals per FY by processing disposition")
+
+ggplotly(p1)
+
+```
+
+# Removals by `apprehension_method_code`
+
+This field is largely missing data prior to FY 2022. Codes are alphanumeric abbreviations; most common codes are analogous to full text values in `apprehension_method` field of [arrests](arrests.html) dataset but significance of some codes is unclear; for example, the 15 top values for this field and inferred correspondence:
+
+"287" - 287(g) arrest
+"PB" - Patrol border
+"CLC" - Criminal Alien Program (CAP) Local Custody
+"CFD" - CAP Federal Custody
+"CST" - CAP State Custody
+"ISP" - Inspection
+"L" - Located
+"NCA" - Non-custodial Arrest
+"TRC" - Transportation check (?)
+"OA" - Other agency
+"PAP" - Probation and parole
+"O" - Other
+"REP" - ERO Reprocessed
+"PI" - Patrol interior (?)
+"LEA" - Law enforcement agency
+
+```{r apprehension_method_code, message=FALSE, warning=FALSE, include=TRUE}
+
+rem <- rem %>% 
+  mutate(apprehension_method_code = str_replace_all(apprehension_method_code, "287.0", "287"))
+
+apprehension_method_code_rank <- rem %>% 
+  count(apprehension_method_code) %>% 
+  arrange(desc(n))
+
+p1 <- rem %>% 
+  filter(fy == 2022) %>% 
+  count(year_mth, apprehension_method_code) %>% 
+  ggplot(aes(x = year_mth, y = n, fill = apprehension_method_code)) +
+  geom_col() +
+  labs(title = "Removals by `apprehension_method_code`, FY 2022")
 
 ggplotly(p1)
 

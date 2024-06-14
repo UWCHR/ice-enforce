@@ -73,6 +73,27 @@ skimr::skim(enc)
 
 ```
 
+## Field definitions
+
+#### Original dataset fields
+- `aor`: ICE Area of Responsibility associated with encounter
+- `event_date`: Date of encounter
+- `landmark`: Landmark or entity associated with encounter
+- `operation`: Operation associated with encounter
+- `processing_disposition`: Status of removal proceedings associated with event
+- `citizenship_country`: Country of citizenship of encountered individual
+- `gender`: Gender of encountered individual
+- `encounter_threat_level`: Fully redacted in original dataset
+- `alien_file_number`: Unique individual identifier for encountered individual, fully redacted in original dataset
+
+#### Additional fields created by UWCHR
+- `id`: Sequential record identifier (not individual identifier)
+- `hashid`: Unique record hash (not individual identifier)
+- `year`: Calendar year derived from `event_date`
+- `month`: Abbreviated month derived from `event_date`
+- `year_mth`: Calendar year and month derived from `event_date`
+- `fy`: U.S. government fiscal year (Oct.-Sept.) derived from `event_date`
+
 # Total encounters
 
 ```{r fy_total, message=FALSE, warning=FALSE, include=TRUE}
@@ -206,7 +227,7 @@ ggplotly(p1)
 
 ## Percent change
 
-Percent change in encounters per FY nationally and by AOR. Note comparison between groups may be misleading because smaller population AORs will be more volatile.
+Percent change in encounters per FY nationally and by AOR.
 
 ```{r arrests_pct_chg, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -276,6 +297,7 @@ p1 <- enc %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, fill=operation_short)) +
   geom_col() +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
   labs(title = "Total ICE encounters per FY by operation")
 
 ggplotly(p1)
@@ -327,6 +349,7 @@ p1 <- enc %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
   geom_col() +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
   labs(title = "Total ICE encounters per FY by processing disposition")
 
 ggplotly(p1)
@@ -378,6 +401,7 @@ p2 <- dat %>%
   ggplot(aes(x = fy, y = pct_not_amenable, fill = aor)) +
   geom_col() +
   scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
   labs(title = "% ICE encounters not amenable to removal or USC") +
   facet_wrap(~aor)
 
@@ -387,16 +411,13 @@ p2
 
 # Landmark
 
-Overview of most common encounter `landmark` values gives a sense of the diversity of this category; note inclusion of general values likely denoting the ICE sub-office or divison responsible for the encounter rather than a precise location. Note also high proportion of records missing `landmark` values.
+Overview of most common encounter `landmark` values gives a sense of the diversity of this category; note inclusion of general values denoting the entity responsible for the encounter rather than a precise geographic location. Note also high proportion of records missing `landmark` values.
 
 ```{r enc_landmark, message=FALSE, warning=FALSE, include=TRUE}
 
 landmarks <- enc %>% 
   count(landmark) %>% 
   arrange(desc(n))
-
-top_landmarks <- landmarks %>%
-  filter(n > 2500)
 
 p1 <- enc %>% 
   filter(event_date <= "2022-09-30",
