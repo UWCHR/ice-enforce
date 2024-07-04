@@ -3,7 +3,7 @@ title: "ICE ERO-LESA enforcement actions data per AOR, FY12-22"
 author: "UWCHR"
 date: "2024-06-06"
 params:
-  aor: LOS
+  aor: SEA
 output:
     html_document:
         html_preview: true
@@ -397,6 +397,24 @@ p1 <- enc %>%
 
 ggplotly(p1)
 
+p2 <- enc %>%
+  filter(aor == specific_aor) %>%
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
+    TRUE ~ "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
+  scale_y_continuous(labels = scales::percent) +
+  geom_col(position = "fill") +
+  labs(title = paste0("ICE encounters by country of citizenship (top 15)",
+                      '<br>',
+                      '<sup>',
+                      specific_area_of_responsibility,
+                      '</sup>'))
+
+ggplotly(p2)
+
 ```
 
 ## Encounter `landmark`
@@ -581,7 +599,25 @@ p1 <- arr %>%
   labs(title = paste0("Total ICE arrests by country of citizenship (top ", cit_categories, ")"),
        subtitle = specific_area_of_responsibility)
 
-p1
+ggplotly(p1)
+
+p2 <- arr %>% 
+  filter(aor == specific_aor,
+        arrest_date <= "2022-09-30") %>%
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, cit_categories) ~ citizenship_country,
+    TRUE ~ "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  geom_col(position = "fill") +
+  geom_hline(yintercept = c(.25, .5, .75), linetype="dashed",
+             linewidth=.25) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = paste0("% ICE arrests by country of citizenship (top ", cit_categories, ")"),
+       subtitle = specific_area_of_responsibility)
+
+p2
 
 ```
 
