@@ -266,6 +266,25 @@ p3 <- sea_arr %>%
   filter(arrest_date >= '2016-10-01',
          arrest_date <= '2022-09-30',
          landmark_state %in% c('WA', 'OR'),
+         arrest_method_short == "CAP Local Incarceration") %>% 
+  mutate(landmark_state = as.factor(landmark_state),
+         arrest_method_short = as.factor(arrest_method_short)) %>% 
+  count(fy, landmark_state, arrest_method_short, .drop=FALSE) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  filter(fy > 2016,
+         fy <= 2022) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_state, fill=landmark_state, group=landmark_state)) +
+  geom_col(position="dodge") +
+  labs(title="CAP Local Incarceration Arrests",
+       subtitle="OR vs. WA, FY 2012-2022",
+       caption="State inferred from `apprehension_landmark` values")
+
+p3
+
+p4 <- sea_arr %>% 
+  filter(arrest_date >= '2016-10-01',
+         arrest_date <= '2022-09-30',
+         landmark_state %in% c('WA', 'OR'),
          arrest_method_short == "CAP State Incarceration") %>% 
   mutate(landmark_state = as.factor(landmark_state),
          arrest_method_short = as.factor(arrest_method_short)) %>% 
@@ -279,9 +298,9 @@ p3 <- sea_arr %>%
        subtitle="OR vs. WA, FY 2012-2022",
        caption="State inferred from `apprehension_landmark` values")
 
-p3
+p4
 
-p4 <- sea_arr %>% 
+p5 <- sea_arr %>% 
   filter(arrest_date >= '2016-10-01',
          arrest_date <= '2022-09-30',
          landmark_state %in% c('WA', 'OR'),
@@ -298,7 +317,7 @@ p4 <- sea_arr %>%
        subtitle="OR vs. WA, FY 2012-2022",
        caption="State inferred from `apprehension_landmark` values")
 
-p4
+p5
 
 ```
 

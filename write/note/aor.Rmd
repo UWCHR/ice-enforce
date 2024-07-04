@@ -209,7 +209,7 @@ ggplotly(p1)
 
 ```
 
-The following chart displays basic comparative measures for the `r specific_area_of_responsibility`: difference between total encounters and total arrests (`diff_enc_arr`); and difference between total arrests and total removals (`diff_arr_rem`). Values greater than zero 
+The following chart displays basic comparative measures for the `r specific_area_of_responsibility`: difference between total encounters and total arrests (`diff_enc_arr`); and difference between total removals and total arrests (`diff_rem_arr`). Values greater than zero denote periods in which there were either more encounters than arrests, or more removals than arrests, respectively.
 
 ```{r aor_diff, message=FALSE, include=TRUE}
 dat_diff <- dat_aor %>% 
@@ -886,6 +886,20 @@ p1 <- rem %>%
   labs(title = "Total ICE removals by country of citizenship (top 15)")
 
 ggplotly(p1)
+
+p2 <- rem %>% 
+  filter(aor == specific_aor) %>% 
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
+    TRUE ~ "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
+  geom_col(position="fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "% ICE removals by country of citizenship (top 15)")
+
+ggplotly(p2)
 
 # % change in removal by group?
 
