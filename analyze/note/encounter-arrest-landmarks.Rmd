@@ -71,7 +71,7 @@ enc <- enc %>%
          year = year(event_date),
          month = month(event_date, label=TRUE, abbr=TRUE),
          year_mth = zoo::as.yearmon(event_date),
-         fy = substr(quarter(event_date, fiscal_start=10, type="year.quarter"), 1,4),
+         fy = as.factor(substr(quarter(event_date, fiscal_start=10, type="year.quarter"), 1,4)),
          gender = toupper(gender),
          operation = toupper(operation),
          processing_disposition = toupper(processing_disposition),
@@ -99,70 +99,86 @@ arr <- arr %>%
 
 sea_arr <- arr %>% 
   filter(aor == "SEA") %>% 
-  count(year_mth, apprehension_landmark) %>% 
+  count(fy, apprehension_landmark) %>% 
   rename(landmark = apprehension_landmark) %>% 
   mutate(type = "arrest")
 
 sea_enc <- enc %>% 
   filter(aor == "SEA") %>% 
-  count(year_mth, landmark) %>% 
+  count(fy, landmark) %>% 
   mutate(type = "encounter")
 
-dat <- rbind(sea_arr, sea_enc)
+dat <- rbind(sea_arr, sea_enc) %>% 
+  complete(expand(dat, landmark, type, fy), fill = list(n = 0)) %>% 
+  filter(!is.na(fy))
 
 p1 <- dat %>% 
   filter(landmark == "CLARK COUNTY JAIL") %>% 
-  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
   geom_line() +
+  scale_x_discrete(breaks=levels(dat$fy)) %>% 
   labs(title = "CLARK COUNTY JAIL")
 
 p1
 
 p2 <- dat %>% 
   filter(landmark == "GRANT CO. JAIL, WA") %>% 
-  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
   geom_line() +
+  scale_x_discrete(breaks=levels(dat$fy)) %>% 
   labs(title = "GRANT CO. JAIL, WA")
 
 p2
 
 p3 <- dat %>% 
   filter(landmark == "ADAMS CO. JAIL") %>% 
-  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
   geom_line() +
+  scale_x_discrete(breaks=levels(dat$fy)) %>% 
   labs(title = "ADAMS CO. JAIL")
 
 p3
 
 p4 <- dat %>% 
   filter(str_detect(landmark, "BENTON CO. JAIL")) %>% 
-  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
   geom_line() +
+  scale_x_discrete(breaks=levels(dat$fy)) %>% 
   labs(title = "BENTON CO. JAIL")
 
 p4
 
 p5 <- dat %>% 
   filter(str_detect(landmark, "KING COUNTY JAIL")) %>% 
-  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
   geom_line() +
+  scale_x_discrete(breaks=levels(dat$fy)) %>% 
   labs(title = "KING COUNTY JAIL")
 
 p5
 
 p6 <- dat %>% 
   filter(str_detect(landmark, "WHATCOM COUNTY JAIL")) %>% 
-  ggplot(aes(x = year_mth, y = n, color = type, fill = type, group = type)) + 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
   geom_line() +
+  scale_x_discrete(breaks=levels(dat$fy)) %>% 
   labs(title = "WHATCOM COUNTY JAIL")
 
 p6
+
+p7 <- dat %>% 
+  filter(str_detect(landmark, "KENT CITY JAIL")) %>% 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  scale_x_discrete(breaks=levels(dat$fy)) %>% 
+  labs(title = "KENT CITY JAIL")
+
+p7
+
 ```
 
 
 ```{r keyword_compare}
-
-specific_aor <- "SEA"
 
 keyword_comparison <- function(keyword, aor_to_compare) {
   
