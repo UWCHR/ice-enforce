@@ -108,8 +108,9 @@ sea_enc <- enc %>%
   count(fy, landmark) %>% 
   mutate(type = "encounter")
 
-dat <- rbind(sea_arr, sea_enc) %>% 
-  complete(expand(dat, landmark, type, fy), fill = list(n = 0)) %>% 
+dat <- rbind(sea_arr, sea_enc)
+
+dat <- complete(dat, landmark, type, fy, fill = list(n = 0)) %>% 
   filter(!is.na(fy))
 
 p1 <- dat %>% 
@@ -174,6 +175,31 @@ p7 <- dat %>%
   labs(title = "KENT CITY JAIL")
 
 p7
+
+p8 <- dat %>% 
+  filter(str_detect(landmark, "SCORE")) %>% 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  geom_vline(aes(xintercept = 2019), color = "black") +
+  scale_x_discrete(breaks=levels(dat$fy)) %>% 
+  labs(title = "SCORE (SOUTH CORRECTIONAL ENTITY)")
+
+p8
+
+selections <- c("CLARK COUNTY JAIL", "GRANT CO. JAIL, WA", "ADAMS CO. JAIL", "KING COUNTY JAIL", "WHATCOM COUNTY JAIL", "KENT CITY JAIL")
+
+p9 <- dat %>% 
+  filter(landmark %in% selections) %>% 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  geom_vline(aes(xintercept = as.factor(2019)), color = "black", linetype = "dashed") +
+  scale_x_discrete(breaks=seq(2012, 2022, 4)) +
+  facet_wrap(~landmark, ncol=2, scales = "free_y") +
+  labs(title = "ICE encounters and arrests, FY2012-22",
+       subtitle = "Selected `landmark` values",
+       caption = "KWW implementation in 2019")
+
+p9
 
 ```
 
@@ -244,7 +270,27 @@ sea_landmarks <- arr %>%
 
 ```
 
-```{r analyze_sea_sea_landmarks}
+```{r sea_landmarks_nca}
+
+sea_arr <- arr %>% 
+  filter(aor == "SEA") %>% 
+  mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark)))
+
+p1 <- sea_arr %>% 
+  filter(arrest_method == "Non-Custodial Arrest") %>% 
+  count(year_mth, apprehension_landmark) %>% 
+  ggplot(aes(x = year_mth, y = n, fill = apprehension_landmark))
+
+ggplotly(p1)
+
+tab <- sea_arr %>% 
+  filter(arrest_method == "Non-Custodial Arrest") %>% 
+  count(fy, apprehension_landmark) %>% 
+  arrange(fy, desc(n))
+
+```
+
+```{r sea_landmarks_type}
 
 sea_landmarks <- read_delim(here('analyze', 'hand', "SEA_landmarks.csv"), delim='|')
 
