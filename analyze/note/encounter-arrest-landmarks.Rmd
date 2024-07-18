@@ -93,6 +93,12 @@ arr <- arr %>%
   mutate(arrest_method_short = case_when(arrest_method %in% unlist(top_methods$arrest_method) ~ as.character(arrest_method), 
                                          TRUE ~ "All others"))
 
+top_sea_landmarks <- arr %>% 
+  filter(aor == "SEA") %>% 
+  mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark))) %>% 
+  count(apprehension_landmark) %>% 
+  arrange(desc(n))
+
 ```
 
 ```{r join_enc_arr}
@@ -206,6 +212,29 @@ p9 <- dat %>%
 
 p9
 
+selections <- c("SEATTLE NON-DETAINED DOCKET", "POO CAP NON-CUSTODIAL ARREST", "SEA CAP", "SEATTLE FUG OPS", "PORTLAND FUGITIVE OPERATIONS STREET ARREST", "SEATTLE FUGITIVE OPERATIONS STREET ARREST", "EUGENE NON-DETAINED DOCKET", "YAKIMA FUG OPS")
+
+p10 <- dat %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  mutate(operational_ldmk = case_when(
+    str_detect(landmark, "NON-DETAINED|NON DETAINED") ~ "NON-DETAINED DOCKET",
+    str_detect(landmark, "FUGITIVE|FUG OPS|STREET ARREST") ~ "FUG OPS/STREET ARREST",
+    str_detect(landmark, "CAP") ~ "CAP AT-LARGE",
+    TRUE ~ "ALL OTHER"
+    )) %>%
+  group_by(fy, operational_ldmk, type) %>% 
+  summarize(n = sum(n)) %>% 
+  ggplot(aes(x = fy, y = n, color = type, fill = type, group = type)) + 
+  geom_line() +
+  geom_vline(aes(xintercept = 2019.5), linetype = "dashed") +
+  scale_x_continuous(breaks=seq(2012, 2022, 4)) +
+  facet_wrap(~operational_ldmk, ncol=2, scales = "fixed") +
+  labs(title = "ICE encounters and arrests, FY2012-22",
+       subtitle = "Selected `landmark` & `apprehension_landmark` categories",
+       caption = "Source: ICE ERO LESA\nFigure: UW Center for Human Rights")
+
+p10
+
 ```
 
 
@@ -270,6 +299,7 @@ sea_landmarks <- arr %>%
   filter(aor == specific_aor) %>% 
   mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark))) %>% 
   distinct(apprehension_landmark)
+  
 
 # write_delim(sea_landmarks, here('analyze', 'output', paste0(specific_aor, "_landmarks.csv")), delim=',')
 
