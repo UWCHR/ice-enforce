@@ -1,4 +1,4 @@
-# ICE ERO-LESA enforcement data
+# ICE immigration enforcement data
 
 This repository processes and analyzes U.S. Immigration and Customs Enforcement (ICE) data released pursuant to FOIA requests by the University of Washington Center for Human Rights.
 
