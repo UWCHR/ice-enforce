@@ -3,7 +3,7 @@
 # :date: 2019-12-26
 # :license: GPL 2.0 or greater
 #
-# ice-ero-lesa/clean/src/Makefile
+# ice-enforce/clean/src/Makefile
 #
 #
 

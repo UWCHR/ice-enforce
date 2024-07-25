@@ -3,7 +3,7 @@
 # :author: PN
 # :copyright: GPL v2 or later
 #
-# ice-ero-lesa/us/clean/src/clean.py
+# ice-enforce/clean/src/clean.py
 #
 #
 import pandas as pd

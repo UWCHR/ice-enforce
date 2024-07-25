@@ -3,7 +3,7 @@
 # Maintainers: PN
 # Copyright:   2024, UWCHR, GPL v2 or later
 # ============================================
-# ice-ero-lesa/docs/Makefile
+# ice-enforce/docs/Makefile
 
 .PHONY: all clean
 

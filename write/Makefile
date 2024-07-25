@@ -3,10 +3,10 @@
 # Maintainers: PN
 # Copyright:   2024, UWCHR, GPL v2 or later
 # ============================================
-# ice-ero-lesa/write/Makefile
+# ice-enforce/write/Makefile
 
 AORS = ATL BAL BOS BUF CHI DAL DEN DET ELP HOU LOS MIA NEW NOL NYC PHI PHO SEA SFR SLC SNA SND SPM WAS
-# AORS = BOS SEA
+# AORS = BOS SEA # For testing
 
 
 .PHONY: all clean
