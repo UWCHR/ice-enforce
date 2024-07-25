@@ -22,4 +22,4 @@ The repository is divided into separate tasks which follow a regular structure; 
 - `export/` - Convenience task to generate final export versions of datasets in `export/output/`
 - `analyze/` - Exploratory analysis of final datasets.
 - `write/` - Generates data notebooks for publication.
-- `docs/` - Data notebooks published to [https://uwchr.github.com/ice-ero-lesa/]
+- `docs/` - Data notebooks published to [https://uwchr.github.com/ice-enforce/]
