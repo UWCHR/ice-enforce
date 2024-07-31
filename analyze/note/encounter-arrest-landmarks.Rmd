@@ -101,6 +101,39 @@ top_sea_landmarks <- arr %>%
 
 ```
 
+```{r enc_arr_tab}
+
+sea_arr <- arr %>% 
+  filter(aor == "SEA",
+         arrest_date >= as.Date("2019-05-21")) %>% 
+  count(apprehension_landmark) %>% 
+  rename(landmark = apprehension_landmark) %>% 
+  mutate(type = "arrest")
+
+sea_enc <- enc %>% 
+  filter(aor == "SEA",
+         event_date >= as.Date("2019-05-21")) %>% 
+  count(landmark) %>% 
+  mutate(type = "encounter")
+
+dat <- rbind(sea_arr, sea_enc)
+
+dat <- complete(dat, landmark, type, fill = list(n = 0))
+
+tab <- dat %>% 
+  group_by(landmark, type) %>% 
+  summarize(n = sum(n)) %>% 
+  pivot_wider(names_from = type, values_from = n) %>% 
+  ungroup() %>% 
+  arrange(desc(arrest)) %>% 
+  mutate(landmark_rank = row_number(),
+         total_landmarks = max(landmark_rank),
+         rank = paste0(landmark_rank, "/", total_landmarks)) %>% 
+  filter(str_detect(landmark, "JAIL|COUNTY|CO\\.")) %>% 
+  dplyr::select(-c(landmark_rank, total_landmarks))
+
+```
+
 ```{r join_enc_arr}
 
 sea_arr <- arr %>% 
