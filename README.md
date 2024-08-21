@@ -2,9 +2,9 @@
 
 This repository processes and analyzes U.S. Immigration and Customs Enforcement (ICE) data released pursuant to FOIA requests by the University of Washington Center for Human Rights.
 
-The datasets analyzed here were released by ICE's Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA); the datasets represent nationwide individual enforcement actions in three categories: encounters, arrests, and removals.
+The datasets analyzed here were released by ICE's Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) from ICE’s Integrated Decision Support (IIDS) database; the datasets represent nationwide individual enforcement actions in three categories: encounters, arrests, and removals.
 
-The most current datasets analyzed cover the period from October 1, 2011 through January 29, 2023, representing the full U.S. government Fiscal Years 2012-2022.
+The most current datasets analyzed cover the period from October 1, 2011 through January 29, 2023, representing the full U.S. government fiscal years 2012-2022.
 
 ## FOIA Request
 
