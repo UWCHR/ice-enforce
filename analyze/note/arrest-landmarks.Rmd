@@ -138,88 +138,113 @@ sea_landmarks <- arr %>%
 
 sea_landmarks <- read_delim(here('analyze', 'hand', "SEA_landmarks.csv"), delim='|')
 
+top_landmarks <- c("Local jail", "State prison", "Federal prison", "At-large", "Non-detained docket", "Detained docket", NA_character_)
+
 sea_arr <- arr %>% 
   filter(aor == "SEA") %>% 
   mutate(apprehension_landmark = str_squish(toupper(apprehension_landmark))) %>% 
-  left_join(., sea_landmarks, by="apprehension_landmark")
+  left_join(., sea_landmarks, by="apprehension_landmark") %>% 
+  mutate(landmark_type = case_when(landmark_type %in% top_landmarks ~ landmark_type,
+                                           TRUE ~ "All others"))
 
 p1 <- sea_arr %>% 
-  filter(arrest_date >= '2016-10-01') %>% 
+  # filter(arrest_date >= '2016-10-01') %>% 
   # mutate(quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter"))) %>% 
-  count(year_mth, landmark_type) %>% 
-  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  count(fy, landmark_type) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_col() +
   labs(title="Apprehension landmark categories, SEA AOR",
-       subtitle = "All arrest methods")
+       subtitle = "All arrest methods",
+       caption = "`landmark_type` inferred from `apprehension_landmark` values.")
 
-ggplotly(p1)
+# ggplotly(p1)
 p1
 
 p2 <- sea_arr %>% 
   filter(arrest_date >= '2016-10-01',
          arrest_method_short == "CAP Local Incarceration") %>% 
-  count(year_mth, arrest_method_short, landmark_type) %>% 
-  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  count(fy, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_col() +
   labs(title="Apprehension landmark categories, SEA AOR",
-       subtitle = "CAP Local Incarceration")
+       subtitle = "CAP Local Incarceration",
+       caption = "`landmark_type` inferred from `apprehension_landmark` values.")
 
 p2
 
 p3 <- sea_arr %>% 
   filter(arrest_date >= '2016-10-01',
          arrest_method_short == "CAP State Incarceration") %>% 
-  count(year_mth, arrest_method_short, landmark_type) %>% 
-  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  count(fy, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_line() +
   labs(title="Apprehension landmark categories, SEA AOR",
-       subtitle = "CAP State Incarceration")
+       subtitle = "CAP State Incarceration",
+       caption = "`landmark_type` inferred from `apprehension_landmark` values.")
 
 p3
 
 p4 <- sea_arr %>% 
   filter(arrest_date >= '2016-10-01',
          arrest_method_short == "CAP Federal Incarceration") %>% 
-  count(year_mth, arrest_method_short, landmark_type) %>% 
-  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  count(fy, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_line() +
   labs(title="Apprehension landmark categories, SEA AOR",
-       subtitle = "CAP Federal Incarceration")
+       subtitle = "CAP Federal Incarceration",
+       caption = "`landmark_type` inferred from `apprehension_landmark` values.")
 
 p4
 
 p5 <- sea_arr %>% 
   filter(arrest_date >= '2016-10-01',
          arrest_method_short == "Located") %>% 
-  count(year_mth, arrest_method_short, landmark_type) %>% 
-  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  count(fy, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_line() +
   labs(title="Apprehension landmark categories, SEA AOR",
-       subtitle = "Located")
+       subtitle = "Located",
+       caption = "`landmark_type` inferred from `apprehension_landmark` values.")
 
 p5
 
 p6 <- sea_arr %>% 
   filter(arrest_date >= '2016-10-01',
          arrest_method_short == "Non-Custodial Arrest") %>% 
-  count(year_mth, arrest_method_short, landmark_type) %>% 
-  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  count(fy, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_col() +
   labs(title="Apprehension landmark categories, SEA AOR",
-       subtitle = "Non-Custodial Arrest")
+       subtitle = "Non-Custodial Arrest",
+       caption = "`landmark_type` inferred from `apprehension_landmark` values.")
 
 p6
 
 p7 <- sea_arr %>% 
   filter(arrest_date >= '2016-10-01',
          arrest_method_short == "ERO Reprocessed Arrest") %>% 
-  count(year_mth, arrest_method_short, landmark_type) %>% 
-  ggplot(aes(x=year_mth, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
+  count(fy, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x=fy, y=n, color=landmark_type, fill=landmark_type, group=landmark_type)) +
   geom_col() +
   labs(title="Apprehension landmark categories, SEA AOR",
-       subtitle = "ERO Reprocessed Arrest")
+       subtitle = "ERO Reprocessed Arrest",
+       caption = "`landmark_type` inferred from `apprehension_landmark` values.")
 
 p7
+
+```
+
+```{r landmark_type_characteristics}
+
+p1 <- sea_arr %>% 
+  mutate(fy = as.numeric(fy)) %>% 
+  count(fy, gender, landmark_type) %>% 
+  ggplot(aes(x = fy, y = n, fill = gender)) +
+  geom_col(position="fill") +
+  scale_x_continuous(breaks = seq(2012, 2022, 4)) +
+  facet_wrap(~landmark_type)
+
+p1
 
 ```
 

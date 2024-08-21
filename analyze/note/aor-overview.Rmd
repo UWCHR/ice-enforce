@@ -125,7 +125,7 @@ demog <- read_delim(here('analyze', 'input', 'aor_demog_indicators.csv.gz'), del
 
 pc_scale = 100000
 
-specific_aor <- "BOS"
+specific_aor <- "SEA"
 specific_area_of_responsibility <- arr %>%
   filter(aor == specific_aor) %>%
   distinct(area_of_responsibility) %>% 
@@ -356,6 +356,18 @@ p1 <- arr %>%
 
 p1
 
+tab <- arr %>% 
+  filter(aor == specific_aor,
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>%
+  mutate(gender = toupper(gender)) %>% 
+  group_by(fy, gender) %>% 
+  summarize(n = n()) %>% 
+  mutate(prop = n / sum(n))
+
+tab
+
+
 ```
 
 ```{r cit, echo=FALSE, message=FALSE, include=TRUE}
@@ -369,18 +381,20 @@ cit <- arr %>%
   summarize(n = n()) %>% 
   arrange(desc(n))
 
-cit_categories <- 10
+cit_categories <- 9
 
 p1 <- arr %>% 
   filter(aor == specific_aor,
+        arrest_date >= "2018-10-01",
         arrest_date <= "2022-09-30") %>%
   mutate(citizenship_country = case_when(
     citizenship_country %in% head(cit$citizenship_country, cit_categories) ~ citizenship_country,
-    TRUE ~ "ALL OTHERS"
-  )) %>% 
+    TRUE ~ "ALL OTHERS"),
+    citizenship_country = case_when(citizenship_country %in% c("GUATEMALA", "HONDURAS", "EL SALVADOR") ~ "GUA+HON+SV",
+                                    TRUE ~ citizenship_country)) %>% 
   count(fy, citizenship_country) %>% 
   ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
-  geom_col() +
+  geom_col(color='black') +
   labs(title = paste0("Total ICE arrests by country of citizenship (top ", cit_categories, ")"),
        subtitle = specific_area_of_responsibility)
 
