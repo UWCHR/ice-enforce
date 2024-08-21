@@ -23,11 +23,12 @@ p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris
 
 # Data overview
 
-This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data regarding nationwide encounters, arrests, and removals for U.S. Government Fiscal Years 2012 through 2022, obtained by the University of Washington Center for Human Rights (UWCHR) pursuant to FOIA request 2022-ICFO-09023.
+This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data from
+ICE’s Integrated Decision Support (IIDS) database regarding nationwide encounters, arrests, and removals for the time period from October 1, 2011, through January 29, 2023, (full U.S. Government Fiscal Years 2012 through 2022), obtained by the University of Washington Center for Human Rights (UWCHR) pursuant to FOIA request 2022-ICFO-09023.
 
 ## Datasets
 
-In each dataset, a record relates to an enforcement event, not an individual. Individuals may be involved in multiple enforcement events of each category. Unique individual identifiers (A-numbers, `alien_file_number`) are redacted in the original datasets as released by ICE; it is not possible to link events related to a specific individual, nor is it possible to link a given encounter to an associated arrest, or an arrest to a subsequent removal.[^1]
+In each dataset, a record relates to an enforcement event, not an individual. Individuals may be involved in multiple enforcement events of each category. Unique individual identifiers (A-numbers, `alien_file_number`) are redacted in the original datasets as released by ICE;[^1] it is not possible to link events related to a specific individual, nor is it possible to link a given encounter to an associated arrest, or an arrest to a subsequent removal.[^2]
 
 Datasets were released without any data dictionary or field descriptions; in cases where this information is not self-explanatory, we have attempted to provide citations of relevant sources providing context.
 
@@ -74,13 +75,11 @@ enc <- enc %>%
          gender = toupper(gender),
          operation = toupper(operation),
          processing_disposition = toupper(processing_disposition),
-         citizenship_country = toupper(citizenship_country)) %>% 
-  filter(event_date >= "2011-10-01",
-         event_date <= "2022-09-30")
+         citizenship_country = toupper(citizenship_country))
 
 ```
 
-An encounter occurs when an individual is subjected to revision of admissibility/removability by ICE, and may or may not lead to an arrest.[^2]
+An encounter occurs when an individual is subjected to revision of admissibility/removability by ICE, and may or may not lead to an arrest.[^3]
 
 The encounters dataset (`enc`) includes `r nrow(enc)` observations of `r length(enc)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis. For additional detail, see the [Encounters](encounters.html) notebook.
 
@@ -125,9 +124,7 @@ arr <- arr %>%
          year_mth = zoo::as.yearmon(arrest_date),
          fy_quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter")),
          fy = as.factor(substr(fy_quarter, 1,4)),
-         citizenship_country = as.factor(toupper(citizenship_country))) %>% 
-  filter(arrest_date >= "2011-10-01",
-         arrest_date <= "2022-09-30")
+         citizenship_country = as.factor(toupper(citizenship_country)))
 
 ```
 
@@ -179,9 +176,7 @@ rem <- rem %>%
          year_mth = zoo::as.yearmon(departed_date),
          processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
          fy_quarter = as.factor(quarter(departed_date, fiscal_start=10, type="year.quarter")),
-         fy = as.factor(substr(fy_quarter, 1,4))) %>% 
-  filter(departed_date >= "2011-10-01",
-         departed_date <= "2022-09-30")
+         fy = as.factor(substr(fy_quarter, 1,4)))
 
 rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
 
@@ -232,17 +227,20 @@ All three enforcement metrics peaked nationwide in FY 2012; we lack data for pri
 ```{r fy_total, message=FALSE, include=TRUE}
 
 enc_fy <- enc %>% 
-  filter(event_date <= "2022-09-30") %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
   group_by(fy) %>% 
   summarize(n_encounters = n())
 
 arr_fy <- arr %>% 
-  filter(arrest_date <= "2022-09-30") %>% 
+  filter(arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>% 
   group_by(fy) %>% 
   summarize(n_arrests = n())
 
 rem_fy <- rem %>% 
-  filter(departed_date <= "2022-09-30") %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
   group_by(fy) %>% 
   summarize(n_removals = n())
 
@@ -256,7 +254,9 @@ p1 <- dat %>%
   labs(title = "Total ICE enforcement events per FY") +
   xlab('') +
   ylab("Value") +
-  ylim(0, NA)
+  ylim(0, NA) +
+  # scale_color_viridis_d() +
+  theme_minimal()
 
 ggplotly(p1)
 
@@ -266,11 +266,11 @@ ggplotly(p1)
 
 ICE ERO divides the country into 24 Areas of Responsibility (AORs) and Field Offices, mapped below. This is the only common level of geographic organization shared between the three enforcement datasets.
 
-Most AORs correspond to one or more U.S. states and territories; the states of CA, NY, and TX are divided between two or more AORs.[^3]
+Most AORs correspond to one or more U.S. states and territories; the states of CA, NY, and TX are divided between two or more AORs.[^4]
 
 For additional detail, see the following descriptive notebooks for each AOR:
 
-[ATL](aor/ATL.html) - [BAL](aor/BAL.html) - [BOS](aor/BOS.html) - [BUF](aor/BUF.html) - [CHI](aor/CHI.html) - [DAL](aor/DAL.html) - [DEN](aor/DEN.html) - [DET](aor/DET.html) - [ELP](aor/ELP.html) - [HOU](aor/HOU.html) - [LOS](aor/LOS.html) - [MIA](aor/MIA.html) - [NEW](aor/NEW.html) - [NOL](aor/NOL.html) - [NYC](aor/NYC.html) - [PHI](aor/PHI.html) - [PHO](aor/PHO.html) - [SEA](aor/SEA.html) - [SFR](aor/SFR.html) - [SLC](aor/SLC.html) - [SNA](aor/SNA.html) - [SND](aor/SND.html) - [SPM](aor/SPM.html) - [WAS](aor/WAS.html)
+[Atlanta (ATL)](aor/ATL.html) - [Baltimore (BAL)](aor/BAL.html) - [Boston (BOS)](aor/BOS.html) - [Buffalo (BUF)](aor/BUF.html) - [Chicago (CHI)](aor/CHI.html) - [Dallas (DAL)](aor/DAL.html) - [Denver (DEN)](aor/DEN.html) - [Detroit (DET)](aor/DET.html) - [El Paso (ELP)](aor/ELP.html) - [Houston (HOU)](aor/HOU.html) - [Los Angeles (LOS)](aor/LOS.html) - [Miami (MIA)](aor/MIA.html) - [Newark (NEW)](aor/NEW.html) - [New Orleans (NOL)](aor/NOL.html) - [New York City (NYC)](aor/NYC.html) - [Philadelphia (PHI)](aor/PHI.html) - [Phoenix (PHO)](aor/PHO.html) - [Seattle (SEA)](aor/SEA.html) - [San Francisco (SFR)](aor/SFR.html) - [Salt Lake City (SLC)](aor/SLC.html) - [San Antonio (SNA)](aor/SNA.html) - [San Diego (SND)](aor/SND.html) - [Saint Paul (SPM)](aor/SPM.html) - [Washington D.C. (WAS)](aor/WAS.html)
 
 ```{r maps_setup, message=FALSE, include=FALSE}
   
@@ -308,6 +308,7 @@ p1 <- aor_geom %>%
     force=2,
     show.legend = FALSE
   ) +
+  # scale_fill_viridis_d() +
   theme_void() +
   labs(title = "ICE AORs and Field Office locations")
 
@@ -322,21 +323,24 @@ Each enforcement dataset categorizes enforcement actions at the level of ICE Are
 ```{r enforce_by_aor, message=FALSE, include=TRUE}
 
 enc_fy_aor <- enc %>% 
-  filter(event_date <= "2022-09-30") %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
   summarize(n_encounters = n()) %>% 
   mutate(fy = as.numeric(as.character(fy))) %>% 
   ungroup()
 
 arr_fy_aor <- arr %>% 
-  filter(arrest_date <= "2022-09-30") %>% 
+  filter(arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
   summarize(n_arrests = n()) %>% 
   mutate(fy = as.numeric(as.character(fy))) %>% 
   ungroup()
 
 rem_fy_aor <- rem %>% 
-  filter(departed_date <= "2022-09-30") %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
   summarize(n_removals = n()) %>% 
   mutate(fy = as.numeric(as.character(fy))) %>% 
@@ -364,7 +368,8 @@ p1 <- dat %>%
   facet_wrap(~aor) +
   # facet_wrap(~aor, scales='free_y') +
   xlab('') +
-  ylab("Value")
+  ylab("Value") +
+  theme_minimal()
 
 p1
 
@@ -384,7 +389,8 @@ p2 <- dat %>%
   labs(title = "Difference between ICE enforcement events per FY") +
   facet_wrap(~aor) +
   xlab('') +
-  ylab("Value")
+  ylab("Value") +
+  theme_minimal()
 
 p2
 
@@ -409,23 +415,24 @@ enc_per_aor <- enc %>%
   filter(!is.na(aor),
          aor != "HQ",
          event_date >= "2011-10-01",
-        event_date <= "2022-09-30") %>% 
+         event_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
   summarize(n = n())
 
 enc_pc_per_aor <- left_join(enc_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
   group_by(aor) %>% 
   fill(contains('pop')) %>% 
-  mutate(n_per_cap = (n / total_pop) * pc_scale,
-         n_per_undocu = (n / undocu_pop) * pc_scale) %>% 
-  arrange(fy, desc(n_per_cap)) %>% 
+  mutate(encounters_per_capita = (n / total_pop) * pc_scale,
+         encounters_per_undocu = (n / undocu_pop) * pc_scale) %>% 
+  arrange(fy, desc(encounters_per_capita)) %>% 
   group_by(fy) %>% 
   mutate(pc_rank = row_number())
 
 p1 <- enc_pc_per_aor %>% 
-  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  ggplot(aes(x = fy, y=encounters_per_capita, color=aor, group=aor)) +
   geom_line() +
-  labs(title = "ICE encounters per 100,000 residents")
+  labs(title = "ICE encounters per 100,000 residents") +
+  theme_minimal()
 
 ggplotly(p1)  
 
@@ -437,23 +444,24 @@ arr_per_aor <- arr %>%
   filter(!is.na(aor),
          aor != "HQ",
          arrest_date >= "2011-10-01",
-        arrest_date <= "2022-09-30") %>% 
+         arrest_date <= "2022-09-30") %>% 
   group_by(fy, aor) %>% 
   summarize(n = n())
 
 arr_pc_per_aor <- left_join(arr_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
   group_by(aor) %>% 
   fill(contains('pop')) %>% 
-  mutate(n_per_cap = (n / total_pop) * pc_scale,
-         n_per_undocu = (n / undocu_pop) * pc_scale) %>% 
-  arrange(fy, desc(n_per_cap)) %>% 
+  mutate(arrests_per_capita = (n / total_pop) * pc_scale,
+         arrests_per_undocu = (n / undocu_pop) * pc_scale) %>% 
+  arrange(fy, desc(arrests_per_capita)) %>% 
   group_by(fy) %>% 
   mutate(pc_rank = row_number())
 
 p1 <- arr_pc_per_aor %>% 
-  ggplot(aes(x = as.factor(fy), y=n_per_cap, color=aor, group=aor)) +
+  ggplot(aes(x = fy, y=arrests_per_capita, color=aor, group=aor)) +
   geom_line() +
-  labs(title = "ICE arrests per 100,000 residents")
+  labs(title = "ICE arrests per 100,000 residents") +
+  theme_minimal()
 
 ggplotly(p1)  
 
@@ -472,16 +480,17 @@ rem_per_aor <- rem %>%
 rem_pc_per_aor <- left_join(rem_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
   group_by(aor) %>% 
   fill(contains('pop')) %>% 
-  mutate(n_per_cap = (n / total_pop) * pc_scale,
-         n_per_undocu = (n / undocu_pop) * pc_scale) %>% 
-  arrange(fy, desc(n_per_cap)) %>% 
+  mutate(removals_per_capita = (n / total_pop) * pc_scale,
+         removals_per_undocu = (n / undocu_pop) * pc_scale) %>% 
+  arrange(fy, desc(removals_per_capita)) %>% 
   group_by(fy) %>% 
   mutate(pc_rank = row_number())
 
 p1 <- rem_pc_per_aor %>% 
-  ggplot(aes(x = fy, y=n_per_cap, color=aor, group=aor)) +
+  ggplot(aes(x = fy, y=removals_per_capita, color=aor, group=aor)) +
   geom_line() +
-  labs(title = "ICE removals per 100,000 residents")
+  labs(title = "ICE removals per 100,000 residents") +
+  theme_minimal()
 
 ggplotly(p1)  
 
@@ -493,7 +502,7 @@ We can map enforcement variables at the AOR level as below:
 
 ```{r enforcement_per_capita}
 
-# Note here we use 2019 demographic data for subsequent
+# Note here we use 2019 demographic data for subsequent per capita calculations
 dat_map <- dat %>%
   mutate(fy = as.character(fy)) %>%
   full_join(demog, by=c('aor' = 'aor', 'fy' = 'year')) %>%
@@ -502,36 +511,42 @@ dat_map <- dat %>%
   left_join(aor_geom, by='aor')
 
 p0 <- dat_map %>%
-  filter(fy == 2022,
+  filter(fy >= 2019,
          aor != "HQ") %>%
-  mutate(encounters_pc = n_encounters / total_pop * pc_scale) %>%
-  ggplot(aes(geometry=geometry, fill=encounters_pc)) +
+  group_by(aor) %>% 
+  mutate(n_encounters = sum(n_encounters),
+         encounters_per_capita = n_encounters / total_pop * pc_scale) %>%
+  ggplot(aes(geometry=geometry, fill=encounters_per_capita)) +
   geom_sf() +
   scale_fill_viridis_c() +
   theme_void() +
-  labs(title = "ICE encounters per capita, FY 2022",
+  labs(title = "ICE encounters per capita, FY 2019-2022",
        caption = "Per est. 100,000 pop., 2019 (tidycensus)")
 
 p1 <- dat_map %>%
-  filter(fy == 2022,
+  filter(fy >= 2019,
          aor != "HQ") %>%
-  mutate(arrests_pc = n_arrests / total_pop * pc_scale) %>%
-  ggplot(aes(geometry=geometry, fill=arrests_pc)) +
+  group_by(aor) %>% 
+  mutate(n_arrests = sum(n_arrests),
+         arrests_per_capita = n_arrests / total_pop * pc_scale) %>%
+  ggplot(aes(geometry=geometry, fill=arrests_per_capita)) +
   geom_sf() +
   scale_fill_viridis_c() +
   theme_void() +
-  labs(title = "ICE arrests per capita, FY 2022",
+  labs(title = "ICE arrests per capita, FY 2019-2022",
        caption = "Per est. 100,000 pop., 2019 (tidycensus)")
 
 p2 <- dat_map %>%
-  filter(fy == 2022,
+  filter(fy >= 2019,
          aor != "HQ") %>%
-  mutate(removals_pc = n_removals / total_pop * pc_scale) %>%
-  ggplot(aes(geometry=geometry, fill=removals_pc)) +
+  group_by(aor) %>% 
+  mutate(n_removals = sum(n_removals),
+         removals_per_capita = n_removals / total_pop * pc_scale) %>%
+  ggplot(aes(geometry=geometry, fill=removals_per_capita)) +
   geom_sf() +
   scale_fill_viridis_c() +
   theme_void() +
-  labs(title = "ICE removals per capita, FY 2022",
+  labs(title = "ICE removals per capita, FY 2019-2022",
        caption = "Per est. 100,000 pop., 2019 (tidycensus)")
 
 p0
@@ -540,8 +555,10 @@ p2
 
 ```
 
-[^1]: Unique values have been assigned for each record: `id` values denote the sequence of records in the original concatenated datasets; `hashid` values are unique identifiers for each record and are included for validation purposes (e.g. validating join operations, checking whether data has been transformed following assignment of `hashid` values, etc.).]
+[^1]: A recent Government Accountability Office (GAO) report indicates that ICE enforcement data includes additional fields not included in the data released to UWCHR, including "Subject ID" and "Person ID" identifiers. See U.S. Government Accountability Office, "Immigration Enforcement: Arrests, Removals, and Detentions Varied Over Time and ICE Should Strengthen Data Reporting", GAO-24-106233, July 23, 2024, https://www.gao.gov/products/gao-24-106233
 
-[^2]: For discussion of ICE's definitions of "encounters", "arrests", and "removals", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018
+[^2]: Unique values have been assigned for each record: `id` values denote the sequence of records in the original concatenated datasets; `hashid` values are unique identifiers for each record and are included for validation purposes (e.g. validating join operations, checking whether data has been transformed following assignment of `hashid` values, etc.).]
 
-[^3]: An additional "HQ" AOR does not have an associated territorial jurisdiction. Some ICE publications and datasets also refer to a "HAL" AOR for the south Texas region centering on Harlingen, TX, which overlaps with the HOU and SNA regions as displayed in this notebook.
+[^3]: For discussion of ICE's definitions of "encounters", "arrests", and "removals", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018
+
+[^4]: An additional "HQ" AOR does not have an associated territorial jurisdiction. Some ICE publications and datasets since 2021 also refer to a "HAL" AOR for the south Texas region centering on Harlingen, TX, which overlaps with the HOU and SNA regions as displayed in this notebook. Hawaii, Guam and Northern Mariana Islands are included in the San Francisco AOR (SFR); Puerto Rico and U.S. Virgin Islands are included in the Miami AOR (MIA).

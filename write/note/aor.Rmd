@@ -23,19 +23,11 @@ options(scipen = 1000000)
 
 specific_aor <- params$aor
 
-static_theme <- function() {
-  theme()
-}
-
-interactive_theme <- function() {
-  theme(plot.title = element_text(size=10),
-        legend.title = element_text(size=10)
-  )
-  }
-
 ```
 
-# ICE ERO enforcement data: `r specific_aor` AOR
+[Back to index](index.html)
+
+# ICE enforcement: `r specific_aor` AOR
 
 ```{r load_data, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -203,7 +195,8 @@ p1 <- dat_aor %>%
        caption = "Figure: Univ. of Wash. Center for Human Rights, Data: ICE ERO-LESA",
        x = "Fiscal Year",
        y = "") +
-  guides(color = guide_legend("Enforcement type"))
+  guides(color = guide_legend("Enforcement type")) +
+  theme_minimal()
 
 ggplotly(p1)
 
@@ -212,6 +205,7 @@ ggplotly(p1)
 The following chart displays basic comparative measures for the `r specific_area_of_responsibility`: difference between total encounters and total arrests (`diff_enc_arr`); and difference between total removals and total arrests (`diff_rem_arr`). Values greater than zero denote periods in which there were either more encounters than arrests, or more removals than arrests, respectively.
 
 ```{r aor_diff, message=FALSE, include=TRUE}
+
 dat_diff <- dat_aor %>% 
   mutate(diff_enc_arr = n_encounters - n_arrests,
          diff_rem_arr = n_removals - n_arrests)
@@ -231,7 +225,8 @@ p2 <- dat_diff %>%
                       specific_area_of_responsibility,
                       '</sup>'),
        x = "Fiscal Year",
-       y = "")
+       y = "") +
+  theme_minimal()
 
 ggplotly(p2)
 
@@ -280,7 +275,8 @@ p1 <- dat %>%
   ylab("") +
   ylim(0, NA) +
   scale_color_discrete(name = "Enforcement type") +
-  facet_wrap(~group, scales = "free_y")
+  facet_wrap(~group, scales = "free_y") +
+  theme_minimal()
 
 ggplotly(p1, tooltip = c("x", "y", "color", "text"))
 
@@ -304,7 +300,8 @@ p3 <- dat_pct %>%
   scale_y_continuous(labels = scales::percent) +
   scale_x_discrete(breaks=seq(2013,2024,4)) +
   facet_wrap(~group) +
-  labs(title = "Annual % change total ICE enforcement actions, FY12-22")
+  labs(title = "Annual % change total ICE enforcement actions, FY12-22") +
+  theme_minimal()
 
 ggplotly(p3)
 
@@ -344,7 +341,8 @@ p1 <- enc_pc_per_aor %>%
   xlab("Fiscal Year") +
   ylab("Encounters per capita") +
   labs(title = "ICE encounters per 100,000 residents",
-       subtitle = paste0(specific_area_of_responsibility, " highlighted"))
+       subtitle = paste0(specific_area_of_responsibility, " highlighted")) +
+  theme_minimal()
 
 p1  
 
@@ -363,7 +361,8 @@ p1 <- enc %>%
   ylab("") +
   xlab('Fiscal Year') +
   labs(title="ICE encounters, % by gender",
-       subtitle=specific_area_of_responsibility)
+       subtitle=specific_area_of_responsibility) +
+  theme_minimal()
 
 p1
 
@@ -393,7 +392,8 @@ p1 <- enc %>%
                       '<br>',
                       '<sup>',
                       specific_area_of_responsibility,
-                      '</sup>'))
+                      '</sup>')) +
+  theme_minimal()
 
 ggplotly(p1)
 
@@ -411,7 +411,8 @@ p2 <- enc %>%
                       '<br>',
                       '<sup>',
                       specific_area_of_responsibility,
-                      '</sup>'))
+                      '</sup>')) +
+  theme_minimal()
 
 ggplotly(p2)
 
@@ -442,7 +443,8 @@ p1 <- enc %>%
                       '<br>',
                       '<sup>',
                       specific_area_of_responsibility,
-                      '</sup>'))
+                      '</sup>')) +
+  theme_minimal()
 
 ggplotly(p1, tooltip=c('x', 'y', 'text'))
 
@@ -465,7 +467,8 @@ p1 <- enc %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = fy, y=n, fill=operation_short)) +
   geom_col() +
-  labs(title = "Total ICE encounters per FY by operation")
+  labs(title = "Total ICE encounters per FY by operation") +
+  theme_minimal()
 
 ggplotly(p1)
 
@@ -492,7 +495,8 @@ p1 <- enc %>%
                       '<br>',
                       '<sup>',
                       specific_area_of_responsibility,
-                      '</sup>'))
+                      '</sup>')) +
+  theme_minimal()
 
 ggplotly(p1, dynamicTicks = TRUE)
 
@@ -525,7 +529,8 @@ p1 <- arr_pc_per_aor %>%
   geom_line() +
   gghighlight(aor == specific_aor, use_direct_label = FALSE) +
   labs(title = "ICE arrests per 100,000 residents",
-       subtitle = paste0(specific_area_of_responsibility, " highlighted"))
+       subtitle = paste0(specific_area_of_responsibility, " highlighted")) +
+  theme_minimal()
 
 p1  
 
@@ -565,7 +570,8 @@ p1 <- arr %>%
   geom_col(position='fill') +
   scale_y_continuous(labels = scales::percent) +
   labs(title="Total ICE arrests, % by gender",
-       subtitle=specific_area_of_responsibility)
+       subtitle=specific_area_of_responsibility) +
+  theme_minimal()
 
 p1
 
@@ -597,7 +603,8 @@ p1 <- arr %>%
   ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
   geom_col() +
   labs(title = paste0("Total ICE arrests by country of citizenship (top ", cit_categories, ")"),
-       subtitle = specific_area_of_responsibility)
+       subtitle = specific_area_of_responsibility) +
+  theme_minimal()
 
 ggplotly(p1)
 
@@ -615,7 +622,8 @@ p2 <- arr %>%
              linewidth=.25) +
   scale_y_continuous(labels = scales::percent) +
   labs(title = paste0("% ICE arrests by country of citizenship (top ", cit_categories, ")"),
-       subtitle = specific_area_of_responsibility)
+       subtitle = specific_area_of_responsibility) +
+  theme_minimal()
 
 p2
 
@@ -640,7 +648,8 @@ p1 <- cit_rank %>%
   geom_point(alpha = .7, size = 2) +
   scale_y_reverse() +
   labs(title = "Ranked country of citizenship for ICE arrests",
-       subtitle = specific_area_of_responsibility)
+       subtitle = specific_area_of_responsibility) +
+  theme_minimal()
 
 ggplotly(p1)
 
@@ -670,7 +679,8 @@ p1 <- arr %>%
          arrest_date <= "2022-09-30") %>%
   group_by(fy, arrest_method_short) %>%
   ggplot(aes(x = fy, fill=arrest_method_short)) +
-  geom_bar(stat='count', position='stack')
+  geom_bar(stat='count', position='stack') +
+  theme_minimal()
 
 ggplotly(p1)
 
@@ -687,13 +697,14 @@ dat <- arr %>%
          arrest_date <= "2022-09-30") %>%
   count(arrest_method_short, fy)
 
-p2 <- dat %>% 
+p1 <- dat %>% 
   ggplot(aes(x = fy, y=n, fill=arrest_method_short)) +
   geom_col(position='dodge') +
   labs(title = "Total CAP arrests, FY12-22",
-       subtitle = specific_area_of_responsibility)
+       subtitle = specific_area_of_responsibility) +
+  theme_minimal()
 
-p2
+p1
 
 dat <- arr %>% 
   filter(arrest_method_short %in% c("CAP Local Incarceration",
@@ -703,13 +714,14 @@ dat <- arr %>%
          arrest_date <= "2022-09-30") %>%
   count(arrest_method_short, fy)
 
-p3 <- dat %>% 
+p2 <- dat %>% 
   ggplot(aes(x = fy, y=n, fill=arrest_method_short)) +
   geom_col(position='dodge') +
   labs(title = "Total CAP arrests, FY12-22",
-       subtitle = "National")
+       subtitle = "National") +
+  theme_minimal()
 
-p3
+p2
 
 
 ```
@@ -735,7 +747,8 @@ p1 <- dat %>%
   filter(group == "National") %>% 
   ggplot(aes(x = fy, y = n, color = arrest_method_short, group=arrest_method_short)) +
   geom_line() +
-  facet_wrap(~group, scales = "free_y")
+  facet_wrap(~group, scales = "free_y") +
+  theme_minimal()
 
 p1
 
@@ -743,7 +756,8 @@ p2 <- dat %>%
   filter(group == specific_area_of_responsibility) %>% 
   ggplot(aes(x = fy, y = n, color = arrest_method_short, group=arrest_method_short)) +
   geom_line() +
-  facet_wrap(~group, scales = "free_y")
+  facet_wrap(~group, scales = "free_y") +
+  theme_minimal()
 
 p2
 
@@ -759,8 +773,11 @@ disps <- arr %>%
   arrange(desc(n))
 
 arr <- arr %>% 
-  mutate(disp_short = case_when(processing_disposition %in% head(disps$processing_disposition, 10) ~ as.character(processing_disposition), 
-                                         TRUE ~ "ALL OTHERS"))
+  mutate(disp_short = case_when(
+    processing_disposition %in%
+      head(disps$processing_disposition, 10) ~
+      as.character(processing_disposition), 
+    TRUE ~ "ALL OTHERS"))
 
 p1 <- arr %>%
   filter(aor == specific_aor) %>% 
@@ -768,7 +785,8 @@ p1 <- arr %>%
   summarize(n = n()) %>% 
   ggplot(aes(x = fy, y=n, fill=disp_short)) +
   geom_col() +
-  labs(title = "Total ICE arrests per FY by processing disposition")
+  labs(title = "Total ICE arrests per FY by processing disposition") +
+  theme_minimal()
 
 ggplotly(p1)
 
@@ -788,20 +806,27 @@ landmarks <- arr %>%
 
 p1 <- arr %>% 
   filter(aor == specific_aor) %>% 
-  mutate(apprehension_landmark = case_when(apprehension_landmark %in% head(landmarks$apprehension_landmark, 15) ~ as.character(apprehension_landmark), 
-                                         TRUE ~ "ALL OTHERS"),
-         apprehension_landmark_abbrv = str_trunc(apprehension_landmark, 20)) %>% 
-  group_by(fy, apprehension_landmark_abbrv, apprehension_landmark) %>% 
+  mutate(apprehension_landmark = case_when(
+    apprehension_landmark %in%
+      head(landmarks$apprehension_landmark, 15) ~
+      as.character(apprehension_landmark), 
+    TRUE ~ "ALL OTHERS")) %>% 
+  group_by(fy, apprehension_landmark) %>% 
   summarize(n = n()) %>% 
   ggplot(aes(x = fy, y=n,
-             fill= apprehension_landmark_abbrv,
-             color= apprehension_landmark_abbrv,
+             fill = apprehension_landmark,
+             color = apprehension_landmark,
              text = apprehension_landmark)) +
   geom_col() +
+  scale_fill_discrete(label = function(x) stringr::str_trunc(x, 20)) +
+  scale_color_discrete(label = function(x) stringr::str_trunc(x, 20)) +
   labs(title = "Total ICE arrests per FY by `apprehension_landmark` (top 15)",
-       subtitle = specific_area_of_responsibility)
+       subtitle = specific_area_of_responsibility) +
+  theme_minimal()
 
-ggplotly(p1, tooltip=c('x', 'y', 'text'))
+# ggplotly(p1, tooltip=c('x', 'y', 'text'))
+
+p1
 
 ```
 
@@ -836,7 +861,8 @@ p1 <- rem_pc_per_aor %>%
   geom_line() +
   gghighlight(aor == specific_aor) +
   labs(title = "ICE removals per 100,000 residents",
-       subtitle = paste0(specific_area_of_responsibility, " highlighted"))
+       subtitle = paste0(specific_area_of_responsibility, " highlighted")) +
+  theme_minimal()
 
 p1  
 
@@ -857,7 +883,8 @@ p1 <- rem %>%
   ggplot(aes(x=fy, y=n, fill=gender)) +
   geom_col(position='fill') +
   scale_y_continuous(labels = scales::percent) +
-  labs(title="Total ICE removals, % by gender")
+  labs(title="Total ICE removals, % by gender") +
+  theme_minimal()
 
 p1
 
@@ -883,7 +910,8 @@ p1 <- rem %>%
   count(fy, citizenship_country) %>% 
   ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
   geom_col() +
-  labs(title = "Total ICE removals by country of citizenship (top 15)")
+  labs(title = "Total ICE removals by country of citizenship (top 15)") +
+  theme_minimal()
 
 ggplotly(p1)
 
@@ -897,7 +925,8 @@ p2 <- rem %>%
   ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
   geom_col(position="fill") +
   scale_y_continuous(labels = scales::percent) +
-  labs(title = "% ICE removals by country of citizenship (top 15)")
+  labs(title = "% ICE removals by country of citizenship (top 15)") +
+  theme_minimal()
 
 ggplotly(p2)
 
@@ -925,7 +954,8 @@ p1 <- rem %>%
   labs(title = "Total removals per FY by processing disposition",
        subtitle = specific_area_of_responsibility,
        x = "Fiscal year",
-       y = "Count")
+       y = "Count") +
+  theme_minimal()
 
 ggplotly(p1)
 
