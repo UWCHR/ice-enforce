@@ -26,7 +26,7 @@ Users interested in reviewing the final datasets without executing the code cont
 
 This project uses "Principled Data Processing" techniques and tools developed by [@HRDAG](https://github.com/HRDAG); see for example ["The Task Is A Quantum of Workflow."](https://hrdag.org/2016/06/14/the-task-is-a-quantum-of-workflow/)
 
-The repository is divided into separate tasks which follow a regular structure; tasks linked using symlinks.
+The repository is divided into separate tasks which follow a regular structure; tasks linked using symlinks. Data processing tasks in `concat/` and `clean/` are currently executed via Python Pandas; data analysis tasks in `write` are executed via R and Knitr.
 
 - `import/` - Contains original un-transformed Excel files in `import/input/` and compressed, CSV-formatted files for each annual sheet in `import/frozen/`
 - `concat/` - Concatenates annual data into combined datasets for each enforcement category, assigns sequential row `id` and `hashid`
@@ -39,3 +39,4 @@ The repository is divided into separate tasks which follow a regular structure; 
 
 - [ ] Code to download data from Google Drive
 - [ ] Share additional exploratory analysis notebooks
+- [ ] Refactor `concat/` and `clean/` in R
