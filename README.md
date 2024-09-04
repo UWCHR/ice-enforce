@@ -6,7 +6,7 @@ The datasets analyzed here were released by ICE's Enforcement and Removal Operat
 
 The most current datasets analyzed cover the period from October 1, 2011 through January 29, 2023, representing the full U.S. government fiscal years 2012-2022.
 
-An overview of the data in this repository can be found at: [https://uwchr.github.com/ice-enforce/]
+An overview of the data in this repository can be found at: https://uwchr.github.com/ice-enforce/
 
 ## FOIA Request
 
@@ -32,5 +32,5 @@ The repository is divided into separate tasks which follow a regular structure; 
 - `concat/` - Concatenates annual data into combined datasets for each enforcement category, assigns sequential row `id` and `hashid`
 - `clean/` - Performs minimal data cleaning to standardize AOR values; cleaning operations can be extended using `clean/hand/clean_rules.yaml`
 - `export/` - Convenience task to generate final export versions of datasets in `export/output/`
-- `write/` - Generates data notebooks for publication.
-- `docs/` - Data notebooks published to [https://uwchr.github.com/ice-enforce/]
+- `write/` - Generates descriptive notebooks for publication.
+- `docs/` - Descriptive notebooks published at: https://uwchr.github.com/ice-enforce/
