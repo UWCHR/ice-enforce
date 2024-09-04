@@ -13,3 +13,4 @@
 *.feather
 *.xlsx
 *.log
+write/output/*
