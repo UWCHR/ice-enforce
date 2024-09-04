@@ -1,0 +1,13 @@
+.creds
+.ipynb_checkpoints/
+*.DS_Store
+.here
+.Rhistory
+.Rproj.user
+.RData
+*.Rproj
+.~lock*
+*_cache/
+*_files/
+*.csv.gz
+*.feather
