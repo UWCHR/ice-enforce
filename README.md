@@ -6,7 +6,7 @@ The datasets analyzed here were released by ICE's Enforcement and Removal Operat
 
 The most current datasets analyzed cover the period from October 1, 2011 through January 29, 2023, representing the full U.S. government fiscal years 2012-2022.
 
-An overview of the data in this repository can be found at: https://uwchr.github.com/ice-enforce/
+An overview of the data in this repository can be found at: [https://uwchr.github.com/ice-enforce/](https://uwchr.github.io/ice-enforce/)
 
 ## FOIA Request
 
