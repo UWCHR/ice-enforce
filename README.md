@@ -18,7 +18,7 @@ An overview of the data in this repository can be found at: https://uwchr.github
 
 Large data files are excluded from this repository; data associated with this repository can be obtained here: https://drive.google.com/drive/folders/1twzNrtb8eb-smcGCTZtkNdLtAHLoxmUg?usp=drive_link
 
-To execute tasks in this repository, first download the data files linked above and ensure it is stored in the indicated directory within the Git respository: original, untransformed datasets are stored in `import/input/`; compressed, CSV-formatted files for each annual sheet are stored in `import/frozen/`. Final datasets with minimal cleaning and standardization are generated/stored in `export/output/`.
+To execute tasks in this repository, first download the data files linked above and ensure they are stored in the indicated directory within the Git respository: original, untransformed datasets are stored in `import/input/`; compressed, CSV-formatted files for each annual sheet are stored in `import/frozen/`. Final datasets with minimal cleaning and standardization are generated/stored in `export/output/`.
 
 Users interested in reviewing the final datasets without executing the code contained in this repository can find export datasets as of Sept. 4, 2024 at the following link: https://drive.google.com/drive/folders/1XHVIOld3HvPVHipP881GjMCiioYrbU2b?usp=drive_link
 
@@ -34,3 +34,8 @@ The repository is divided into separate tasks which follow a regular structure; 
 - `export/` - Convenience task to generate final export versions of datasets in `export/output/`
 - `write/` - Generates descriptive notebooks for publication.
 - `docs/` - Descriptive notebooks published at: https://uwchr.github.com/ice-enforce/
+
+## To-do
+
+- [ ] Code to download data from Google Drive
+- [ ] Share additional exploratory analysis notebooks
