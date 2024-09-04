@@ -1,0 +1,17 @@
+---
+area_of_responsibility: str
+arrest_date: category
+departed_date: category
+arrest_method: category
+apprehension_landmark: category
+operation: category
+processing_disposition: category
+citizenship_country: category
+gender: category
+removal_threat_level: category
+apprehension_threat_level: category
+alien_file_number: category
+case_closed_date: category
+id: int
+hashid: str
+...

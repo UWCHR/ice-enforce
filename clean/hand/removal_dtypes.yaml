@@ -1,0 +1,16 @@
+---
+area_of_responsibility: str
+arrest_date: category
+departed_date: category
+case_closed_date: category
+removal_date: category
+apprehension_method_code: category
+processing_disposition_code: category
+citizenship_country: category
+gender: category
+removal_threat_level: category
+final_charge_section: category
+alien_file_number: category
+id: int
+hashid: str
+...
