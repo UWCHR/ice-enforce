@@ -1,0 +1,33 @@
+---
+# Project scope constants
+project_scope_start_date: 2011-10-01
+project_scope_end_date: 2019-09-30
+model_1_start_date: 2011-10-01
+model_1_end_date: 2019-09-30
+model_1_start_date_old: 2015-10-01
+model_1_end_date_old: 2019-06-30
+model_2_start_date: 2011-10-01
+model_2_end_date: 2017-09-30
+
+# Other constants
+per_capita_scale: 100000
+
+# Border status based on whether active BP sector in AOR territory
+aor_region:
+  southwest_border:
+  - SND
+  - PHO
+  - ELP
+  - SNA
+  - HOU
+  coastal_border:
+  - NOL
+  - MIA
+  northern_border:
+  - SEA
+  - SPM
+  - CHI
+  - DET
+  - BUF
+  - BOS
+...
