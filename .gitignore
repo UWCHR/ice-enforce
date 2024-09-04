@@ -11,3 +11,4 @@
 *_files/
 *.csv.gz
 *.feather
+*.xlsx
