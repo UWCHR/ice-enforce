@@ -1,0 +1,10 @@
+id: int64
+aor: category
+apprehension_date: str
+processing_disposition_code: category
+citizenship: category
+gender: category
+rc threat_level: category
+final_charge_section: category
+departed_date: str
+removal_date: str
