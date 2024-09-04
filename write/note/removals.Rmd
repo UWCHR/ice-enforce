@@ -1,0 +1,431 @@
+---
+title: "ICE ERO-LESA nationwide removals data, FY12-22"
+author: "UWCHR"
+date: "2023-06-01"
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+
+[Back to index](index.html)
+
+# Data overview: Removals
+
+This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data from
+ICE’s Integrated Decision Support (IIDS) database regarding nationwide ICE removals for the time period from October 1, 2011, through January 29, 2023, (full U.S. Government Fiscal Years 2012 through 2022), obtained by the University of Washington Center for Human Rights pursuant to FOIA request 2022-ICFO-09023. 
+
+```{r setup, message=FALSE, warning=FALSE, include=TRUE}
+
+options(scipen = 1000000)
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight)
+
+pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
+
+rem <- read_delim(here('write', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                   arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  case_close_date = col_date(format="%m/%d/%Y"),
+                                  removal_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_method_code = col_character(),
+                                  processing_disposition_code = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  final_charge_section = col_factor(),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+redacted <- c('removal_threat_level', 'alien_file_number')
+redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
+
+rem <- rem %>% 
+  dplyr::select(-redacted, -case_closed_date)
+
+cy_months <- c("Jan","Feb","Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+fy_months <- c("Oct", "Nov", "Dec", "Jan","Feb","Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")
+
+rem <- rem %>% 
+  mutate(aor = factor(aor, levels = sort(levels(rem$aor))),
+         year = year(departed_date),
+         month = factor(month(departed_date, label=TRUE, abbr=TRUE), levels = fy_months),
+         year_mth = zoo::as.yearmon(departed_date),
+         processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
+         fy =substr(quarter(departed_date, fiscal_start=10, type="year.quarter"), 1,4),
+         gender = toupper(gender),
+         processing_disposition = toupper(processing_disposition),
+         citizenship_country = factor(toupper(citizenship_country)))
+
+rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
+
+```
+
+A removal occurs when an individual is issued a final order of removal and departs the United States via deportation or voluntary return.[^1]
+
+The removals dataset (`rem`) includes `r nrow(rem)` observations of `r length(rem)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
+
+The following provides an summary of dataset characteristics via `skimr::skim(rem)`:
+
+```{r skim, message=FALSE, warning=FALSE, include=TRUE}
+
+skimr::skim(rem)
+
+```
+
+## Field definitions
+
+Datasets were released without any data dictionary or field descriptions; in cases where this information is not self-explanatory, we have attempted to provide citations of relevant sources providing context.
+
+#### Original dataset fields
+- `aor`: ICE Area of Responsibility associated with removal
+- `arrest_date`: Date of arrest
+- `departed_date`: Date of departure
+- `removal_date`: Date of order of removal
+- `case_closed_date`: Date of closure of case
+- `apprehension_method_code`: Abbreviated code for apprehension method associated with removal
+- `processing_disposition_code`: Abbreviated code for processing disposition associated with removal
+- `final_charge_section`: Federal code under which individual ordered removed
+- `citizenship_country`: Country of citizenship of removed individual
+- `gender`: Gender of removed individual
+- `apprehension_threat_level`: Fully redacted in original dataset
+- `removal`_threat_level`: Fully redacted in original dataset
+- `alien_file_number`: Unique individual identifier for arrested individual, fully redacted in original dataset
+
+#### Additional fields created by UWCHR
+- `id`: Sequential record identifier (not individual identifier)
+- `hashid`: Unique record hash (not individual identifier)
+- `processing_disposition_clean`: Inferred full text value of `processing_disposition_code`
+- `year`: Calendar year derived from `arrest_date`
+- `month`: Abbreviated month derived from `arrest_date`
+- `year_mth`: Calendar year and month derived from `arrest_date`
+- `fy`: U.S. government fiscal year (Oct.-Sept.) derived from `arrest_date`
+
+# Total removals
+
+Major decrease in removals by ICE, but note CBP Title 42 expulsions at Southern border since 2020 are not counted here.
+
+```{r fy_total, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- rem %>% 
+ filter(departed_date >= "2011-10-01",
+     departed_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n)) +
+  geom_col() +
+  labs(title = "Total removals per FY") +
+  theme_minimal()
+
+p1
+
+p2 <- rem %>%
+ filter(departed_date >= "2011-10-01",
+     departed_date <= "2022-09-30") %>% 
+  group_by(year_mth) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = year_mth, y = n)) +
+  geom_line(aes(group=1)) +
+  ylim(0, NA) +
+  labs(title = "Total nationwide ICE removals per month") +
+  theme_minimal()
+
+p2
+
+p3 <- rem %>%
+ filter(departed_date >= "2011-10-01",
+     departed_date <= "2022-09-30") %>% 
+  group_by(fy, month) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = month, y = n, color = fy, group = fy)) +
+  geom_line() +
+  ylim(0, NA) +
+  scale_color_viridis_d() +
+  labs(title = "Total nationwide ICE removals per month") +
+  theme_minimal()
+
+p3
+
+```
+
+# Basic demographics
+
+## Removals by `gender`
+
+```{r gender, message=FALSE, warning=FALSE, include=TRUE}
+
+# rem %>%
+#   mutate(gender = tolower(gender)) %>% 
+#   group_by(gender) %>% 
+#   summarize(n = n())
+
+p1 <- rem %>% 
+  filter(departed_date >= "2011-10-01",
+       departed_date <= "2022-09-30") %>% 
+  count(fy, gender) %>% 
+  ggplot(aes(x=fy, y=n, fill=gender)) +
+  geom_col(position='fill') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Total ICE removals, % by gender") +
+  theme_minimal()
+
+p1
+
+```
+
+## Removals by `citizenship_country`
+
+Note `citizenship_country` may not correspond with an individual's deportation destination; deportation destination is not represented in this dataset.
+
+```{r cit, message=FALSE, warning=FALSE, include=TRUE}
+
+cit <- rem %>%
+  mutate(citizenship_country = toupper(citizenship_country)) %>% 
+  group_by(citizenship_country) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+p1 <- rem %>% 
+ filter(departed_date >= "2011-10-01",
+     departed_date <= "2022-09-30") %>% 
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% head(cit$citizenship_country, 15) ~ citizenship_country,
+    TRUE ~ "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
+  geom_col() +
+  labs(title = "Total ICE removals by country of citizenship (top 15)") +
+  theme_minimal()
+
+ggplotly(p1)
+
+# % change in removal by group?
+
+```
+
+# ICE removals per AOR
+
+```{r removals_per_aor_fy, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- rem %>%
+  filter(departed_date >= "2011-10-01",
+     departed_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "Total removals per FY by AOR") +
+  theme_minimal()
+
+ggplotly(p1)
+
+```
+
+```{r removals_pct_chg, message=FALSE, warning=FALSE, include=TRUE}
+
+natl_pct_chg <- rem %>%
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
+  group_by(fy) %>%
+  summarize(n = n()) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- natl_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="FY % change in total removals") +
+  theme_minimal()
+
+p1
+
+aor_pct_chg <- rem %>%
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30",
+         aor != "HQ",
+         !is.na(aor)) %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p2 <- aor_pct_chg %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor)  +
+  labs(title="FY % change in total removals per AOR") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  theme_minimal()
+
+p2
+
+```
+
+# Removals by processing disposition
+
+Unlike datasets for [encounters](encounters.html) and [arrests](arrests.html), removals data represents case processing disposition as an abbreviated `processing_disposition_code`. Where possible, we have inferred correspondence between full text `processing_disposition` values in encounters and arrests datasets and `processing_disposition_code` values in this dataset; cleaned values are represented in the `processing_disposition_clean` field.
+
+```{r disp, message=FALSE, warning=FALSE, include=TRUE}
+
+disps <- rem %>% 
+  filter(departed_date >= "2012-10-01",
+         departed_date <= "2022-09-30",
+         ) %>% 
+  count(processing_disposition_clean) %>% 
+  arrange(desc(n))
+
+top_disp <- disps %>% 
+  filter(n > 50000)
+
+rem <- rem %>% 
+  mutate(disp_short = case_when(processing_disposition_clean %in% unlist(top_disp$processing_disposition_clean) ~ as.character(processing_disposition_clean), 
+                                         TRUE ~ "ALL OTHERS"))
+
+
+```
+
+```{r rem_disp_fy, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- rem %>% 
+  filter(departed_date >= "2012-10-01",
+         departed_date <= "2022-09-30",
+         ) %>% 
+  group_by(fy, disp_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
+  geom_col() +
+  labs(title = "Total removals per FY by processing disposition") +
+  theme_minimal()
+
+ggplotly(p1)
+
+```
+
+# Removals by `apprehension_method_code`
+
+This field is largely missing data prior to FY 2022. Codes are alphanumeric abbreviations; most common codes are analogous to full text values in `apprehension_method` field of [arrests](arrests.html) dataset but significance of some codes is unclear; for example, the 15 top values for this field and inferred correspondence:
+
+- "287": 287(g) arrest
+- "PB": Patrol border
+- "CLC": Criminal Alien Program (CAP) local custody
+- "CFD": CAP federal custody
+- "CST": CAP state custody
+- "ISP": Inspection
+- "L": Located
+- "NCA": Non-custodial arrest
+- "TRC": Transportation check (?)
+- "OA": Other agency
+- "PAP": Probation and parole
+- "O": Other
+- "REP": ERO reprocessed
+- "PI": Patrol interior (?)
+- "LEA": Law enforcement agency assist
+
+```{r apprehension_method_code, message=FALSE, warning=FALSE, include=TRUE}
+
+rem <- rem %>% 
+  mutate(apprehension_method_code = str_replace_all(apprehension_method_code, "287.0", "287"))
+
+apprehension_method_code_rank <- rem %>% 
+  count(apprehension_method_code) %>% 
+  arrange(desc(n))
+
+p1 <- rem %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
+  count(year_mth, apprehension_method_code) %>% 
+  ggplot(aes(x = year_mth, y = n, fill = apprehension_method_code)) +
+  geom_col() +
+  labs(title = "Removals by `apprehension_method_code`, FY 2022") +
+  theme_minimal()
+
+ggplotly(p1)
+
+```
+
+# Dates
+
+Removals data includes four separate date fields: `departed_date`, `case_close_date`, `arrest_date`, and `removal_date`. Of these, `departed_date` is most complete, with no missing values; therefore we use this date as the primary field for date values in this notebook.
+
+```{r date_compare, message=FALSE, warning=FALSE, include=TRUE}
+
+rem %>% 
+  dplyr::select(contains('date')) %>% 
+skimr::skim()
+
+hist(rem$departed_date, breaks='years', col='pink')
+hist(rem$removal_date, breaks='years', col='lightblue')
+hist(rem$arrest_date, breaks='years', col='lightyellow')
+hist(rem$case_close_date, breaks='years', col='lightgreen')
+
+```
+
+The earliest dataset analyzed here, for FY 2012, includes only the `departed_date` and `case_close_date` fields; the FY 2013 dataset introduces an additional `arrest_date` value alongside these; and the FY 2014 and subsequent datasets include a fourth value for `removal_date`.
+
+The fields `departed_date` and `removal_date` are complete for all records in datasets where these date fields appear. Only the most recent records for FY 2022 are missing `case_close_date` values, logically suggests that these cases remained open at the time of production of this dataset; a small proportion of records are missing `arrest_date` during all years since FY 2013, it is not clear what this indicates about the cases in question.
+
+```{r date_compare_fy, message=FALSE, warning=FALSE, include=TRUE}
+
+rem %>%
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(missing_dep_date = sum(is.na(departed_date)),
+            missing_rem_date = sum(is.na(removal_date)),
+            missing_arr_date = sum(is.na(arrest_date)),
+            missing_cc_date = sum(is.na(case_close_date)),
+            )
+
+```
+
+We can calculate lag between different dates, between arrest date and departure date, which reveals an increase in average time between arrest and departure since FY 2014; and significant difference between cases by `processing_disposition`:
+
+```{r dep_diff_arr, message=FALSE, warning=FALSE, include=TRUE}
+
+rem$dep_diff_arr <- difftime(rem$departed_date, rem$arrest_date, units='days')
+
+p1 <- rem %>% 
+   filter(departed_date >= "2011-10-01",
+       departed_date <= "2022-09-30") %>% 
+  filter(fy >= 2013) %>%
+  group_by(fy) %>% 
+  summarize(mean_dep_diff_arr = mean(dep_diff_arr, na.rm = TRUE)) %>% 
+  ggplot(aes(x = fy, y = mean_dep_diff_arr)) +
+  geom_line(group=1) +
+  ylim(0, NA) +
+  theme_minimal()
+
+p1
+
+p2 <- rem %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
+  mutate(disp_short = case_when(processing_disposition_clean %in%
+                                  unlist(top_disp$processing_disposition_clean) ~
+                                  as.character(processing_disposition_clean), 
+                                TRUE ~ "ALL OTHERS")) %>% 
+  filter(fy >= 2014) %>%
+  group_by(fy, disp_short) %>% 
+  summarize(mean_dep_diff_arr = mean(dep_diff_arr, na.rm = TRUE),
+            med_dep_diff_arr = median(dep_diff_arr, na.rm = TRUE)) %>% 
+  ggplot(aes(y = disp_short, x = mean_dep_diff_arr, color = disp_short, group=disp_short)) +
+  geom_boxplot() +
+  scale_y_discrete(label=function(x) abbreviate(x, minlength=10)) +
+  theme_minimal()
+
+p2
+
+```
+
+
+[^1]: For discussion of ICE's definition of "removals", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018

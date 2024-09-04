@@ -1,0 +1,484 @@
+---
+title: "ICE ERO-LESA nationwide encounters data, FY12-22"
+author: "UWCHR"
+date: "2024-06-01"
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+ 
+[Back to index](index.html)
+ 
+# Data overview: Encounters
+
+This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data from
+ICE’s Integrated Decision Support (IIDS) database regarding nationwide ICE encounters for the time period from October 1, 2011, through January 29, 2023, (full U.S. Government Fiscal Years 2012 through 2022), obtained by the University of Washington Center for Human Rights pursuant to FOIA request 2022-ICFO-09023.
+
+```{r setup, message=FALSE, warning=FALSE, include=TRUE}
+
+options(scipen = 1000000)
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, viridis)
+
+enc <- read_delim(here('write', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                   event_date = col_character(),
+                                   landmark = col_character(),
+                                   operation = col_factor(),
+                                   processing_disposition = col_factor(),
+                                   citizenship_country = col_factor(),
+                                   gender = col_factor(),
+                                   hashid = col_character(),
+                                   id = col_number()))
+
+# glimpse(enc)
+
+redacted <- c('encounter_threat_level', 'alien_file_number')
+redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
+
+enc <- enc %>% 
+  dplyr::select(-redacted)
+
+cy_months <- c("Jan","Feb","Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+fy_months <- c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")
+
+enc <- enc %>% 
+  mutate(aor = factor(aor, levels = sort(levels(enc$aor))),
+         event_date = as_date(event_date, format="%m/%d/%Y"),
+         year = year(event_date),
+         month = factor(month(event_date, label=TRUE, abbr=TRUE), levels = fy_months),
+         year_mth = zoo::as.yearmon(event_date),
+         fy = substr(quarter(event_date, fiscal_start=10, type="year.quarter"), 1,4),
+         gender = toupper(gender),
+         operation = toupper(operation),
+         processing_disposition = toupper(processing_disposition),
+         citizenship_country = toupper(citizenship_country))
+
+```
+
+An encounter occurs when an individual is subjected to revision of admissibility/removability by ICE, and may or may not lead to an arrest.[^1] The encounters dataset (`enc`) includes `r nrow(enc)` observations of `r length(enc)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis.
+
+The following provides an summary of dataset characteristics via `skimr::skim(enc)`:
+
+```{r skim, message=FALSE, warning=FALSE, include=TRUE}
+
+# This is slow
+
+skimr::skim(enc)
+
+```
+
+## Field definitions
+
+Datasets were released without any data dictionary or field descriptions; in cases where this information is not self-explanatory, we have attempted to provide citations of relevant sources providing context.
+
+#### Original dataset fields
+- `aor`: ICE Area of Responsibility associated with encounter
+- `event_date`: Date of encounter
+- `landmark`: Landmark or entity associated with encounter
+- `operation`: Operation associated with encounter
+- `processing_disposition`: Status of removal proceedings associated with event
+- `citizenship_country`: Country of citizenship of encountered individual
+- `gender`: Gender of encountered individual
+- `encounter_threat_level`: Fully redacted in original dataset
+- `alien_file_number`: Unique individual identifier for encountered individual, fully redacted in original dataset
+
+#### Additional fields created by UWCHR
+- `id`: Sequential record identifier (not individual identifier)
+- `hashid`: Unique record hash (not individual identifier)
+- `year`: Calendar year derived from `event_date`
+- `month`: Abbreviated month derived from `event_date`
+- `year_mth`: Calendar year and month derived from `event_date`
+- `fy`: U.S. government fiscal year (Oct.-Sept.) derived from `event_date`
+
+# Total encounters
+
+```{r fy_total, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- enc %>%
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = fy, y = n)) +
+  geom_line(aes(group=1)) +
+  ylim(0, NA) +
+  labs(title = "Total nationwide ICE encounters per FY") +
+  theme_minimal()
+
+p1
+
+# p2 <- enc %>%
+#   group_by(year_mth) %>%
+#   summarize(n = n()) %>%
+#   ggplot(aes(x = year_mth, y = n)) +
+#   geom_line(aes(group=1)) +
+#   ylim(0, NA) +
+#   labs(title = "Total nationwide ICE encounters per month")
+# 
+# p2
+# 
+# p3 <- enc %>%
+#   group_by(fy, month) %>%
+#   summarize(n = n()) %>%
+#   ggplot(aes(x = month, y = n, color = fy, group = fy)) +
+#   geom_line() +
+#   ylim(0, NA) +
+#   scale_color_viridis_d() +
+#   labs(title = "Total nationwide ICE encounters per month")
+# 
+# p3
+
+```
+
+# Basic demographics
+
+## Gender
+
+Note increasing proportion of encounters involving females:
+
+```{r gender, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- enc %>%
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  count(fy, gender) %>% 
+  ggplot(aes(x=fy, y=n, fill=gender)) +
+  geom_col(position='fill') +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="Total ICE encounters, % by gender") +
+  theme_minimal()
+
+p1
+
+```
+
+## Country of citizenship
+
+Total ICE encounters by country of citizenship:
+
+```{r cit, message=FALSE, warning=FALSE, include=TRUE}
+
+cit <- enc %>%
+  mutate(citizenship_country = toupper(citizenship_country)) %>% 
+  group_by(citizenship_country) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+p1 <- enc %>%
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  mutate(citizenship_country = case_when(
+    citizenship_country %in%
+      head(cit$citizenship_country, 15) ~
+      citizenship_country,
+    TRUE ~ 
+      "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country, color=citizenship_country)) +
+  geom_col() +
+  labs(title = "Total ICE encounters by country of citizenship (top 15)") +
+  theme_minimal()
+
+ggplotly(p1)
+
+```
+
+## U.S. citizens and "unknown" nationality
+
+Decreasing proportion of ICE encounters of U.S. citizens/and "unknown" nationality. These categories are suggestive of encounters involving people not amenable for removal by ICE.
+
+```{r cit_us_unk, message=FALSE, warning=FALSE, include=TRUE}
+
+p2 <- enc %>%
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  mutate(citizenship_country = case_when(
+    citizenship_country %in% 
+      c("UNITED STATES", "UNKNOWN") ~ 
+      citizenship_country,
+    TRUE ~ 
+      "ALL OTHERS"
+  )) %>% 
+  count(fy, citizenship_country) %>% 
+  ggplot(aes(x=fy, y=n, fill=citizenship_country)) +
+  geom_col(position="fill") +
+  labs(title = "Total ICE encounters, proportion U.S./UNKNOWN") +
+  theme_minimal()
+
+p2
+
+```
+
+# Total encounters per AOR
+
+Below is an interactive chart of total ICE encounters per FY by AOR. Note significant quantity of encounters with missing ("NA") AOR; trend of missing values does not parallel overall trends.
+
+```{r annual, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- enc %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "Total ICE encounters per FY by AOR") +
+  theme_minimal()
+
+ggplotly(p1)
+
+# p2 <- enc %>%
+#   group_by(year_mth, aor) %>% 
+#   summarize(n = n()) %>% 
+#   ggplot(aes(x = year_mth, y=n, color=aor, group=aor)) +
+#   geom_line() +
+#   labs(title = "Total ICE encounters per month by AOR")
+# 
+# ggplotly(p2)
+
+```
+
+## Percent change
+
+Percent change in encounters per FY nationally and by AOR.
+
+```{r arrests_pct_chg, message=FALSE, warning=FALSE, include=TRUE}
+
+natl_pct_chg <- enc %>%
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  group_by(fy) %>%
+  summarize(n = n()) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p1 <- natl_pct_chg %>% 
+  filter(!is.na(pct_change)) %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title="FY % change in total ICE encounters") +
+  theme_minimal()
+
+p1
+
+aor_pct_chg <- enc %>%
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  filter(!is.na(aor)) %>% 
+  group_by(fy, aor) %>%
+  summarize(n = n()) %>% 
+  group_by(aor) %>% 
+  arrange(fy, .by_group=TRUE) %>% 
+  mutate(pct_change = (n/lag(n) - 1))
+
+p2 <- aor_pct_chg %>% 
+  filter(!is.na(pct_change)) %>% 
+  ggplot(aes(x = fy, y = pct_change)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  facet_wrap(~aor)  +
+  labs(title="FY % change in total ICE encounters per AOR") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  theme_minimal()
+
+p2
+
+```
+
+# Operation
+
+Note high proportion of records missing `operation` data.
+
+```{r enc_op_setup, message=FALSE, warning=FALSE, include=TRUE}
+
+ops <- enc %>% 
+  count(operation) %>% 
+  arrange(desc(n))
+
+top_ops <- ops %>% 
+  filter(n > 10000)
+
+enc <- enc %>% 
+  mutate(operation_short = case_when(
+    operation %in% unlist(top_ops$operation) ~ as.character(operation), 
+    TRUE ~ "ALL OTHERS"))
+
+```
+
+```{r enc_op_fy, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- enc %>% 
+  filter(event_date >= "2011-10-01",
+           event_date <= "2022-09-30") %>% 
+  group_by(fy, operation_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=operation_short)) +
+  geom_col() +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  labs(title = "Total ICE encounters per FY by operation") +
+  theme_minimal()
+
+ggplotly(p1)
+
+```
+
+Some patterns are more visible at month-to-month level. Note large encounter totals for "Operation Horizon" during November 2021, February-March 2022; note also increasing proportion of encounters related to southwest border.
+
+```{r enc_op_mth, message=FALSE, warning=FALSE, include=TRUE}
+
+p2 <- enc %>% 
+  filter(event_date >= "2019-10-01"
+         # !is.na(operation)
+         ) %>% 
+  group_by(year_mth, operation_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year_mth, y=n, fill=operation_short)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per month by operation, FY20-22") +
+  theme_minimal()
+
+ggplotly(p2)
+
+```
+
+# Processing disposition
+
+```{r enc_disp, message=FALSE, warning=FALSE, include=TRUE}
+
+disps <- enc %>% 
+  count(processing_disposition) %>% 
+  arrange(desc(n))
+
+top_disps <- disps %>% 
+  filter(n > 10000)
+
+enc <- enc %>% 
+  mutate(disp_short = case_when(
+    processing_disposition %in%
+      unlist(top_disps$processing_disposition) ~
+      as.character(processing_disposition), 
+    TRUE ~
+      "ALL OTHERS"))
+
+```
+
+```{r enc_disp_fy, message=FALSE, warning=FALSE, include=TRUE}
+
+p1 <- enc %>% 
+filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  group_by(fy, disp_short) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=disp_short)) +
+  geom_col() +
+  scale_x_discrete(breaks=seq(2012, 2022, 4)) +
+  labs(title = "Total ICE encounters per FY by processing disposition") +
+  theme_minimal()
+
+ggplotly(p1)
+
+```
+
+## Proportion "not amenable to removal"
+
+Here we calculate the proportion of encounters with `processing_disposition` of "NOT AMENABLE TO REMOVAL" OR "FOREIGN BORN USC" (U.S. citizen). Higher proportion of these categories is suggestive of un-targeted enforcement practices.
+
+```{r enc_disp_fy_pct_not_amenable, message=FALSE, warning=FALSE, include=TRUE}
+
+not_amenable = c("NOT AMENABLE TO REMOVAL", "FOREIGN BORN USC")
+
+fy_total <- enc %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_total = n())
+
+fy_not_amenable <- enc %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  filter(disp_short %in% not_amenable) %>% 
+  group_by(fy) %>% 
+  summarize(n_not_amenable = n())
+
+dat <- left_join(fy_not_amenable, fy_total, by=c('fy')) %>% 
+  mutate(pct_not_amenable = n_not_amenable/n_total)
+
+p1 <- dat %>% 
+  ggplot(aes(x = fy, y = pct_not_amenable)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "% ICE encounters not amenable to removal or USC") +
+  theme_minimal()
+  
+
+p1
+
+fy_aor_total <- enc %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n_total = n())
+
+fy_aor_not_amenable <- enc %>%
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  filter(disp_short %in% not_amenable) %>% 
+  group_by(fy, aor) %>% 
+  summarize(n_not_amenable = n())
+
+dat <- left_join(fy_aor_not_amenable, fy_aor_total, by=c('fy', 'aor')) %>% 
+  mutate(pct_not_amenable = n_not_amenable/n_total)
+
+p2 <- dat %>% 
+  ggplot(aes(x = fy, y = pct_not_amenable, fill = aor)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 2)) +
+  labs(title = "% ICE encounters not amenable to removal or USC") +
+  facet_wrap(~aor) +
+  theme_minimal()
+
+p2
+  
+```
+
+# Landmark
+
+Overview of most common encounter `landmark` values gives a sense of the diversity of this category; note inclusion of general values denoting the entity responsible for the encounter rather than a precise geographic location. Note also high proportion of records missing `landmark` values.
+
+```{r enc_landmark, message=FALSE, warning=FALSE, include=TRUE}
+
+landmarks <- enc %>% 
+  count(landmark) %>% 
+  arrange(desc(n))
+
+p1 <- enc %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  mutate(landmark = case_when(landmark %in%
+                                head(landmarks$landmark, 15) ~
+                                as.character(landmark), 
+                              TRUE ~
+                                "ALL OTHERS")) %>% 
+  group_by(fy, landmark) %>% 
+  summarize(n = n()) %>% 
+  ggplot(aes(x = as.factor(fy), y=n, fill=landmark)) +
+  geom_col() +
+  labs(title = "Total ICE encounters per FY by landmark (top 15)") +
+  theme_minimal()
+
+ggplotly(p1)
+
+```
+
+[^1]: For discussion of ICE's definition of "encounters", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018
+filter(event_date <= "2022-09-30") %>% 

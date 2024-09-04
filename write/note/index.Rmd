@@ -1,0 +1,564 @@
+---
+title: "ICE ERO-LESA enforcement events data, FY12-22"
+author: "UWCHR"
+date: "2024-05-31"
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+
+```{r setup, message=FALSE, warning=FALSE, include=TRUE}
+
+options(scipen = 1000000)
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder, viridis)
+
+```
+
+# Data overview
+
+This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data from
+ICE’s Integrated Decision Support (IIDS) database regarding nationwide encounters, arrests, and removals for the time period from October 1, 2011, through January 29, 2023, (full U.S. Government Fiscal Years 2012 through 2022), obtained by the University of Washington Center for Human Rights (UWCHR) pursuant to FOIA request 2022-ICFO-09023.
+
+## Datasets
+
+In each dataset, a record relates to an enforcement event, not an individual. Individuals may be involved in multiple enforcement events of each category. Unique individual identifiers (A-numbers, `alien_file_number`) are redacted in the original datasets as released by ICE;[^1] it is not possible to link events related to a specific individual, nor is it possible to link a given encounter to an associated arrest, or an arrest to a subsequent removal.[^2]
+
+Datasets were released without any data dictionary or field descriptions; in cases where this information is not self-explanatory, we have attempted to provide citations of relevant sources providing context.
+
+Datasets have been minimally cleaned and standardized; in the following sections we load each dataset and perform some basic additional standardization and creation of convenience variables for various units of time, etc.
+
+For additional detail, see respective descriptive notebooks for each enforcement dataset:
+
+- [Encounters](encounters.html)
+- [Arrests](arrests.html)
+- [Removals](removals.html)
+
+### Encounters
+
+```{r load_encounters, message=FALSE, warning=FALSE, include=TRUE}
+
+# ENCOUNTERS DATA
+
+enc <- read_delim(here('write', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                   event_date = col_character(),
+                                   landmark = col_character(),
+                                   operation = col_factor(),
+                                   processing_disposition = col_factor(),
+                                   citizenship_country = col_factor(),
+                                   gender = col_factor(),
+                                   hashid = col_character(),
+                                   id = col_number()),
+                  show_col_types = FALSE)
+
+redacted <- c('encounter_threat_level', 'alien_file_number')
+redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
+
+enc <- enc %>% 
+  dplyr::select(-redacted)
+
+enc <- enc %>% 
+  mutate(aor = factor(aor, levels = sort(levels(enc$aor))),
+         event_date = as_date(event_date, format="%m/%d/%Y"),
+         year = year(event_date),
+         month = month(event_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(event_date),
+         fy_quarter = as.factor(quarter(event_date, fiscal_start=10, type="year.quarter")),
+         fy = as.factor(substr(fy_quarter, 1,4)),
+         gender = toupper(gender),
+         operation = toupper(operation),
+         processing_disposition = toupper(processing_disposition),
+         citizenship_country = toupper(citizenship_country))
+
+```
+
+An encounter occurs when an individual is subjected to revision of admissibility/removability by ICE, and may or may not lead to an arrest.[^3]
+
+The encounters dataset (`enc`) includes `r nrow(enc)` observations of `r length(enc)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis. For additional detail, see the [Encounters](encounters.html) notebook.
+
+```{r glimpse_encounters, message=FALSE, warning=FALSE, include=TRUE}
+
+glimpse(enc)
+
+```
+
+### Arrests
+
+```{r load_arrests, message=FALSE, warning=FALSE, include=TRUE}
+
+# ARRESTS DATA
+
+arr <- read_delim(here('write', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                  arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_landmark = col_factor(),
+                                  arrest_method = col_factor(),
+                                  operation = col_factor(),
+                                  processing_disposition = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  case_closed_date = col_date(format="%m/%d/%Y"),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
+redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
+
+arr <- arr %>% 
+  dplyr::select(-all_of(redacted))
+
+arr <- arr %>% 
+  mutate(aor = factor(aor, levels = sort(levels(arr$aor))),
+         arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+         year = year(arrest_date),
+         month = month(arrest_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(arrest_date),
+         fy_quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter")),
+         fy = as.factor(substr(fy_quarter, 1,4)),
+         citizenship_country = as.factor(toupper(citizenship_country)))
+
+```
+
+An arrest occurs when an individual is taken into custody by ICE and removal proceedings initiated against them.
+
+The arrests dataset (`arr`) includes `r nrow(arr)` observations of `r length(arr)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis. For additional detail, see the [Arrests](arrests.html) notebook.
+
+```{r glimpse_arrests, message=FALSE, warning=FALSE, include=TRUE}
+
+glimpse(arr)
+
+```
+
+### Removals
+
+```{r load_removals, message=FALSE, warning=FALSE, include=TRUE}
+
+# REMOVALS DATA
+
+pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
+
+rem <- read_delim(here('write', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                   arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  case_close_date = col_date(format="%m/%d/%Y"),
+                                  removal_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_method_code = col_character(),
+                                  processing_disposition_code = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  final_charge_section = col_factor(),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+# glimpse(rem)
+
+redacted <- c('removal_threat_level', 'alien_file_number')
+redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
+
+rem <- rem %>% 
+  dplyr::select(-redacted, -case_closed_date)
+
+rem <- rem %>% 
+  mutate(aor = factor(aor, levels = sort(levels(rem$aor))),
+         year = year(departed_date),
+         month = month(departed_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(departed_date),
+         processing_disp = toupper(coalesce(processing_disposition_code, processing_disposition)),
+         fy_quarter = as.factor(quarter(departed_date, fiscal_start=10, type="year.quarter")),
+         fy = as.factor(substr(fy_quarter, 1,4)))
+
+rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_raw'))
+
+```
+
+A removal occurs when an individual is issued a final order of removal and departs the United States via deportation or voluntary return.
+
+The removals dataset (`rem`) includes `r nrow(rem)` observations of `r length(rem)` variables; `r length(redacted)` fully redacted fields (`r redacted_text`) are dropped from analysis. For additional detail, see the [Removals](removals.html) notebook.
+
+```{r glimpse_removals, message=FALSE, warning=FALSE, include=TRUE}
+
+glimpse(rem)
+
+```
+
+```{r load_supplemental, message=FALSE, warning=FALSE, include=TRUE}
+
+# SUPPLEMENTAL DATA
+
+# AOR geographic boundaries by county
+county_aor <- read_delim(here('share', 'hand', 'county_aor.csv'), delim = ',')
+aor_field_office <- read_delim(here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
+
+# Select demographics obtained via `tidycensus` and aggregated to AOR in a separate repository
+# We currently lack demographics for years following 2019, so we use 2019 values for subsequent years
+# TO DO: Update demographics for more recent years
+demog <- read_delim(here('share', 'input', 'aor_demog_indicators.csv'), delim='|') %>%
+  arrange(aor, year) %>% 
+  mutate(year = as.character(year))
+
+# Google Maps API key required to render maps, see `??ggmap::register_google`
+ggkey = Sys.getenv("GOOGLEGEOCODE_API_KEY")
+register_google(key = ggkey)
+
+# Scale for per capita calculations
+pc_scale = 100000
+
+```
+
+# Basic descriptive analysis
+
+The following sections provide a basic descriptive overview of the three enforcement datasets.
+
+## Total enforcement actions per FY
+
+All three enforcement metrics peaked nationwide in FY 2012; we lack data for prior years. Note total arrests exceed total removals for first time in FY 2021; significant increase in rate of encounters compared to arrests in FY 2022.
+
+```{r fy_total, message=FALSE, include=TRUE}
+
+enc_fy <- enc %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_encounters = n())
+
+arr_fy <- arr %>% 
+  filter(arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_arrests = n())
+
+rem_fy <- rem %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
+  group_by(fy) %>% 
+  summarize(n_removals = n())
+
+dat <- left_join(enc_fy, arr_fy, by='fy') %>% 
+  left_join(rem_fy, by='fy')
+
+p1 <- dat %>%
+  pivot_longer(cols=-c('fy')) %>% 
+  ggplot(aes(x = as.factor(fy), y=value, color=name, group=name)) +
+  geom_line() +
+  labs(title = "Total ICE enforcement events per FY") +
+  xlab('') +
+  ylab("Value") +
+  ylim(0, NA) +
+  # scale_color_viridis_d() +
+  theme_minimal()
+
+ggplotly(p1)
+
+```
+
+## ICE Areas of Responsibility (AOR)
+
+ICE ERO divides the country into 24 Areas of Responsibility (AORs) and Field Offices, mapped below. This is the only common level of geographic organization shared between the three enforcement datasets.
+
+Most AORs correspond to one or more U.S. states and territories; the states of CA, NY, and TX are divided between two or more AORs.[^4]
+
+For additional detail, see the following descriptive notebooks for each AOR:
+
+[Atlanta (ATL)](aor/ATL.html) - [Baltimore (BAL)](aor/BAL.html) - [Boston (BOS)](aor/BOS.html) - [Buffalo (BUF)](aor/BUF.html) - [Chicago (CHI)](aor/CHI.html) - [Dallas (DAL)](aor/DAL.html) - [Denver (DEN)](aor/DEN.html) - [Detroit (DET)](aor/DET.html) - [El Paso (ELP)](aor/ELP.html) - [Houston (HOU)](aor/HOU.html) - [Los Angeles (LOS)](aor/LOS.html) - [Miami (MIA)](aor/MIA.html) - [Newark (NEW)](aor/NEW.html) - [New Orleans (NOL)](aor/NOL.html) - [New York City (NYC)](aor/NYC.html) - [Philadelphia (PHI)](aor/PHI.html) - [Phoenix (PHO)](aor/PHO.html) - [Seattle (SEA)](aor/SEA.html) - [San Francisco (SFR)](aor/SFR.html) - [Salt Lake City (SLC)](aor/SLC.html) - [San Antonio (SNA)](aor/SNA.html) - [San Diego (SND)](aor/SND.html) - [Saint Paul (SPM)](aor/SPM.html) - [Washington D.C. (WAS)](aor/WAS.html)
+
+```{r maps_setup, message=FALSE, include=FALSE}
+  
+states <- unique(county_aor$geoid_state)
+
+all_counties <- counties(state=states) %>%
+  shift_geometry()
+
+# Combine county-level geometries into an AOR geometry
+
+aor_geom <- left_join(all_counties, county_aor, by=c('GEOID' = "geoid")) %>%
+  group_by(aor) %>%
+  summarize(geometry = sf::st_union(geometry))
+
+aor_field_office <- read_delim(here('share', 'hand', 'aor_ero_field_office.csv'), delim = ',')
+
+aor_field_office_sf <- aor_field_office %>%
+  st_as_sf(coords = c("long", "lat"), crs=4326)
+
+```
+
+```{r map_aor, message=FALSE, include=TRUE}
+
+p1 <- aor_geom %>%
+  ggplot(aes(fill=aor)) +
+  geom_sf(color='black') +
+  geom_sf(data = aor_field_office_sf, aes(geometry = geometry), show.legend = FALSE) +
+  ggrepel::geom_label_repel(
+    data = aor_field_office_sf,
+    aes(label = aor, geometry = geometry),
+    fill = alpha(c("white"),0.5),
+    color = "black",
+    stat = "sf_coordinates",
+    min.segment.length = 0,
+    force=2,
+    show.legend = FALSE
+  ) +
+  # scale_fill_viridis_d() +
+  theme_void() +
+  labs(title = "ICE AORs and Field Office locations")
+
+p1
+
+```
+
+## Enforcement by AOR
+
+Each enforcement dataset categorizes enforcement actions at the level of ICE Areas of Responsibility (AORs). Here we provide an overview of total enforcement actions per Fiscal Year across all AORs. Note wide distribution in rates of enforcement actions among AORs and over time.
+
+```{r enforce_by_aor, message=FALSE, include=TRUE}
+
+enc_fy_aor <- enc %>% 
+  filter(event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n_encounters = n()) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  ungroup()
+
+arr_fy_aor <- arr %>% 
+  filter(arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n_arrests = n()) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  ungroup()
+
+rem_fy_aor <- rem %>% 
+  filter(departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n_removals = n()) %>% 
+  mutate(fy = as.numeric(as.character(fy))) %>% 
+  ungroup()
+
+dat <- left_join(enc_fy_aor, arr_fy_aor, by=c('fy', 'aor')) %>% 
+  left_join(rem_fy_aor, by=c('fy', 'aor'))
+
+dat <- dat %>% 
+  filter(!is.na(aor)) %>% 
+  mutate(across(everything(), ~replace_na(., 0))) %>% 
+  mutate(diff_enc_arr = n_encounters - n_arrests,
+         diff_rem_arr = n_removals - n_arrests)
+  
+
+p1 <- dat %>%
+  filter(!is.na(aor)) %>% 
+  dplyr::select(-contains('diff')) %>% 
+  pivot_longer(cols=-c('fy', 'aor')) %>% 
+  ggplot(aes(x = as.factor(fy), y=value, color=name, group=name)) +
+  geom_line() +
+  # scale_y_log10() +
+  scale_x_discrete(breaks=seq(2013,2024,4)) +
+  labs(title = "Total ICE enforcement events per FY") +
+  facet_wrap(~aor) +
+  # facet_wrap(~aor, scales='free_y') +
+  xlab('') +
+  ylab("Value") +
+  theme_minimal()
+
+p1
+
+```
+
+Two simple comparative measures are the annual differences between total encounters and arrests; and between total removals and arrests per AOR.
+
+```{r enforce_diff}
+
+p2 <- dat %>%
+  filter(!is.na(aor)) %>% 
+  dplyr::select(fy, aor, contains('diff')) %>% 
+  pivot_longer(cols=-c('fy', 'aor')) %>% 
+  ggplot(aes(x = as.factor(fy), y=value, color=name, group=name)) +
+  geom_line() +
+  scale_x_discrete(breaks=seq(2013,2024,4)) +
+  labs(title = "Difference between ICE enforcement events per FY") +
+  facet_wrap(~aor) +
+  xlab('') +
+  ylab("Value") +
+  theme_minimal()
+
+p2
+
+# b1 <- dat %>%
+#   filter(!is.na(aor)) %>% 
+#   dplyr::select(fy, aor, contains('diff')) %>% 
+#   pivot_longer(cols=-c('fy', 'aor')) %>% 
+#   ggplot(aes(x = as.factor(name), y=value, color=name, group=name)) +
+#   geom_boxplot()
+# 
+# b1
+
+```
+
+## Rates of enforcement per capita
+
+We can calculate rates of enforcement per capita at the AOR level using ACS 1-year population estimates obtained via `tidycensus`.
+
+```{r encounters_pc, message=FALSE, warning=FALSE, include=TRUE}
+
+enc_per_aor <- enc %>% 
+  filter(!is.na(aor),
+         aor != "HQ",
+         event_date >= "2011-10-01",
+         event_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n())
+
+enc_pc_per_aor <- left_join(enc_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
+  group_by(aor) %>% 
+  fill(contains('pop')) %>% 
+  mutate(encounters_per_capita = (n / total_pop) * pc_scale,
+         encounters_per_undocu = (n / undocu_pop) * pc_scale) %>% 
+  arrange(fy, desc(encounters_per_capita)) %>% 
+  group_by(fy) %>% 
+  mutate(pc_rank = row_number())
+
+p1 <- enc_pc_per_aor %>% 
+  ggplot(aes(x = fy, y=encounters_per_capita, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "ICE encounters per 100,000 residents") +
+  theme_minimal()
+
+ggplotly(p1)  
+
+```
+
+```{r arrests_pc, message=FALSE, warning=FALSE, include=TRUE}
+
+arr_per_aor <- arr %>% 
+  filter(!is.na(aor),
+         aor != "HQ",
+         arrest_date >= "2011-10-01",
+         arrest_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n())
+
+arr_pc_per_aor <- left_join(arr_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
+  group_by(aor) %>% 
+  fill(contains('pop')) %>% 
+  mutate(arrests_per_capita = (n / total_pop) * pc_scale,
+         arrests_per_undocu = (n / undocu_pop) * pc_scale) %>% 
+  arrange(fy, desc(arrests_per_capita)) %>% 
+  group_by(fy) %>% 
+  mutate(pc_rank = row_number())
+
+p1 <- arr_pc_per_aor %>% 
+  ggplot(aes(x = fy, y=arrests_per_capita, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "ICE arrests per 100,000 residents") +
+  theme_minimal()
+
+ggplotly(p1)  
+
+```
+
+```{r removals_pc, message=FALSE, warning=FALSE, include=TRUE}
+
+rem_per_aor <- rem %>% 
+  filter(!is.na(aor),
+         aor != "HQ",
+         departed_date >= "2011-10-01",
+         departed_date <= "2022-09-30") %>% 
+  group_by(fy, aor) %>% 
+  summarize(n = n())
+
+rem_pc_per_aor <- left_join(rem_per_aor, demog, by=c('fy' = 'year', 'aor' = 'aor')) %>% 
+  group_by(aor) %>% 
+  fill(contains('pop')) %>% 
+  mutate(removals_per_capita = (n / total_pop) * pc_scale,
+         removals_per_undocu = (n / undocu_pop) * pc_scale) %>% 
+  arrange(fy, desc(removals_per_capita)) %>% 
+  group_by(fy) %>% 
+  mutate(pc_rank = row_number())
+
+p1 <- rem_pc_per_aor %>% 
+  ggplot(aes(x = fy, y=removals_per_capita, color=aor, group=aor)) +
+  geom_line() +
+  labs(title = "ICE removals per 100,000 residents") +
+  theme_minimal()
+
+ggplotly(p1)  
+
+```
+
+## Mapping enforcement
+
+We can map enforcement variables at the AOR level as below:
+
+```{r enforcement_per_capita}
+
+# Note here we use 2019 demographic data for subsequent per capita calculations
+dat_map <- dat %>%
+  mutate(fy = as.character(fy)) %>%
+  full_join(demog, by=c('aor' = 'aor', 'fy' = 'year')) %>%
+  group_by(aor) %>%
+  fill(contains('pop')) %>%
+  left_join(aor_geom, by='aor')
+
+p0 <- dat_map %>%
+  filter(fy >= 2019,
+         aor != "HQ") %>%
+  group_by(aor) %>% 
+  mutate(n_encounters = sum(n_encounters),
+         encounters_per_capita = n_encounters / total_pop * pc_scale) %>%
+  ggplot(aes(geometry=geometry, fill=encounters_per_capita)) +
+  geom_sf() +
+  scale_fill_viridis_c() +
+  theme_void() +
+  labs(title = "ICE encounters per capita, FY 2019-2022",
+       caption = "Per est. 100,000 pop., 2019 (tidycensus)")
+
+p1 <- dat_map %>%
+  filter(fy >= 2019,
+         aor != "HQ") %>%
+  group_by(aor) %>% 
+  mutate(n_arrests = sum(n_arrests),
+         arrests_per_capita = n_arrests / total_pop * pc_scale) %>%
+  ggplot(aes(geometry=geometry, fill=arrests_per_capita)) +
+  geom_sf() +
+  scale_fill_viridis_c() +
+  theme_void() +
+  labs(title = "ICE arrests per capita, FY 2019-2022",
+       caption = "Per est. 100,000 pop., 2019 (tidycensus)")
+
+p2 <- dat_map %>%
+  filter(fy >= 2019,
+         aor != "HQ") %>%
+  group_by(aor) %>% 
+  mutate(n_removals = sum(n_removals),
+         removals_per_capita = n_removals / total_pop * pc_scale) %>%
+  ggplot(aes(geometry=geometry, fill=removals_per_capita)) +
+  geom_sf() +
+  scale_fill_viridis_c() +
+  theme_void() +
+  labs(title = "ICE removals per capita, FY 2019-2022",
+       caption = "Per est. 100,000 pop., 2019 (tidycensus)")
+
+p0
+p1
+p2
+
+```
+
+[^1]: A recent Government Accountability Office (GAO) report indicates that ICE enforcement data includes additional fields not included in the data released to UWCHR, including "Subject ID" and "Person ID" identifiers. See U.S. Government Accountability Office, "Immigration Enforcement: Arrests, Removals, and Detentions Varied Over Time and ICE Should Strengthen Data Reporting", GAO-24-106233, July 23, 2024, https://www.gao.gov/products/gao-24-106233
+
+[^2]: Unique values have been assigned for each record: `id` values denote the sequence of records in the original concatenated datasets; `hashid` values are unique identifiers for each record and are included for validation purposes (e.g. validating join operations, checking whether data has been transformed following assignment of `hashid` values, etc.).]
+
+[^3]: For discussion of ICE's definitions of "encounters", "arrests", and "removals", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018
+
+[^4]: An additional "HQ" AOR does not have an associated territorial jurisdiction. Some ICE publications and datasets since 2021 also refer to a "HAL" AOR for the south Texas region centering on Harlingen, TX, which overlaps with the HOU and SNA regions as displayed in this notebook. Hawaii, Guam and Northern Mariana Islands are included in the San Francisco AOR (SFR); Puerto Rico and U.S. Virgin Islands are included in the Miami AOR (MIA).
