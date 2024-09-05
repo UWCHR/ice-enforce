@@ -40,3 +40,4 @@ The repository is divided into separate tasks which follow a regular structure; 
 - [ ] Code to download data from Google Drive
 - [ ] Share additional exploratory analysis notebooks
 - [ ] Refactor `concat/` and `clean/` in R
+- [ ] Write all AOR notebooks (`aor.Rmd`) with single call to load data
