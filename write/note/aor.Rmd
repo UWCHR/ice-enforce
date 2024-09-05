@@ -142,7 +142,7 @@ rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_
 
 # SUPPLEMENTAL DATA
 
-demog <- read_delim(here('share', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
+demog <- read_delim(here('share', 'input', 'aor_demog_indicators.csv'), delim='|') %>%
   arrange(aor, year) %>% 
   mutate(year = as.factor(year))
 
