@@ -15,8 +15,9 @@ output:
  
 # Data overview: Encounters
 
-This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data from
-ICE’s Integrated Decision Support (IIDS) database regarding nationwide ICE encounters for the time period from October 1, 2011, through January 29, 2023, (full U.S. Government Fiscal Years 2012 through 2022), obtained by the University of Washington Center for Human Rights pursuant to FOIA request 2022-ICFO-09023.
+This notebook presents a national overview of U.S. Immigration and Customs Enforcement (ICE) Enforcement and Removal Operations (ERO) Law Enforcement Systems and Analysis Division (LESA) data from ICE’s Integrated Decision Support (IIDS) database regarding nationwide ICE encounters for the time period from October 1, 2011, through January 29, 2023, (full U.S. Government Fiscal Years 2012 through 2022), obtained by the [University of Washington Center for Human Rights (UWCHR)](https://jsis.washington.edu/humanrights/) pursuant to FOIA request 2022-ICFO-09023.
+
+For data and code used to generate this notebook, see: https://github.com/UWCHR/ice-enforce
 
 ```{r setup, message=FALSE, warning=FALSE, include=TRUE}
 

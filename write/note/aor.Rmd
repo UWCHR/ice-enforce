@@ -13,6 +13,8 @@ output:
         code_folding: hide
 ---
 
+[Back to index](index.html)
+
 ```{r setup, message=FALSE, warning=FALSE, include=TRUE}
 
 library(pacman)
@@ -25,15 +27,11 @@ specific_aor <- params$aor
 
 ```
 
-[Back to index](index.html)
-
-# ICE enforcement: `r specific_aor` AOR
-
 ```{r load_data, message=FALSE, warning=FALSE, include=TRUE}
 
 # ENCOUNTERS DATA
 
-enc <- read_delim(here('analyze', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
+enc <- read_delim(here('write', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                    event_date = col_character(),
                                    landmark = col_character(),
@@ -69,7 +67,7 @@ enc <- enc %>%
 
 # ARRESTS DATA
 
-arr <- read_delim(here('analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
+arr <- read_delim(here('write', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                   arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
@@ -107,7 +105,7 @@ arr <- arr %>%
 
 pd_dict <- read_delim(here('share', 'hand', 'processing_disp.csv'), delim='|')
 
-rem <- read_delim(here('analyze', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
+rem <- read_delim(here('write', 'input', 'ice_removals_fy12-23ytd.csv.gz'), delim='|',
                   col_types = cols(aor = col_factor(),
                                    arrest_date = col_date(format="%m/%d/%Y"),
                                   departed_date = col_date(format="%m/%d/%Y"),
@@ -144,7 +142,7 @@ rem <- left_join(rem, pd_dict, by=c('processing_disp' = 'processing_disposition_
 
 # SUPPLEMENTAL DATA
 
-demog <- read_delim(here('analyze', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
+demog <- read_delim(here('share', 'input', 'aor_demog_indicators.csv.gz'), delim='|') %>%
   arrange(aor, year) %>% 
   mutate(year = as.factor(year))
 
@@ -158,7 +156,11 @@ specific_area_of_responsibility <- arr %>%
 
 ```
 
-This notebook provides a basic descriptive overview of ICE ERO-LESA enforcement data for the `r paste0(specific_area_of_responsibility, " (",  specific_aor, ")")`.
+# ICE ERO enforcement data: `r specific_area_of_responsibility`
+
+This notebook provides a basic descriptive overview of ICE ERO-LESA enforcement data for the `r paste0(specific_area_of_responsibility, " (",  specific_aor, ")")` for the time period from October 1, 2011, through January 29, 2023, (full U.S. Government Fiscal Years 2012 through 2022), obtained by the [University of Washington Center for Human Rights (UWCHR)](https://jsis.washington.edu/humanrights/) pursuant to FOIA request 2022-ICFO-09023.
+
+For data and code used to generate this notebook, see: https://github.com/UWCHR/ice-enforce
 
 # Total enforcement actions by FY
 
@@ -310,6 +312,8 @@ ggplotly(p3)
 
 
 # Encounters
+
+For national overview, see the [Encounters](encounters.html) notebook.
 
 ## Encounters per capita
 
@@ -503,6 +507,8 @@ ggplotly(p1, dynamicTicks = TRUE)
 ```
 
 # Arrests
+
+For national overview, see the [Arrests](arrests.html) notebook.
 
 ## Arrests per capita
 
@@ -831,6 +837,8 @@ p1
 ```
 
 # Removals
+
+For national overview, see the [Removals](removals.html) notebook.
 
 ## Removals per capita
 
