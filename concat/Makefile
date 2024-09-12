@@ -28,7 +28,7 @@ output/ice_arrests_fy12-23ytd.csv.gz: \
 	../import/frozen/ERO_Arrests_FY2021.csv.gz \
 	../import/frozen/ERO_Arrests_FY2022.csv.gz \
 	../import/frozen/ERO_Arrests_FY2023YTD.csv.gz
-	mkdir -p input
+	mkdir -p input output
 	cd input/ && ln -sf ../../import/frozen/ERO_Arrests_FY20* .
 	python $< \
 		--input_fy12=input/ERO_Arrests_FY2012.csv.gz \
@@ -59,7 +59,7 @@ output/ice_encounters_fy12-23ytd.csv.gz: \
 	../import/frozen/ERO_Encounters_FY2021.csv.gz \
 	../import/frozen/ERO_Encounters_FY2022.csv.gz \
 	../import/frozen/ERO_Encounters_FY2023YTD.csv.gz
-	mkdir -p input
+	mkdir -p input output
 	cd input/ && ln -sf ../../import/frozen/ERO_Encounters_FY20* .
 	python $< \
 		--input_fy12=input/ERO_Encounters_FY2012.csv.gz \
@@ -90,7 +90,7 @@ output/ice_removals_fy12-23ytd.csv.gz: \
 	../import/frozen/ICE_Removals_FY2021.csv.gz \
 	../import/frozen/ICE_Removals_FY2022.csv.gz \
 	../import/frozen/ICE_Removals_FY2023YTD.csv.gz
-	mkdir -p input
+	mkdir -p input output
 	cd input/ && ln -sf ../../import/frozen/ICE_Removals_FY20* .
 	python $< \
 		--input_fy12=input/ICE_Removals_FY2012.csv.gz \

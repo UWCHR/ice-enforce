@@ -18,7 +18,9 @@ output/ice_arrests_fy12-23ytd.csv.gz: \
 	src/clean.py \
 	hand/clean_rules.yaml \
 	hand/arrest_dtypes.yaml \
-	input/ice_arrests_fy12-23ytd.csv.gz
+	../concat/output/ice_arrests_fy12-23ytd.csv.gz
+	mkdir -p input output
+	cd input && ln -sf ../../concat/output/ice_arrests_fy12-23ytd.csv.gz .
 	python $< \
 		--dtypes=hand/arrest_dtypes.yaml \
 		--cleanrules=hand/clean_rules.yaml \
@@ -30,7 +32,9 @@ output/ice_encounters_fy12-23ytd.csv.gz: \
 	src/clean.py \
 	hand/clean_rules.yaml \
 	hand/encounter_dtypes.yaml \
-	input/ice_encounters_fy12-23ytd.csv.gz
+	../concat/output/ice_encounters_fy12-23ytd.csv.gz
+	mkdir -p input output
+	cd input && ln -sf ../../concat/output/ice_encounters_fy12-23ytd.csv.gz .
 	python $< \
 		--dtypes=hand/encounter_dtypes.yaml \
 		--cleanrules=hand/clean_rules.yaml \
@@ -42,7 +46,9 @@ output/ice_removals_fy12-23ytd.csv.gz: \
 	src/clean.py \
 	hand/clean_rules.yaml \
 	hand/removal_dtypes.yaml \
-	input/ice_removals_fy12-23ytd.csv.gz
+	../concat/output/ice_removals_fy12-23ytd.csv.gz
+	mkdir -p input output
+	cd input && ln -sf ../../concat/output/ice_removals_fy12-23ytd.csv.gz .
 	python $< \
 		--dtypes=hand/removal_dtypes.yaml \
 		--cleanrules=hand/clean_rules.yaml \
