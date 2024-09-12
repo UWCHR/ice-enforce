@@ -11,9 +11,9 @@ output:
         toc_depth: 3
         toc_float: true
         code_folding: hide
----
+---   
 
-[Back to index](index.html)
+[Back to index](../index.html)
 
 ```{r setup, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -313,7 +313,7 @@ ggplotly(p3)
 
 # Encounters
 
-For national overview, see the [Encounters](encounters.html) notebook.
+For national overview, see the [Encounters](../encounters.html) notebook.
 
 ## Encounters per capita
 
@@ -508,7 +508,7 @@ ggplotly(p1, dynamicTicks = TRUE)
 
 # Arrests
 
-For national overview, see the [Arrests](arrests.html) notebook.
+For national overview, see the [Arrests](../arrests.html) notebook.
 
 ## Arrests per capita
 
@@ -838,7 +838,7 @@ p1
 
 # Removals
 
-For national overview, see the [Removals](removals.html) notebook.
+For national overview, see the [Removals](../removals.html) notebook.
 
 ## Removals per capita
 
