@@ -33,7 +33,7 @@ The repository is divided into separate tasks which follow a regular structure; 
 - `clean/` - Performs minimal data cleaning to standardize AOR values; cleaning operations can be extended using `clean/hand/clean_rules.yaml`
 - `export/` - Convenience task to generate final export versions of datasets in `export/output/`
 - `write/` - Generates descriptive notebooks for publication.
-- `docs/` - Descriptive notebooks published at: https://uwchr.github.com/ice-enforce/
+- `docs/` - Descriptive notebooks published at: https://uwchr.github.io/ice-enforce/
 
 ## To-do
 
