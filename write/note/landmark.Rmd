@@ -1,0 +1,313 @@
+---
+title: "ICE ERO-LESA enforcement events FY12-22 analysis of landmark fields"
+author: "UWCHR"
+date: "2024-10-31"
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+
+This notebook provides an overview of `landmark` and `apprehension_landmark` fields respectively associated with ICE encounter and arrest records (the removals data does not contain a similar field).
+
+We argue that it is important to exercise caution when interpreting these values, as they can not be relied upon as precise locations of these events. Many records instead encode the ICE entity associated with the event; attempts to geolocate these events to the state or county level are likely to be inaccurate.
+
+```{r setup, message=FALSE, warning=FALSE, include=TRUE}
+
+options(scipen = 1000000)
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, sf, tigris, ggrepel, ggmap, tidygeocoder, viridis)
+
+```
+
+## Encounters
+
+```{r load_encounters, message=FALSE, warning=FALSE, include=TRUE}
+
+# ENCOUNTERS DATA
+
+enc <- read_delim(here('write', 'input', 'ice_encounters_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                   event_date = col_character(),
+                                   landmark = col_character(),
+                                   operation = col_factor(),
+                                   processing_disposition = col_factor(),
+                                   citizenship_country = col_factor(),
+                                   gender = col_factor(),
+                                   hashid = col_character(),
+                                   id = col_number()),
+                  show_col_types = FALSE)
+
+redacted <- c('encounter_threat_level', 'alien_file_number')
+redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
+
+enc <- enc %>% 
+  dplyr::select(-redacted)
+
+enc <- enc %>% 
+  mutate(aor = factor(aor, levels = sort(levels(enc$aor))),
+         event_date = as_date(event_date, format="%m/%d/%Y"),
+         year = year(event_date),
+         month = month(event_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(event_date),
+         fy_quarter = as.factor(quarter(event_date, fiscal_start=10, type="year.quarter")),
+         fy = as.factor(substr(fy_quarter, 1,4)),
+         gender = toupper(gender),
+         operation = toupper(operation),
+         processing_disposition = toupper(processing_disposition),
+         citizenship_country = toupper(citizenship_country))
+
+```
+
+The encounters dataset contains `r nrow(enc)` distinct `landmark` values; or `r nrow(enc %>% distinct(landmark, aor))` distinct combinations of `aor` and `landmark`.
+
+A total of `r sum(is.na(enc$landmark))` or `r sum(is.na(enc$landmark)) / nrow(enc) * 100`% of encounter records are missing `landmark` values; see below for an overview of missingness over time and among ICE areas of responsibility.
+
+```{r encounters_landmark_missingness}
+
+p1 <- enc %>%
+  mutate(null_landmark = is.na(landmark)) %>% 
+  count(null_landmark, fy) %>% 
+  ggplot(aes(x = fy, y = n, fill = null_landmark)) +
+  geom_col(position="fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Proportion of encounters missing `landmark` value")
+
+p1
+
+p2 <- enc %>%
+  mutate(null_landmark = is.na(landmark)) %>% 
+  count(null_landmark, fy, aor) %>% 
+  ggplot(aes(x = fy, y = n, fill = null_landmark)) +
+  geom_col(position="fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 4)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) +
+  facet_wrap(~aor) + 
+  labs(title = "Proportion of encounters missing `landmark` value")
+
+p2
+
+```
+
+See below a table of the ten most common encounter `landmark` values. Note the top two values are associated with ICE "Interoperability" centers in Los Angeles, CA (Los Angeles AOR), and Batavia, NY (Buffalo AOR), which utilized nationwide databases to identify potential targets for ICE enforcement actions in the context of "Secure Communities" and other ICE programs; it is possible that these targets may not even be located in the respective states or AORs of these interoperability centers. See the [Encounters](encounters.html) notebook for an overview of rates of encounters per AOR, which shows that the LOS and BUF regions had extremely high rates of encounters during periods when these `landmark` values predominate in the data.
+
+Note also the inclusion of landmarks associated with enforcement programs at either the state or AOR-level ("SECURE COMMUNITIES NEW YORK"). Finally, other values are denoted as "GENERAL AREA, NON-SPECIFIC"; these will be discussed in more detail below in the context of the arrests dataset.
+
+```{r encounters_landmark_top_10}
+
+dat <- enc %>% 
+  filter(!is.na(landmark)) %>% 
+  count(landmark) %>% 
+  arrange(desc(n)) %>% 
+  head(10)
+
+knitr::kable(dat)
+
+```
+
+## Arrests
+
+```{r load_arrests, message=FALSE, warning=FALSE, include=TRUE}
+
+# ARRESTS DATA
+
+arr <- read_delim(here('write', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                  arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_landmark = col_factor(),
+                                  arrest_method = col_factor(),
+                                  operation = col_factor(),
+                                  processing_disposition = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  case_closed_date = col_date(format="%m/%d/%Y"),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
+redacted_text <- paste0('`', paste(unlist(redacted), collapse = '`, `'), '`')
+
+arr <- arr %>% 
+  dplyr::select(-all_of(redacted))
+
+arr <- arr %>% 
+  mutate(aor = factor(aor, levels = sort(levels(arr$aor))),
+         arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+         year = year(arrest_date),
+         month = month(arrest_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(arrest_date),
+         fy_quarter = as.factor(quarter(arrest_date, fiscal_start=10, type="year.quarter")),
+         fy = as.factor(substr(fy_quarter, 1,4)),
+         citizenship_country = as.factor(toupper(citizenship_country)))
+
+methods <- arr %>% 
+  count(arrest_method) %>% 
+  arrange(desc(n))
+
+top_methods <- methods %>% 
+  filter(n > 10000)
+
+arr <- arr %>% 
+  mutate(arrest_method_short =
+           case_when(arrest_method %in%
+                       unlist(top_methods$arrest_method) ~
+                       as.character(arrest_method), 
+                     TRUE ~ 
+                       "All others"))
+
+```
+
+The arrests dataset contains `r nrow(arr)` distinct `apprehension_landmark` values; or `r nrow(arr %>% distinct(apprehension_landmark, aor))` distinct combinations of `aor` and `apprehension_landmark`.
+
+A total of `r sum(is.na(arr$apprehension_landmark))` or `r sum(is.na(arr$apprehension_landmark)) / nrow(arr) * 100`% of arrest records are missing `apprehension_landmark` values; see below for an overview of missingness over time and among ICE areas of responsibility.
+
+```{r arrests_landmark_missingness}
+
+p1 <- arr %>%
+  mutate(null_landmark = is.na(apprehension_landmark)) %>% 
+  count(null_landmark, fy) %>% 
+  ggplot(aes(x = fy, y = n, fill = null_landmark)) +
+  geom_col(position="fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Proportion of arrests missing `apprehension_landmark` value")
+
+p1
+
+p2 <- arr %>%
+  mutate(null_landmark = is.na(apprehension_landmark)) %>% 
+  count(null_landmark, fy, aor) %>% 
+  ggplot(aes(x = fy, y = n, fill = null_landmark)) +
+  geom_col(position="fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 4)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) +
+  facet_wrap(~aor) +
+  labs(title = "Proportion of arrests missing `apprehension_landmark` value")
+
+p2
+
+```
+
+See below a table of the ten most common arrest `apprehension_landmark` values. In contrast with the encounters landmarks described above, these appear to map more reliably to county or state-level landmarks.
+
+However, note the value "ICE ERO NEWARK", which denotes an arrest associated with Enforcement and Removal Operations out of the Newark Field Office; this Field Office has jurisdiction over the entire state of New Jersey, and we believe it would likely be inaccurate to associate these arrests with the city of Newark or Essex County, NJ. Additionally, the value "NDD - 26 FEDERAL PLAZA NY, NY" denotes the "non-detained docket" of ICE's New York City Field Office; it is unclear that this should be taken as the precise location of an arrest, versus an administrative category.
+
+Values denoting ICE field offices or programs (e.g. "FUGITIVE OPERATIONS", "STREET ARREST") rather than locations are also common throughout the dataset; attempts to geolocate and interpret these values as precise arrest locations will likely lead to systematic over-representation of geographic divisions associated with ICE field offices.
+
+For example, `r nrow(arr %>% filter(apprehension_landmark == "SEA CAP"))` records with `apprehension_landmark` value "SEA CAP", denoting Criminal Alien Program arrests out of the Seattle field office, should likely not be interpreted as associated with the city of Seattle or King County, as these arrests could have taken place anywhere in the Seattle Area of Responsibility.
+
+```{r arrests_landmark_top_10}
+
+dat <- arr %>% 
+  filter(!is.na(apprehension_landmark)) %>% 
+  count(apprehension_landmark) %>% 
+  arrange(desc(n)) %>% 
+  head(10)
+
+knitr::kable(dat)
+
+```
+
+```{r general_area_non_specific}
+
+# Use better grep here
+nonspecific_str <- unique(arr$apprehension_landmark[grep('NON-SPECIFIC', arr$apprehension_landmark)])
+nonspecific_str <- nonspecific_str[!grepl('COUNTY|CHICAGO|PLYMOUTH|FORT WORTH|SCOTLANDVILLE|SANTA ANA|NORTH DARTMOUTH|IOWA|SOUTH DAKOTA', nonspecific_str)]
+
+aor_dat <- arr %>% 
+  mutate(nonspecific = apprehension_landmark %in% nonspecific_str) %>% 
+  count(nonspecific, fy, aor)
+
+method_dat <- arr %>% 
+  mutate(nonspecific = apprehension_landmark %in% nonspecific_str) %>% 
+  count(nonspecific, fy, arrest_method_short)
+
+```
+
+### "GENERAL AREA, NON-SPECIFIC"
+
+A significant number of `apprehension_landmark` values include the phrase "GENERAL AREA, NON-SPECIFIC"; when excluding values that also describe a state or county by name, these amount to `r sum(arr$apprehension_landmark %in% nonspecific_str)` records or `r sum(arr$apprehension_landmark %in% nonspecific_str) / nrow(arr) * 100`% of the arrests dataset.
+
+The majority of these values follow a regular format of a three-letter alphabetic code followed by "GENERAL AREA, NON-SPECIFIC". We believe that these three-letter alphabetic codes denote ICE field offices or sub-field offices; this observation is derived from our [analysis of DHS I-213](https://uwchr.github.io/i-213-analysis/) “Record of Deportable/Inadmissible Alien” forms for the Seattle Area of Responsibility, which include a "Location Code" field which appears to encode the DHS field office and sub-field office associated with each apprehension, e.g. "SEA/RIC" for Seattle field office, Richland, WA sub-field office. Although some maps of ICE sub-field offices have been published, we are unaware of any comprehensive source of information regarding interpretation of sub-field office codes or their respective jurisdictions. Our analysis of I-213 forms for the Seattle AOR suggests that many field offices may conduct arrests in multiple counties or states.
+
+Crucially, the quantity of records with these explicitly non-specific `apprehension_landmark` values varies over time and between ICE AORs and programs (by `arrest_method`), as observed below. Note this does not include other `apprehension_landmark` values which cannot be precisely geolocated.
+
+```{r pct_nonspecific}
+
+p1 <- aor_dat %>% 
+  ggplot(aes(x = fy, y = n, fill = nonspecific)) +
+  geom_col(position="fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 4)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) +
+  facet_wrap(~aor) +
+  labs(title = "Proportion of arrests with non-specific `apprehension_landmark` value")
+
+p1
+
+p2 <- method_dat %>% 
+  ggplot(aes(x = fy, y = n, fill = nonspecific)) +
+  geom_col(position="fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 4)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) +
+  facet_wrap(~arrest_method_short) +
+  labs(title = "Proportion of arrests with non-specific `apprehension_landmark` value")
+
+p2
+
+
+```
+
+```{r string_detection}
+
+arr <- arr %>% 
+  mutate(
+    landmark_type = case_when(
+      str_detect(apprehension_landmark, "COUNTY JAIL") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(apprehension_landmark, "PARISH JAIL") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(apprehension_landmark, "CO\\.? JAIL") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(apprehension_landmark, "SHERIFF|SHERRIFF") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(apprehension_landmark, "COUNTY PRISON") ~ "COUNTY JAIL/SHERIFF",
+      str_detect(apprehension_landmark, "CITY JAIL") ~ "CITY JAIL/POLICE",
+      str_detect(apprehension_landmark, "POLICE") ~ "CITY JAIL/POLICE",
+      str_detect(apprehension_landmark, "PD") ~ "CITY JAIL/POLICE",
+      str_detect(apprehension_landmark, "STATE PRISON") ~ "STATE PRISON/JAIL",
+      str_detect(apprehension_landmark, "STATE JAIL") ~ "STATE PRISON/JAIL",
+      str_detect(apprehension_landmark, "DEPT\\.? OF CORRECTIONS") ~ "STATE PRISON/JAIL",
+      str_detect(apprehension_landmark, "DEPARTMENT OF CORRECTIONS") ~ "STATE PRISON/JAIL",
+      str_detect(apprehension_landmark, "\\bDOC\\b") ~ "STATE PRISON/JAIL",
+      str_detect(apprehension_landmark, "FEDERAL") ~ "FEDERAL PRISON",
+      str_detect(apprehension_landmark, "\\bBOP\\b") ~ "FEDERAL PRISON",
+      str_detect(apprehension_landmark, "FCI") ~ "FEDERAL PRISON",
+      TRUE ~ "ALL OTHERS"
+      ))
+
+p1 <- arr %>% 
+  count(fy, landmark_type) %>% 
+  ggplot(aes(x = fy, y = n, fill = landmark_type)) +
+  geom_col()
+  
+p1
+
+p2 <- arr %>% 
+  mutate(cap_methods = case_when(
+    str_detect(arrest_method, "CAP") ~ arrest_method,
+    !str_detect(arrest_method, "CAP") ~ "All other arrest methods"
+  )) %>% 
+  count(fy, cap_methods, landmark_type) %>% 
+  ggplot(aes(x = fy, y = n, fill = landmark_type)) +
+  geom_col() +
+  facet_wrap(~cap_methods)
+  
+p2
+
+```
