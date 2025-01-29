@@ -1,0 +1,175 @@
+---
+title: "FY12-24YTD ICE ERO statistics analysis"
+author: "UWCHR"
+date: "2025-01-29"
+output:
+    html_document:
+        html_preview: true
+        toc: true
+        toc_depth: 3
+        toc_float: true
+        code_folding: hide
+---
+
+# ICE ERO arrests: Data overview
+
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+options(scipen = 1000000)
+
+library(pacman)
+
+p_load(here, tidyverse, zoo, lubridate, ggplot2, plotly, gghighlight, readxl)
+
+filename <- "ICE_ERO_PFD_DataFY2021_FY2024_Q4.xlsx"
+
+df <- read_excel(here::here('analyze', 'input', filename), sheet=1)
+
+df <- janitor::clean_names(df)
+
+```
+
+```{r}
+
+p1 <- df %>% 
+  group_by(area_of_responsibility_aor, fiscal_year) %>% 
+  summarize(administrative_arrests = sum(administrative_arrests)) %>% 
+  ggplot(aes(x = fiscal_year, y = administrative_arrests, color = area_of_responsibility_aor)) +
+  geom_line()
+
+p1
+
+```
+```{r}
+
+dat <- df %>% 
+  group_by(area_of_responsibility_aor, fiscal_year, criminality) %>% 
+  summarize(administrative_arrests = sum(administrative_arrests)) %>%
+  group_by(area_of_responsibility_aor, fiscal_year) %>% 
+  mutate(pct = administrative_arrests / sum(administrative_arrests)) %>% 
+  ungroup()
+
+p1 <- dat %>% 
+  ggplot(aes(x=fiscal_year, y=pct, fill=criminality, group=criminality)) +
+  geom_col(position='dodge') +
+  scale_y_continuous(labels = scales::percent) +
+  facet_wrap(~area_of_responsibility_aor)
+
+p1
+
+```
+
+
+```{r}
+
+dat_sea <- df %>% 
+  filter(area_of_responsibility_aor == "Seattle") %>% 
+  group_by(fiscal_year, criminality) %>% 
+  summarize(administrative_arrests = sum(administrative_arrests)) %>% 
+  mutate(group = "Seattle") %>% 
+  group_by(fiscal_year) %>% 
+  mutate(pct = administrative_arrests / sum(administrative_arrests)) %>% 
+  ungroup()
+
+dat_natl <- df %>% 
+  group_by(fiscal_year, criminality) %>% 
+  summarize(administrative_arrests = sum(administrative_arrests)) %>% 
+  mutate(group = "National") %>% 
+  group_by(fiscal_year) %>% 
+  mutate(pct = administrative_arrests / sum(administrative_arrests)) %>% 
+  ungroup()
+
+dat <- rbind(dat_sea, dat_natl)
+
+p1 <- dat %>% 
+  ggplot(aes(x=fiscal_year, y=pct, fill=criminality, group=criminality)) +
+  geom_col(position='dodge') +
+  scale_y_continuous(labels = scales::percent) +
+  facet_wrap(~group, scales = "free_y")
+
+p1
+
+```
+
+```{r}
+
+arr <- read_delim(here('analyze', 'input', 'ice_arrests_fy12-23ytd.csv.gz'), delim='|',
+                  col_types = cols(aor = col_factor(),
+                                  arrest_date = col_date(format="%m/%d/%Y"),
+                                  departed_date = col_date(format="%m/%d/%Y"),
+                                  apprehension_landmark = col_factor(),
+                                  arrest_method = col_factor(),
+                                  operation = col_factor(),
+                                  processing_disposition = col_factor(),
+                                  citizenship_country = col_factor(),
+                                  gender = col_factor(),
+                                  case_closed_date = col_date(format="%m/%d/%Y"),
+                                  id = col_integer(),
+                                  hashid = col_character()
+                                  )) 
+
+redacted <- c('removal_threat_level', 'apprehension_threat_level', 'alien_file_number')
+
+arr <- arr %>% 
+  dplyr::select(-all_of(redacted))
+
+arr <- arr %>% 
+  mutate(arrest_date = as_date(arrest_date, format="%m/%d/%Y"),
+         year = year(arrest_date),
+         month = month(arrest_date, label=TRUE, abbr=TRUE),
+         year_mth = zoo::as.yearmon(arrest_date),
+         fiscal_year = substr(quarter(arrest_date, fiscal_start=10, type="year.quarter"), 1,4),
+         citizenship_country = as.factor(toupper(citizenship_country))) %>% 
+  filter(arrest_date <= "2022-09-30")
+
+```
+
+
+```{r}
+
+dat1 <- arr %>% 
+  group_by(fiscal_year) %>% 
+  summarize(administrative_arrests = n()) %>% 
+  mutate(source = "FOIA")
+
+dat2 <- df %>% 
+  group_by(fiscal_year) %>% 
+  summarize(administrative_arrests = sum(administrative_arrests)) %>% 
+  mutate(source = "ERO")
+
+dat <- rbind(dat1, dat2)
+
+p1 <- dat %>% 
+  ggplot(aes(x = fiscal_year, y = administrative_arrests, fill = source, group = source)) +
+  geom_col(position='dodge') +
+  labs(title = "Total ICE ERO administrative arrests, nationwide")
+
+p1
+
+```
+
+```{r}
+
+dat1 <- arr %>% 
+  filter(area_of_responsibility == "Seattle Area of Responsibility") %>% 
+  group_by(fiscal_year) %>% 
+  summarize(administrative_arrests = n()) %>% 
+  mutate(source = "FOIA")
+
+dat2 <- df %>% 
+  filter(area_of_responsibility_aor == "Seattle") %>% 
+  group_by(fiscal_year) %>% 
+  summarize(administrative_arrests = sum(administrative_arrests)) %>% 
+  mutate(source = "ERO")
+
+dat <- rbind(dat1, dat2)
+
+p1 <- dat %>% 
+  ggplot(aes(x = fiscal_year, y = administrative_arrests, fill = source, group = source)) +
+  geom_col(position='dodge') +
+  labs(title = "Total ICE ERO administrative arrests",
+       subtitle = "Seattle Area of Responsibility")
+
+p1
+
+```
