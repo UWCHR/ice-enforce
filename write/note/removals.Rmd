@@ -389,11 +389,13 @@ rem %>%
 
 ```
 
-We can calculate lag between different dates, between arrest date and departure date, which reveals an increase in average time between arrest and departure since FY 2014; and significant difference between cases by `processing_disposition`:
+We can calculate lag between different dates, such as between arrest date and departure date, which reveals an increase in average time between arrest and departure since FY 2014; and significant difference between cases by `processing_disposition`:
 
 ```{r dep_diff_arr, message=FALSE, warning=FALSE, include=TRUE}
 
 rem$dep_diff_arr <- difftime(rem$departed_date, rem$arrest_date, units='days')
+
+hist(as.numeric(rem$dep_diff_arr))
 
 p1 <- rem %>% 
    filter(departed_date >= "2011-10-01",
@@ -428,5 +430,68 @@ p2
 
 ```
 
+We repeat the same analysis for the differnce between `removal_date` and `departed_date` for the period FY14 on (`removal_date` absent for data prior to FY14):
+
+```{r rem_diff_dep, message=FALSE, warning=FALSE, include=TRUE}
+
+rem$rem_diff_dep <- difftime(rem$removal_date, rem$departed_date, units='days')
+
+hist(as.numeric(rem$rem_diff_dep))
+
+p1 <- rem %>% 
+   filter(departed_date >= "2013-10-01",
+       departed_date <= "2022-09-30") %>% 
+  filter(fy >= 2013) %>%
+  group_by(fy) %>% 
+  summarize(mean_rem_diff_dep = mean(rem_diff_dep, na.rm = TRUE)) %>% 
+  ggplot(aes(x = fy, y = mean_rem_diff_dep)) +
+  geom_line(group=1) +
+  ylim(0, NA) +
+  theme_minimal()
+
+p1
+
+```
+
+Here we focus on characteristics of removals with nonzero difference between `removal_date`, `departure_date`:
+
+```{r rem_diff_dep_nonzero, message=FALSE, warning=FALSE, include=TRUE}
+
+rem_diff_dep_nonzero <- rem %>% 
+  filter(rem_diff_dep != 0,
+         !is.na(rem_diff_dep)) %>% 
+  mutate(rem_diff_dep = as.numeric(rem_diff_dep))
+
+hist(as.numeric(rem_diff_dep_nonzero$rem_diff_dep))
+
+p1 <- rem_diff_dep_nonzero %>% 
+   filter(departed_date >= "2013-10-01",
+       departed_date <= "2022-09-30") %>% 
+  filter(fy >= 2013) %>%
+  group_by(fy) %>% 
+  summarize(mean_rem_diff_dep = mean(rem_diff_dep, na.rm = TRUE)) %>% 
+  ggplot(aes(x = fy, y = mean_rem_diff_dep)) +
+  geom_line(group=1) +
+  ylim(0, NA) +
+  theme_minimal()
+
+p1
+
+p2 <- rem_diff_dep_nonzero %>% 
+  filter(departed_date >= "2013-10-01",
+         departed_date <= "2022-09-30") %>% 
+  mutate(disp_short = case_when(processing_disposition_clean %in%
+                                  unlist(top_disp$processing_disposition_clean) ~
+                                  as.character(processing_disposition_clean), 
+                                TRUE ~ "ALL OTHERS")) %>% 
+  filter(fy >= 2014) %>%
+  ggplot(aes(y = disp_short, x = rem_diff_dep, color = disp_short, group=disp_short)) +
+  geom_boxplot() +
+  scale_y_discrete(label=function(x) abbreviate(x, minlength=10)) +
+  theme_minimal()
+
+p2
+
+```
 
 [^1]: For discussion of ICE's definition of "removals", see American Immigration Council, "Changing Patterns of Interior Immigration Enforcement in the United States, 2016 - 2018", July 2019: https://www.americanimmigrationcouncil.org/research/interior-immigration-enforcement-united-states-2016-2018

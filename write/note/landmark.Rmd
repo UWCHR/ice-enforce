@@ -295,7 +295,7 @@ method_dat <- arr %>%
 
 A significant number of `apprehension_landmark` values include the phrase "GENERAL AREA, NON-SPECIFIC"; when excluding values that also describe a state or county by name, these amount to `r sum(arr$apprehension_landmark %in% nonspecific_str)` records or `r sum(arr$apprehension_landmark %in% nonspecific_str) / nrow(arr) * 100`% of the arrests dataset.
 
-The majority of these values follow a regular format of a three-letter alphabetic code followed by "GENERAL AREA, NON-SPECIFIC". We believe that these three-letter alphabetic codes denote ICE field offices or sub-field offices; this observation is derived from our [analysis of DHS I-213](https://uwchr.github.io/i-213-analysis/) “Record of Deportable/Inadmissible Alien” forms for the Seattle Area of Responsibility, which include a "Location Code" field which appears to encode the DHS field office and sub-field office associated with each apprehension, e.g. "SEA/RIC" for Seattle field office, Richland, WA sub-field office. Although some maps of ICE sub-field offices have been published, we are unaware of any comprehensive source of information regarding interpretation of sub-field office codes or their respective jurisdictions. Our analysis of I-213 forms for the Seattle AOR suggests that many field offices may conduct arrests in multiple counties or states.
+The majority of these values follow a regular format of a three-letter alphabetic code followed by "GENERAL AREA, NON-SPECIFIC". We believe that these three-letter alphabetic codes denote ICE field offices or sub-field offices; this observation is derived from our [analysis of DHS I-213](https://uwchr.github.io/i-213-analysis/) “Record of Deportable/Inadmissible Alien” forms for the Seattle Area of Responsibility, which include a "Location Code" field which appears to encode the DHS field office and sub-field office associated with each apprehension, e.g. "SEA/RIC" for Seattle field office, Richland, WA sub-field office. Although some maps of ICE sub-field offices have been published, we are unaware of any comprehensive source of information regarding interpretation of sub-field office codes or their respective jurisdictions. Our analysis of I-213 forms for the Seattle AOR suggests that sub-field offices may conduct arrests in multiple counties or states.
 
 Crucially, the quantity of records with these explicitly non-specific `apprehension_landmark` values varies over time and between ICE AORs and programs (by `arrest_method`), as observed below. Note this does not include other `apprehension_landmark` values which cannot be precisely geolocated.
 
@@ -376,3 +376,49 @@ p2
 
 ```
 
+Increase in values connoting "non-detained docket" arrests ("NDD"):
+
+```{r non_detained_docket}
+
+arr <- arr %>% 
+  mutate(
+    landmark_type = case_when(
+      str_detect(apprehension_landmark, "NONDETAINED") ~ "NDD",
+      str_detect(apprehension_landmark, "NON DETAINED") ~ "NDD",
+      str_detect(apprehension_landmark, "NDD") ~ "NDD",
+      str_detect(apprehension_landmark, "NON\\-DETAINED") ~ "NDD",
+      TRUE ~ "ALL OTHERS"
+      ))
+
+p1 <- arr %>% 
+  count(fy, landmark_type) %>% 
+  ggplot(aes(x = fy, y = n, fill = landmark_type)) +
+  geom_col(position="fill")
+  
+p1
+
+p2 <- arr %>% 
+  filter(!is.na(aor),
+         !aor == "HQ",
+         !is.na(apprehension_landmark)) %>% 
+  count(fy, aor, landmark_type) %>% 
+  ggplot(aes(x = fy, y = n, fill = landmark_type)) +
+  geom_col(position="fill") +
+  facet_wrap(~aor) +
+  scale_x_discrete(breaks=seq(2012, 2022, 4))
+  
+p2
+
+p3 <- arr %>% 
+  filter(!is.na(aor),
+         !aor == "HQ",
+         !is.na(apprehension_landmark)) %>% 
+  count(fy, arrest_method_short, landmark_type) %>% 
+  ggplot(aes(x = fy, y = n, fill = landmark_type)) +
+  geom_col(position="fill") +
+  facet_wrap(~arrest_method_short) +
+  scale_x_discrete(breaks=seq(2012, 2022, 4))
+  
+p3
+
+```
