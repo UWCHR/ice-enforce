@@ -451,6 +451,8 @@ ggplotly(p1)
 
 Overview of most common arrest `apprehension_landmark` values gives a sense of the diversity of this category, which includes `r length(unique(arr$apprehension_landmark))` unique values; note inclusion of general values likely denoting the ICE sub-office or divison responsible for the arrest rather than a precise location. Closer inspection is recommended at the AOR level.
 
+For more on `apprehension_landmark` values, see the [Landmarks](landmarks.html) notebook.
+
 ```{r arr_landmark, message=FALSE, warning=FALSE, include=TRUE}
 
 landmarks_per_aor <- arr %>%

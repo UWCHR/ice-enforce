@@ -5,8 +5,8 @@
 # ============================================
 # ice-enforce/write/Makefile
 
-# AORS = ATL BAL BOS BUF CHI DAL DEN DET ELP HOU LOS MIA NEW NOL NYC PHI PHO SEA SFR SLC SNA SND SPM WAS
-AORS = BOS # For testing multiple AOR output
+AORS = ATL BAL BOS BUF CHI DAL DEN DET ELP HOU LOS MIA NEW NOL NYC PHI PHO SEA SFR SLC SNA SND SPM WAS
+# AORS = BOS # For testing multiple AOR output
 
 
 .PHONY: clean all
@@ -15,7 +15,8 @@ all: \
 	output/index.html \
 	output/encounters.html \
 	output/arrests.html \
-	output/removals.html
+	output/removals.html \
+	output/landmarks.html
 
 aors:
 	@for n in $(AORS); do \
@@ -67,6 +68,16 @@ output/removals.html: \
 	cd input && ln -sf ../../clean/output/*.csv.gz .
 	Rscript -e "rmarkdown::render('note/removals.Rmd', 'html_document')"
 	mv note/removals.html output/
+
+output/landmarks.html: \
+		note/landmarks.Rmd \
+		../clean/output/ice_encounters_fy12-23ytd.csv.gz \
+		../clean/output/ice_arrests_fy12-23ytd.csv.gz \
+		../share/input/aor_demog_indicators.csv
+	mkdir -p input output
+	cd input && ln -sf ../../clean/output/*.csv.gz .
+	Rscript -e "rmarkdown::render('note/landmarks.Rmd', 'html_document')"
+	mv note/landmarks.html output/
 
 # Test single AOR output
 output/SEA.html: \

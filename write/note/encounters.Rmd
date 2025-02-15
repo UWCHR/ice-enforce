@@ -456,6 +456,8 @@ p2
 
 Overview of most common encounter `landmark` values gives a sense of the diversity of this category; note inclusion of general values denoting the entity responsible for the encounter rather than a precise geographic location. Note also high proportion of records missing `landmark` values.
 
+For more on `landmark` values, see the [Landmarks](landmarks.html) notebook.
+
 ```{r enc_landmark, message=FALSE, warning=FALSE, include=TRUE}
 
 landmarks <- enc %>% 

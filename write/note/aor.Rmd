@@ -424,6 +424,8 @@ ggplotly(p2)
 
 ## Encounter `landmark`
 
+For more on `landmark` values, see the [Landmarks](../landmarks.html) notebook.
+
 ```{r enc_landmark, message=FALSE, warning=FALSE, include=TRUE}
 
 landmarks <- enc %>% 
@@ -799,6 +801,8 @@ ggplotly(p1)
 ```
 
 ## Arrests by `apprehension_landmark`
+
+For more on `apprehension_landmark` values, see the [Landmarks](../landmarks.html) notebook.
 
 ```{r arr_landmark, message=FALSE, warning=FALSE, include=TRUE}
 

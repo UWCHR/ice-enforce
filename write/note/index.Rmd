@@ -41,6 +41,10 @@ For additional detail, see respective descriptive notebooks for each enforcement
 - [Arrests](arrests.html)
 - [Removals](removals.html)
 
+See also a descriptive notebook discussing limitations in interpretation of encounter `landmark` and arrest `apprehension_landmark` values:
+
+- [Landmarks](landmarks.html)
+
 ### Encounters
 
 ```{r load_encounters, message=FALSE, warning=FALSE, include=TRUE}
