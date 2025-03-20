@@ -13,7 +13,7 @@ output:
         code_folding: hide
 ---   
 
-[Back to index](../index.html)
+[Back to index](https://uwchr.github.io/ice-enforce/)
 
 ```{r setup, message=FALSE, warning=FALSE, include=TRUE}
 

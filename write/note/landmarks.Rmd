@@ -1,5 +1,5 @@
 ---
-title: "ICE ERO-LESA enforcement events FY12-22 analysis of landmark fields"
+title: "ICE ERO-LESA enforcement events FY12-22: Analysis of 'landmark' fields"
 author: "UWCHR"
 date: "2024-10-31"
 output:
@@ -10,6 +10,10 @@ output:
         toc_float: true
         code_folding: hide
 ---
+
+[Back to index](index.html)
+
+# Data overview: "Landmark" fields
 
 ```{r setup, message=FALSE, warning=FALSE, include=TRUE}
 
@@ -143,7 +147,7 @@ b1
 
 # Encounters
 
-The encounters dataset contains `r nrow(enc %>% distinct(landmark))` distinct `landmark` values; or `r nrow(enc %>% distinct(landmark, aor))` distinct combinations of `aor` and `landmark`.
+The [Encounters](encounters.html) dataset contains `r nrow(enc %>% distinct(landmark))` distinct `landmark` values; or `r nrow(enc %>% distinct(landmark, aor))` distinct combinations of `aor` and `landmark`.
 
 ## Missingness
 
@@ -196,7 +200,7 @@ knitr::kable(dat)
 
 # Arrests
 
-The arrests dataset contains `r nrow(arr %>% distinct(apprehension_landmark))` distinct `apprehension_landmark` values; or `r nrow(arr %>% distinct(apprehension_landmark, aor))` distinct combinations of `aor` and `apprehension_landmark`.
+The [Arrests](arrests.html) dataset contains `r nrow(arr %>% distinct(apprehension_landmark))` distinct `apprehension_landmark` values; or `r nrow(arr %>% distinct(apprehension_landmark, aor))` distinct combinations of `aor` and `apprehension_landmark`.
 
 ## Missingness
 
