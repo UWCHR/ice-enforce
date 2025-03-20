@@ -202,6 +202,8 @@ The arrests dataset contains `r nrow(arr %>% distinct(apprehension_landmark))` d
 
 A total of `r sum(is.na(arr$apprehension_landmark))` or `r sum(is.na(arr$apprehension_landmark)) / nrow(arr) * 100`% of arrest records are missing `apprehension_landmark` values; see below for an overview of missingness over time and among ICE areas of responsibility.
 
+Note especially that specific categories of arrests, including "ERO Reprocessed Arrest" and "Inspections" are significantly more likely to be missing `apprehension_landmark` values.
+
 ```{r arrests_landmark_missingness}
 
 p1 <- arr %>%
@@ -223,9 +225,24 @@ p2 <- arr %>%
   scale_x_discrete(breaks=seq(2012, 2022, 4)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) +
   facet_wrap(~aor) +
-  labs(title = "Proportion of arrests missing `apprehension_landmark` value")
+  labs(title = "Proportion of arrests missing `apprehension_landmark` value",
+       subtitle = "By ICE Area of Responsibility (AOR)")
 
 p2
+
+p3 <- arr %>%
+  mutate(null_landmark = is.na(apprehension_landmark)) %>% 
+  count(null_landmark, fy, arrest_method_short) %>% 
+  ggplot(aes(x = fy, y = n, fill = null_landmark)) +
+  geom_col(position="fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_discrete(breaks=seq(2012, 2022, 4)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) +
+  facet_wrap(~arrest_method_short) +
+  labs(title = "Proportion of arrests missing `apprehension_landmark` value",
+       subtitle = "By arrest method")
+
+p3
 
 ```
 
@@ -420,5 +437,25 @@ p3 <- arr %>%
   scale_x_discrete(breaks=seq(2012, 2022, 4))
   
 p3
+
+```
+
+## Top 5 `apprehension_landmark` per `area_of_responsibility`
+
+```{r top_5_per_aor}
+
+tab1 <- arr %>% count(area_of_responsibility, apprehension_landmark) %>% arrange(area_of_responsibility, desc(n)) %>% group_by(area_of_responsibility) %>%  slice_head(n=5)
+
+knitr::kable(tab1)
+
+```
+
+## Top 5 `apprehension_landmark` per `arrest_method_short`
+
+```{r top_5_per_method}
+
+tab2 <- arr %>% count(arrest_method_short, apprehension_landmark) %>% arrange(arrest_method_short, desc(n)) %>% group_by(arrest_method_short) %>%  slice_head(n=5)
+
+knitr::kable(tab2)
 
 ```

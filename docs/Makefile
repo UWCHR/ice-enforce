@@ -11,7 +11,8 @@ all: \
 		../write/output/index.html \
 		../write/output/encounters.html \
 		../write/output/arrests.html \
-		../write/output/removals.html
+		../write/output/removals.html \
+		../write/output/landmarks.html
 	cp -r ../write/output/* .
 
 clean:
